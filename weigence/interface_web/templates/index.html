@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Weigence{% endblock %}
+
+{% block content %}
+<h2 style="text-align:center; margin-top: 20px;">Últimos 10 Pesajes Registrados</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Peso (g)</th>
+            <th>Alerta</th>
+            <th>Fecha y Hora</th>
+            <th>Acciones</th>  <!-- Nueva columna -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for peso, alerta, fecha in registros %}
+        <tr class="alerta-{{ alerta }}">
+            <td>{{ peso }}</td>
+            <td>{{ "✔️" if alerta else "❌" }}</td>
+            <td>{{ fecha }}</td>
+            <td>
+                <button class="accion ver">🔍</button>
+                <button class="accion eliminar">🗑️</button>
+                <button class="accion descargar">⬇️</button>
+                <button class="accion simular">⚠️</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

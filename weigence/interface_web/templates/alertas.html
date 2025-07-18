@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Alertas - Weigence{% endblock %}
+
+{% block content %}
+<h2 style="text-align:center; margin-top: 20px;">Alertas Activas: {{ alertas_activas }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Producto/Estante</th>
+            <th>Peso (g)</th>
+            <th>Alerta</th>
+            <th>Fecha y Hora</th>
+            <th>Revisada</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr class="alerta-{{ r.alerta }}">
+            <td>{{ r.producto }}</td>
+            <td>{{ r.peso }}</td>
+            <td>⚠️</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ "Sí" if r.revisada else "No" }}</td>
+            <td>
+                <button class="accion ver">🔍</button>
+                {% if not r.revisada %}
+                <button class="accion revisar">✔️ Marcar Revisada</button>
+                {% else %}
+                <button class="accion revisada" disabled>✔️ Revisada</button>
+                {% endif %}
+                <button class="accion eliminar">🗑️</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

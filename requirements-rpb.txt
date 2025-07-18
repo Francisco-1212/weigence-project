@@ -1,0 +1,6 @@
+#pip install -r requirements-rpb.txt  ---- Falta raspberry pi a la calma
+
+RPi.GPIO
+hx711
+mysql-connector-python
+flask
