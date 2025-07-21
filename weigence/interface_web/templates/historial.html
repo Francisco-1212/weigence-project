@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Historial - Weigence{% endblock %}
+
+{% block contenido %}
+<h2 style="text-align:center; margin-top: 20px;">Historial de Pesajes</h2>
+
+<div class="filtros-historial">
+    <input type="text" id="filtro-producto" placeholder="Filtrar por estante o producto...">
+    <input type="date" id="filtro-inicio">
+    <input type="date" id="filtro-fin">
+    <button class="accion filtrar" onclick="filtrarHistorial()"><i class="fas fa-search"></i> Aplicar Filtros</button>
+    <button class="accion limpiar" onclick="limpiarFiltros()"><i class="fas fa-broom"></i> Limpiar</button>
+</div>
+
+<table id="tabla-historial">
+    <thead>
+        <tr>
+            <th>Producto/Estante</th>
+            <th>Peso (g)</th>
+            <th>Alerta</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr class="alerta-{{ r.alerta }}">
+            <td>{{ r.producto }}</td>
+            <td>{{ r.peso }}</td>
+            <td>{{ "⚠️" if r.alerta else "✔️" }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>
+                <button class="accion ver" onclick="mostrarModal('{{ r.peso }}', {{ r.alerta|lower }}, '{{ r.fecha }}')"><i class="fas fa-eye"></i></button>
+                <button class="accion descargar" onclick="descargarDatos('{{ r.peso }}', {{ r.alerta|lower }}, '{{ r.fecha }}')"><i class="fas fa-download"></i></button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="modal" class="modal">
+    <div class="modal-contenido">
+        <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <h3>Detalle del Pesaje</h3>
+        <p><strong>Peso:</strong> <span id="modal-peso"></span> g</p>
+        <p><strong>Alerta:</strong> <span id="modal-alerta"></span></p>
+        <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+    </div>
+</div>
+{% endblock %}

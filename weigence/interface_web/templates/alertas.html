@@ -2,13 +2,23 @@
 
 {% block title %}Alertas - Weigence{% endblock %}
 
-{% block content %}
+{% block contenido %}
 <h2 style="text-align:center; margin-top: 20px;">Alertas Activas: {{ alertas_activas }}</h2>
 
-<table>
+<div style="margin-bottom: 20px; text-align: right;">
+    <label for="filtro-revisadas"><strong>Filtrar:</strong></label>
+    <select id="filtro-revisadas" onchange="filtrarAlertas()">
+        <option value="todas">Todas</option>
+        <option value="no-revisadas">Solo no revisadas</option>
+        <option value="revisadas">Solo revisadas</option>
+    </select>
+</div>
+
+<table id="tabla-alertas">
     <thead>
         <tr>
-            <th>Producto/Estante</th>
+            <th>Producto</th>
+            <th>Estante</th>
             <th>Peso (g)</th>
             <th>Alerta</th>
             <th>Fecha y Hora</th>
@@ -18,23 +28,35 @@
     </thead>
     <tbody>
         {% for r in registros %}
-        <tr class="alerta-{{ r.alerta }}">
+        <tr class="alerta-true">
             <td>{{ r.producto }}</td>
+            <td>{{ r.estante }}</td>
             <td>{{ r.peso }}</td>
             <td>⚠️</td>
             <td>{{ r.fecha }}</td>
             <td>{{ "Sí" if r.revisada else "No" }}</td>
             <td>
-                <button class="accion ver">🔍</button>
+                <button class="accion ver" onclick="mostrarModal('{{ r.peso }}', true, '{{ r.fecha }}')"><i class="fas fa-eye"></i></button>
                 {% if not r.revisada %}
-                <button class="accion revisar">✔️ Marcar Revisada</button>
+                <button class="accion revisar" onclick="marcarRevisada(this)">✔️ Marcar Revisada</button>
                 {% else %}
                 <button class="accion revisada" disabled>✔️ Revisada</button>
                 {% endif %}
-                <button class="accion eliminar">🗑️</button>
+                <button class="accion eliminar" onclick="eliminarFila(this)"><i class="fas fa-trash-alt"></i></button>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<div id="modal" class="modal">
+    <div class="modal-contenido">
+        <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <h3>Detalle de la Alerta</h3>
+        <p><strong>Peso:</strong> <span id="modal-peso"></span> g</p>
+        <p><strong>Alerta:</strong> <span id="modal-alerta"></span></p>
+        <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+    </div>
+</div>
+
 {% endblock %}
