@@ -125,11 +125,14 @@ function limpiarFiltros() {
     mostrarToast("Filtros limpiados");
 }
 function filtrarAlertas() {
-    const seleccion = document.getElementById("filtro-revisadas").value;
+    const filtroRevisadas = document.getElementById("filtro-revisadas");
+    if (!filtroRevisadas) return;  // Salir si no existe el filtro en esta página
+
+    const seleccion = filtroRevisadas.value;
     const filas = document.querySelectorAll("#tabla-alertas tbody tr");
 
     filas.forEach(fila => {
-        const textoRevisada = fila.children[5].innerText.trim(); // columna "Revisada"
+        const textoRevisada = fila.children[5].innerText.trim();
         const revisada = textoRevisada.toLowerCase() === "sí";
 
         if (
@@ -143,8 +146,100 @@ function filtrarAlertas() {
         }
     });
 }
-document.addEventListener('DOMContentLoaded', filtrarAlertas);
+document.addEventListener('DOMContentLoaded', () => {
+    filtrarAlertas();
+});
 
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btnPesajes = document.getElementById("btn-pesajes");
+  const btnAlertas = document.getElementById("btn-alertas");
+  const btnOcultar = document.getElementById("btn-ocultar");
+  const chartSection = document.getElementById("chart-section");
+  const ctx = document.getElementById("chart").getContext("2d");
+
+  let chartInstance = null;
+
+  const datosPesajes = {
+    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"],
+    datasets: [{
+      label: "Pesajes (g)",
+      data: [1200, 1300, 1150, 1400, 1350, 1500, 1600, 1550, 1650, 1700],
+      borderColor: "blue",
+      backgroundColor: "rgba(0,0,255,0.1)",
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  };
+
+  const datosAlertas = {
+    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"],
+    datasets: [{
+      label: "Alertas activas",
+      data: [3, 5, 2, 7, 6, 4, 8, 7, 5, 4],
+      borderColor: "red",
+      backgroundColor: "rgba(255,0,0,0.1)",
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  };
+
+  function mostrarGrafico(datos) {
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+      type: "line",
+      data: datos,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "top" }
+        }
+      }
+    });
+
+    chartSection.style.display = "block";
+    btnOcultar.style.display = "inline-block";
+  }
+
+  function actualizarTabs(activo) {
+    btnPesajes.classList.remove("active");
+    btnAlertas.classList.remove("active");
+
+    if (activo === "pesajes") btnPesajes.classList.add("active");
+    if (activo === "alertas") btnAlertas.classList.add("active");
+  }
+
+  btnPesajes.addEventListener("click", () => {
+    mostrarGrafico(datosPesajes);
+    actualizarTabs("pesajes");
+  });
+
+  btnAlertas.addEventListener("click", () => {
+    mostrarGrafico(datosAlertas);
+    actualizarTabs("alertas");
+  });
+
+  btnOcultar.addEventListener("click", () => {
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
+    chartSection.style.display = "none";
+    btnOcultar.style.display = "none";
+
+    btnPesajes.classList.remove("active");
+    btnAlertas.classList.remove("active");
+  });
+
+  // Mostrar gráfico y activar pestaña "Pesajes" al cargar
+  mostrarGrafico(datosPesajes);
+  actualizarTabs("pesajes");
+});
 
 
 console.log("✅ JS cargado correctamente");

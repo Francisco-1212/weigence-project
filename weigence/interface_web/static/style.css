@@ -155,33 +155,201 @@ button.revisada {
 .contenido {
     padding: 2rem;
 }
+/* Tarjetas base */
 .dashboard-resumen {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 30px;
-    gap: 1rem;
-    flex-wrap: wrap;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
 }
+
+
 
 .tarjeta {
-    background-color: #34495e;
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 200px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  flex: 1 1 250px;
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.tarjeta:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.tarjeta.grafico {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.tabs-grafico {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  user-select: none;
+}
+
+.tabs-grafico .tab {
+  padding: 8px 18px;
+  background-color: transparent;
+  border: 2px solid #ccc;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #444;
+}
+
+.tabs-grafico .tab:hover {
+  border-color: #666;
+  color: #000;
+}
+
+.tabs-grafico .tab.active {
+  background-color: #0051ff;
+  border-color: #0051ff;
+  color: white;
+  box-shadow: 0 0 8px rgba(0, 81, 255, 0.4);
+}
+
+.tabs-grafico .tab.ocultar {
+  margin-left: auto; /* Para que quede a la derecha si quieres */
+  background-color: #eee;
+  border-color: #aaa;
+  color: #333;
+}
+
+.tabs-grafico .tab.ocultar:hover {
+  background-color: #ddd;
+  border-color: #888;
+}
+
+#chart {
+  max-width: 100%;
+  height: 220px;
+}
+
+.grafico-header {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  background-color: transparent;
+  border: 2px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.tab-btn:hover:not(.active) {
+  background-color: #f0f0f0;
+}
+
+
+.tarea.grafico, .tarjeta.grafico {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.chart-btn {
+  background: transparent;
+  border: 1px solid #aaa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.chart-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.chart-btn.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+
+/* Colores por tipo */
+.resumen { border-left: 5px solid #3b82f6; }
+.alertas { border-left: 5px solid #ef4444; }
+.ultima-actualizacion { border-left: 5px solid #10b981; }
+
+/* Títulos y texto */
 .tarjeta h3 {
-    margin-bottom: 10px;
-    font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  color: #333;
 }
 
 .tarjeta p {
-    font-size: 2rem;
-    font-weight: bold;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #111;
 }
+
+/* Botones gráficos */
+.chart-toggle {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.chart-toggle button {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  margin: 0 0.5rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chart-toggle button:hover {
+  background-color: #2563eb;
+}
+
+/* Animación de entrada */
+.fade-in {
+  animation: fadeIn 0.8s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -286,6 +454,58 @@ button.accion {
 
 button.accion:hover {
     color: #007bff;
+}
+/* Estilo general para los botones del gráfico */
+.chart-toggle button {
+    background-color: #06578dfa;
+    border: none;
+    color: rgb(255, 255, 255);
+    padding: 10px 20px;
+    margin: 0 8px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Efecto hover */
+.chart-toggle button:hover {
+    background-color: #043657f8;
+    transform: scale(1.05);
+}
+
+/* Botón activo (opcional si quieres diferenciarlo visualmente) */
+.chart-toggle button.active {
+    background-color: #2ecc71;
+}
+
+/* Contenedor del gráfico */
+.chart-container {
+    display: none; /* oculto por defecto */
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Ajuste responsivo para pantallas pequeñas */
+@media (max-width: 768px) {
+    .chart-toggle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .chart-toggle button {
+        margin: 5px 0;
+        width: 80%;
+    }
+
+    .chart-container {
+        width: 100%;
+        overflow-x: auto;
+    }
 }
 
 
