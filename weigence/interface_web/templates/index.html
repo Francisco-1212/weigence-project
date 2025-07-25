@@ -4,36 +4,41 @@
 <h2 style="text-align:center; margin-top: 20px;"></h2>
 <div class="dashboard-resumen fade-in">
   <div class="tarjeta resumen">
-    <h3>Total Pesajes</h3>
-    <p>{{ total_pesajes }}</p>
+    <h3 class="tarjeta-titulo">Total Pesajes</h3>
+    <div class="divisor"></div>
+    <p class="tarjeta-dato">{{ total_pesajes }}</p>
   </div>
+
   <div class="tarjeta alertas">
-    <h3>Alertas Activas</h3>
-    <p>{{ total_alertas }}</p>
+    <h3 class="tarjeta-titulo">Alertas Activas</h3>
+    <div class="divisor"></div>
+    <p class="tarjeta-dato">{{ total_alertas }}</p>
   </div>
+
   <div class="tarjeta ultima-actualizacion">
-    <h3>Última Actualización</h3>
-    <p>{{ ultima_fecha }}</p>
+    <h3 class="tarjeta-titulo">Última Actualización</h3>
+    <div class="divisor"></div>
+    <p class="tarjeta-dato">{{ ultima_fecha }}</p>
   </div>
+
+
 
   <!-- Nueva Tarjeta: Gráfico -->
     <div class="tarjeta grafico">
       <div class="tabs-grafico">
-        <button id="btn-pesajes" class="tab active">Pesajes</button>
-        <button id="btn-alertas" class="tab">Alertas</button>
+        <button id="btn-pesajes" class="tab active" title="Pesajes en gramos (g)">Pesajes</button>
+        <button id="btn-alertas" class="tab" title="Alertas registradas">Alertas</button>
       </div>
       <canvas id="chart"></canvas>
-    </div>
+      <div class="descargar-grafico">
+      <button id="btn-descargar" class="btn-icono">
 
+      </button>
+      </div>
     </div>
+</div>
     
 </div>
-
-
-
-
-
-
     <h2 style="text-align:center; margin-top: 20px;">Últimos 10 Pesajes Registrados</h2>
     <table>
         <thead>
@@ -41,7 +46,7 @@
                 <th>Peso (g)</th>
                 <th>Alerta</th>
                 <th>Fecha y Hora</th>
-                <th>Acciones</th>  <!-- Nueva columna -->
+                <th>Acciones</th>  
             </tr>
         </thead>
         <tbody>
@@ -85,7 +90,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js" defer></script>
+<script src="/weigence/interface_web/static/js/script.js" defer></script>
 
 
 

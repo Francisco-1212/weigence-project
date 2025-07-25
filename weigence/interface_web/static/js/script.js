@@ -152,59 +152,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ JS cargado correctamente");
+
   const btnPesajes = document.getElementById("btn-pesajes");
   const btnAlertas = document.getElementById("btn-alertas");
-  const btnOcultar = document.getElementById("btn-ocultar");
-  const chartSection = document.getElementById("chart-section");
+  const btnDescargar = document.getElementById("btn-descargar");
   const ctx = document.getElementById("chart").getContext("2d");
 
   let chartInstance = null;
 
-  const datosPesajes = {
-    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"],
-    datasets: [{
-      label: "Pesajes (g)",
-      data: [1200, 1300, 1150, 1400, 1350, 1500, 1600, 1550, 1650, 1700],
-      borderColor: "blue",
-      backgroundColor: "rgba(0,0,255,0.1)",
-      fill: true,
-      tension: 0.3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-    }]
-  };
+const datosPesajes = {
+  labels: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+  datasets: [{
+    label: "Pesajes (g)",
+    data: [1450, 1300, 950, 1350, 1400, 1100, 1750], 
+    borderColor: "blue",
+    backgroundColor: "rgba(0,0,255,0.1)",
+    fill: true,
+    tension: 0.3,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+  }]
+};
 
-  const datosAlertas = {
-    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"],
-    datasets: [{
-      label: "Alertas activas",
-      data: [3, 5, 2, 7, 6, 4, 8, 7, 5, 4],
-      borderColor: "red",
-      backgroundColor: "rgba(255,0,0,0.1)",
-      fill: true,
-      tension: 0.3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-    }]
-  };
-
-  function mostrarGrafico(datos) {
-    if (chartInstance) chartInstance.destroy();
+const datosAlertas = {
+  labels: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+  datasets: [{
+    label: "Alertas activas",
+    data: [3, 4, 2, 5, 0, 3, 2, 1],
+    borderColor: "red",
+    backgroundColor: "rgba(255,0,0,0.1)",
+    fill: true,
+    tension: 0.3,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+  }]
+};
+  
+function mostrarGrafico(datos) {
+  if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
-      type: "line",
-      data: datos,
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: "top" }
+    type: "line",
+    data: datos,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
         }
       }
-    });
+    }
+  });
 
-    chartSection.style.display = "block";
-    btnOcultar.style.display = "inline-block";
-  }
+
+  // animación suave
+  const canvas = document.getElementById("chart");
+  canvas.classList.remove("animate-chart");
+  void canvas.offsetWidth;
+  canvas.classList.add("animate-chart");
+}
+
+    
 
   function actualizarTabs(activo) {
     btnPesajes.classList.remove("active");
@@ -213,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activo === "pesajes") btnPesajes.classList.add("active");
     if (activo === "alertas") btnAlertas.classList.add("active");
   }
-
+  
   btnPesajes.addEventListener("click", () => {
     mostrarGrafico(datosPesajes);
     actualizarTabs("pesajes");
@@ -224,22 +233,24 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarTabs("alertas");
   });
 
-  btnOcultar.addEventListener("click", () => {
+  // Botón de descarga
+  btnDescargar.addEventListener("click", () => {
     if (chartInstance) {
-      chartInstance.destroy();
-      chartInstance = null;
+      const image = chartInstance.toBase64Image("image/png", 1);
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = "grafico_weigence.png";
+      link.click();
+    } else {
+      alert("Primero debes generar el gráfico.");
     }
-    chartSection.style.display = "none";
-    btnOcultar.style.display = "none";
-
-    btnPesajes.classList.remove("active");
-    btnAlertas.classList.remove("active");
   });
 
   // Mostrar gráfico y activar pestaña "Pesajes" al cargar
   mostrarGrafico(datosPesajes);
   actualizarTabs("pesajes");
 });
+
 
 
 console.log("✅ JS cargado correctamente");

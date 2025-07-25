@@ -158,77 +158,240 @@ button.revisada {
 /* Tarjetas base */
 .dashboard-resumen {
   display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  margin: 30px 0;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 2rem;
-  padding: 2rem;
 }
-
-
-
 .tarjeta {
-  flex: 1 1 250px;
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  padding: 1.8rem 1.5rem;
+  flex: 1;
+  min-width: 220px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  cursor: default;
+  border-left: 5px solid #f97316; 
+}
+.tarjeta:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+/* ==== Títulos generales ==== */
+.tarjeta h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #1e40af; /* Azul oscuro para buen contraste y modernidad */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.tarjeta:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+/* Línea divisoria sutil y elegante */
+.divisor {
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 14px;
+  width: 60px;
+  background: linear-gradient(90deg, #0051ff, #3b82f6);
+  box-shadow: 0 1px 6px rgba(59, 130, 246, 0.3);
+  align-self: flex-start; /* Que quede alineado al inicio */
+  transition: background 0.4s ease;
 }
+
+/* Texto valor principal (numérico) */
+.tarjeta p {
+  font-size: 2.3rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.15;
+  color: #111827; /* Gris muy oscuro para máxima legibilidad */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 0.02em;
+  transition: color 0.3s ease;
+}
+
+/* Texto secundario dentro de Última actualización */
+.ultima-actualizacion p {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #64748b; /* Gris frío y elegante */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+
+/* Animación para actualización del dato */
+.tarjeta-dato {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #111827;
+  animation: fadeInUp 0.45s ease forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Colores específicos para cada tipo de tarjeta */
+.resumen h3, .resumen p {
+  color: #1e40af; /* Azul */
+}
+
+.resumen .divisor {
+  background: linear-gradient(90deg, #79aaf8, #3b82f6);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.alertas h3, .alertas p {
+  color: #b91c1c; /* Rojo */
+}
+
+.alertas .divisor {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+.ultima-actualizacion h3 {
+  color: #334155; /* Gris azulado */
+}
+
+.ultima-actualizacion .divisor {
+  background: linear-gradient(90deg, #86efac, #22c55e);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+}
+
+
+/* ==== Tarjeta del gráfico ==== */
 .tarjeta.grafico {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  transition: box-shadow 0.3s ease;
 }
 
+.tarjeta.grafico:hover {
+  box-shadow: 0 10px 30px rgb(89, 117, 179);
+}
+
+/* ==== Botón descargar ==== */
+#btn-descargar {
+  padding: 6px 14px;
+  background-color: #ffffff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  align-self: flex-end;
+  user-select: none;
+
+}
+
+#btn-descargar:hover {
+  background-color: #e7e7e7;
+
+}
+
+/* ==== Tabs del gráfico ==== */
 .tabs-grafico {
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: 10px;
+  margin-bottom: 18px;
   user-select: none;
+  max-width: 100%;
+  justify-content: center;
+  padding: 0 10px;
+  flex-wrap: nowrap;
+  min-width: 280px;
 }
 
 .tabs-grafico .tab {
-  padding: 8px 18px;
+  padding: 6px 14px;
   background-color: transparent;
-  border: 2px solid #ccc;
+  border: 2px solid #cbd5e1;
   border-radius: 24px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: #444;
+  transition: all 0.35s ease;
+  color: #475569;
+  flex: 0 1 auto;
+  min-width: 88px;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: inset 0 0 0 0 transparent;
 }
 
-.tabs-grafico .tab:hover {
-  border-color: #666;
-  color: #000;
+.tabs-grafico .tab:hover:not(.active) {
+  border-color: #7b93d6;
+  color: #1e40af;
+  box-shadow: inset 0 0 6px rgba(59, 130, 246, 0.25);
 }
 
 .tabs-grafico .tab.active {
   background-color: #0051ff;
   border-color: #0051ff;
   color: white;
-  box-shadow: 0 0 8px rgba(0, 81, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 81, 255, 0.45);
 }
 
-.tabs-grafico .tab.ocultar {
-  margin-left: auto; /* Para que quede a la derecha si quieres */
-  background-color: #eee;
-  border-color: #aaa;
-  color: #333;
+/* ==== Responsividad ==== */
+@media (max-width: 640px) {
+  .tarjeta p {
+    font-size: 1.7rem;
+  }
+  .tarjeta h3 {
+    font-size: 1rem;
+  }
+  .tabs-grafico {
+    gap: 6px;
+    padding: 0 6px;
+  }
+  .tabs-grafico .tab {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    min-width: 70px;
+  }
+  .tarjeta.grafico {
+    padding: 16px;
+  }
 }
 
-.tabs-grafico .tab.ocultar:hover {
-  background-color: #ddd;
-  border-color: #888;
+/* ==== Variables para colores (si usas CSS variables) ==== */
+/*
+:root {
+  --color-azul-oscuro: #1e40af;
+  --color-azul-claro: #3b82f6;
+  --color-rojo-oscuro: #b91c1c;
+  --color-rojo-claro: #f87171;
+  --color-gris-oscuro: #334155;
+  --color-gris-claro: #cbd5e1;
 }
+*/
+
+
 
 #chart {
   max-width: 100%;
@@ -300,12 +463,15 @@ button.revisada {
 }
 
 
-/* Colores por tipo */
-.resumen { border-left: 5px solid #3b82f6; }
-.alertas { border-left: 5px solid #ef4444; }
-.ultima-actualizacion { border-left: 5px solid #10b981; }
 
 /* Títulos y texto */
+.ultima-actualizacion p {
+  font-size: 1.1rem;
+  color: #334155;
+  font-weight: 400;
+}
+
+
 .tarjeta h3 {
   margin-bottom: 0.5rem;
   font-size: 1.25rem;
