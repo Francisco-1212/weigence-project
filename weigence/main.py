@@ -1,28 +1,25 @@
-# main.py
-
 from lectura_sensores.lector_peso import leer_peso
 from procesamiento.procesador_datos import analizar_peso
-from conexion_bd.conexion_mysql import guardar_dato
+from conexion_bd.conexion_supabase import guardar_dato   # <- ahora usa Supabase
 
 import time
 
 def ciclo_principal():
     print("🔁 Iniciando ciclo de pesaje...")
-    
+
     peso_referencia = 1000.0  # peso esperado del producto (gramos)
-    
+
     while True:
         peso_actual = leer_peso()
         print(f"📦 Peso leído: {peso_actual} g")
 
         resultado = analizar_peso(peso_actual, peso_referencia)
-        
         print(f"📊 Resultado: {resultado}")
-        
-        # Guardar en base de datos solo si es válido
+
+        # Guardar en Supabase
         try:
             guardar_dato(resultado["peso"], resultado["alerta"])
-            print("✅ Datos guardados correctamente.\n")
+            print("✅ Datos guardados en Supabase.\n")
         except Exception as e:
             print("❌ Error al guardar:", e)
 

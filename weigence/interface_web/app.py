@@ -14,8 +14,8 @@ def conectar_bd():
     try:
         conexion_string = (
             "DRIVER={ODBC Driver 17 for SQL Server};"
-            "SERVER=(localdb)\\weigence;"
-            "DATABASE=weigence;"
+            "SERVER=localhost\SQLEXPRESS;"
+            "DATABASE=weigence_db;"
             "Trusted_Connection=yes;"
             "Connection Timeout=30;"
         )

@@ -1,97 +1,182 @@
 {% extends "base.html" %}
 
 {% block contenido %}
-<h2 style="text-align:center; margin-top: 20px;"></h2>
-<div class="dashboard-resumen fade-in">
-  <div class="tarjeta resumen">
-    <h3 class="tarjeta-titulo">Total Pesajes</h3>
-    <div class="divisor"></div>
-    <p class="tarjeta-dato">{{ total_pesajes }}</p>
-  </div>
+<main class="flex-1 bg-[var(--neutral-50)] p-6 lg:p-8">
+  <div class="mx-auto max-w-7xl">
 
-  <div class="tarjeta alertas">
-    <h3 class="tarjeta-titulo">Alertas Activas</h3>
-    <div class="divisor"></div>
-    <p class="tarjeta-dato">{{ total_alertas }}</p>
-  </div>
-
-  <div class="tarjeta ultima-actualizacion">
-    <h3 class="tarjeta-titulo">Última Actualización</h3>
-    <div class="divisor"></div>
-    <p class="tarjeta-dato">{{ ultima_fecha }}</p>
-  </div>
-
-
-
-  <!-- Nueva Tarjeta: Gráfico -->
-    <div class="tarjeta grafico">
-      <div class="tabs-grafico">
-        <button id="btn-pesajes" class="tab active" title="Pesajes en gramos (g)">Pesajes</button>
-        <button id="btn-alertas" class="tab" title="Alertas registradas">Alertas</button>
-      </div>
-      <canvas id="chart"></canvas>
-      <div class="descargar-grafico">
-      <button id="btn-descargar" class="btn-icono">
-
-      </button>
+    <!-- Header -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <h2 class="text-[var(--neutral-900)] text-3xl font-bold tracking-tight">Bienvenido a tu Dashboard</h2>
+      <div class="flex items-center gap-2">
+        <button class="flex h-9 items-center justify-center gap-x-2 rounded-md border border-[var(--neutral-300)] bg-white px-3 text-sm font-medium text-[var(--neutral-700)] hover:bg-[var(--neutral-100)] transition-colors active:bg-[var(--neutral-200)]">
+          <span class="material-symbols-outlined text-lg"> calendar_today </span>
+          <span>Últimos 30 días</span>
+          <span class="material-symbols-outlined text-lg"> arrow_drop_down </span>
+        </button>
       </div>
     </div>
-</div>
+
+    <!-- Cards -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+      <!-- Card 1 -->
+      <div class="flex flex-col gap-2 rounded-xl border border-[var(--neutral-200)] bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div class="flex items-center justify-between">
+          <p class="text-[var(--neutral-600)] text-sm font-medium">Valor del Inventario</p>
+          <span class="material-symbols-outlined text-[var(--success-500)]"> attach_money </span>
+        </div>
+        <p class="text-[var(--neutral-900)] text-3xl font-bold">$45,800</p>
+        <p class="text-xs text-[var(--success-600)] flex items-center gap-1 font-medium">
+          <span class="material-symbols-outlined text-sm"> trending_up </span>
+          <span>+2.5% vs mes anterior</span>
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="flex flex-col gap-2 rounded-xl border border-[var(--neutral-200)] bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div class="flex items-center justify-between">
+          <p class="text-[var(--neutral-600)] text-sm font-medium">Productos en Stock</p>
+          <span class="material-symbols-outlined text-[var(--primary-500)]"> inventory </span>
+        </div>
+        <p class="text-[var(--neutral-900)] text-3xl font-bold">350</p>
+        <p class="text-xs text-[var(--neutral-500)] flex items-center gap-1 font-medium">
+          <span>15 Productos nuevos</span>
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="flex flex-col gap-2 rounded-xl border border-[var(--neutral-200)] bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div class="flex items-center justify-between">
+          <p class="text-[var(--neutral-600)] text-sm font-medium">Alertas Activas</p>
+          <span class="material-symbols-outlined text-[var(--secondary-600)]"> notification_important </span>
+        </div>
+        <p class="text-[var(--secondary-600)] text-3xl font-bold">5</p>
+        <p class="text-xs text-[var(--neutral-500)] flex items-center gap-1 font-medium">
+          <span>2 nuevas hoy</span>
+        </p>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="flex flex-col gap-2 rounded-xl border border-[var(--neutral-200)] bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <p class="text-[var(--neutral-600)] text-sm font-medium">Uso de Almacenamiento</p>
+        <div class="flex h-16 items-end justify-center gap-1.5">
+          <div class="group relative w-full h-[60%]">
+            <div class="h-full rounded-t-sm bg-[var(--primary-200)] transition-colors group-hover:bg-[var(--primary-400)]"></div>
+          </div>
+          <div class="group relative w-full h-[80%]">
+            <div class="h-full rounded-t-sm bg-[var(--primary-200)] transition-colors group-hover:bg-[var(--primary-400)]"></div>
+          </div>
+          <div class="group relative w-full h-[40%]">
+            <div class="h-full rounded-t-sm bg-[var(--primary-200)] transition-colors group-hover:bg-[var(--primary-400)]"></div>
+          </div>
+          <div class="group relative w-full h-[90%]">
+            <div class="h-full rounded-t-sm bg-[var(--primary-200)] transition-colors group-hover:bg-[var(--primary-400)]"></div>
+          </div>
+          <div class="group relative w-full h-[70%]">
+            <div class="h-full rounded-t-sm bg-[var(--primary-200)] transition-colors group-hover:bg-[var(--primary-400)]"></div>
+          </div>
+        </div>
+        <p class="text-[var(--neutral-900)] text-center text-lg font-bold">75%</p>
+      </div>
+    </div>
+
     
-</div>
-    <h2 style="text-align:center; margin-top: 20px;">Últimos 10 Pesajes Registrados</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Peso (g)</th>
-                <th>Alerta</th>
-                <th>Fecha y Hora</th>
-                <th>Acciones</th>  
-            </tr>
-        </thead>
-        <tbody>
-            {% for peso, alerta, fecha in registros %}
-            <tr class="alerta-{{ alerta }}">
-                <td>{{ peso }}</td>
-                <td>{{ "✔️" if alerta else "❌" }}</td>
-                <td>{{ fecha }}</td>
-                <td>
-                    <button class="accion ver" title="Ver detalle" onclick="mostrarModal('{{ peso }}', {{ alerta|lower }}, '{{ fecha }}')">
-                    <i class="fas fa-eye"></i>
-                    </button>
+    <!-- Productos con bajo stock + Alertas + Movimientos -->
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-                    <button class="accion eliminar" title="Eliminar fila" onclick="eliminarFila(this)">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
+      <!-- Tabla de stock -->
+      <div class="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm lg:col-span-2 transition-all hover:shadow-md">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <h3 class="text-[var(--neutral-900)] text-lg font-semibold">Productos con Bajo Stock</h3>
+          <div class="flex h-9 items-center justify-center rounded-lg bg-[var(--neutral-100)] p-1">
+            <!-- Toggle botones -->
+            <label class="flex h-full cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium text-[var(--neutral-600)] has-[:checked]:bg-white has-[:checked]:text-[var(--primary-600)] has-[:checked]:shadow-sm transition-colors">
+              <span>Ver Todos</span>
+              <input class="sr-only" name="stock-toggle" type="radio" value="all"/>
+            </label>
+            <label class="flex h-full cursor-pointer items-center justify-center rounded-md px-4 text-sm font-medium text-[var(--neutral-600)] has-[:checked]:bg-white has-[:checked]:text-[var(--primary-600)] has-[:checked]:shadow-sm transition-colors">
+              <span>Críticos</span>
+              <input checked class="sr-only" name="stock-toggle" type="radio" value="critical"/>
+            </label>
+          </div>
+        </div>
 
-                    <button class="accion descargar" title="Descargar datos" onclick="descargarDatos('{{ peso }}', {{ alerta|lower }}, '{{ fecha }}')">
-                      <i class="fas fa-download"></i>
-                    </button>
+        <!-- Tabla -->
+        <div class="mt-6 flow-root">
+          <div class="-mx-6 -my-2 overflow-x-auto">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6">
+              <table class="min-w-full divide-y divide-[var(--neutral-200)]">
+                <thead class="bg-[var(--primary-100)]">
+                  <tr>
+                    <th class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-[var(--neutral-900)] bg-[var(--primary-100)]" scope="col">Producto</th>
+                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-[var(--neutral-900)] bg-[var(--primary-100)]" scope="col">Ubicación</th>
+                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-[var(--neutral-900)] bg-[var(--primary-100)]" scope="col">Stock Actual</th>
+                    <th class="px-3 py-3.5 text-left text-sm font-semibold text-[var(--neutral-900)] bg-[var(--primary-100)]" scope="col">Umbral Mínimo</th>
+                    <th class="relative py-3.5 pl-3 pr-6 bg-[var(--primary-100)]" scope="col">
+                      <span class="sr-only">Acciones</span>
+                    </th>
+                  </tr>
+                </thead>
 
-                    <button class="accion simular" title="Simular alerta" onclick="simularAlerta(this)">
-                      <i class="fas fa-exclamation-triangle"></i>
-                    </button>
+                <tbody class="divide-y divide-[var(--neutral-200)] bg-white">
+                  <tr>
+                    <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-[var(--neutral-900)]">Producto C</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-[var(--neutral-500)]">Estante 3, Nivel 2</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm">
+                      <span class="inline-flex items-center rounded-md bg-[var(--danger-50)] px-2 py-1 text-xs font-medium text-[var(--danger-700)] ring-1 ring-inset ring-[var(--danger-600)/20]">5 kg</span>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-[var(--neutral-500)]">10 kg</td>
+                    <td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+                      <a class="text-[var(--primary-600)] hover:text-[var(--primary-800)] transition-colors" href="#">Ver<span class="sr-only">, Producto C</span></a>
+                    </td>
+                  </tr>
+                  <!-- Repetir para otros productos, reemplazando colores igual -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+      <!-- Alertas críticas -->
+      <div class="space-y-6">
+        <div class="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm transition-all hover:shadow-md">
+          <h3 class="text-[var(--neutral-900)] text-lg font-semibold">Alertas Críticas</h3>
+          <div class="mt-4 space-y-4">
+            <div class="flex items-start gap-4 rounded-lg bg-[var(--secondary-50)] p-3">
+              <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--secondary-100)] text-[var(--secondary-600)]">
+                <span class="material-symbols-outlined"> warning </span>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-[var(--secondary-800)]">Peso excedido en Producto C</p>
+                <p class="text-xs text-[var(--neutral-500)]">Estante 3, Nivel 2</p>
+                <p class="text-xs text-[var(--neutral-500)]">Hace 2 horas</p>
+              </div>
+            </div>
+            <!-- Repetir para otras alertas -->
+          </div>
+        </div>
 
-        
-    </table>
-<div id="modal" class="modal">
-    <div class="modal-contenido">
-        <span class="cerrar" onclick="cerrarModal()">&times;</span>
-        <h3>Detalle del Pesaje</h3>
-        <p><strong>Peso:</strong> <span id="modal-peso"></span> g</p>
-        <p><strong>Alerta:</strong> <span id="modal-alerta"></span></p>
-        <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+        <!-- Movimientos recientes -->
+        <div class="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm transition-all hover:shadow-md">
+          <h3 class="text-[var(--neutral-900)] text-lg font-semibold">Movimientos Recientes</h3>
+          <div class="mt-4 space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--success-100)] text-[var(--success-600)]">
+                <span class="material-symbols-outlined"> arrow_downward </span>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-[var(--neutral-800)]">Entrada de Producto B</p>
+                <p class="text-xs text-[var(--neutral-500)]">Estante 2, Nivel 3</p>
+                <p class="text-xs text-[var(--neutral-500)]">Hace 5 minutos</p>
+              </div>
+            </div>
+            <!-- Repetir para otros movimientos -->
+          </div>
+        </div>
+      </div>
+
     </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/weigence/interface_web/static/js/script.js" defer></script>
-
-
-
+  </div>
+</main>
 {% endblock %}

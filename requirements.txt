@@ -3,3 +3,5 @@
 hx711
 mysql-connector-python
 flask
+#pip install supabase 
+#pip install python-dotenv

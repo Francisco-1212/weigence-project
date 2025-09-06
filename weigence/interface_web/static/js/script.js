@@ -251,6 +251,18 @@ function mostrarGrafico(datos) {
   actualizarTabs("pesajes");
 });
 
+function mostrarModalAlerta(titulo, descripcion, peso, fecha, estante, producto) {
+    document.getElementById("modal-titulo").innerText = titulo;
+    document.getElementById("modal-descripcion").innerText = descripcion;
+    document.getElementById("modal-peso-detalle").innerText = peso + "g";
+    document.getElementById("modal-fecha-detalle").innerText = fecha;
+    document.getElementById("modal-estante").innerText = estante;
+    document.getElementById("modal-producto").innerText = producto;
+    document.getElementById("modal-alerta").style.display = "block";
+}
 
+function cerrarModalAlerta() {
+    document.getElementById("modal-alerta").style.display = "none";
+}
 
 console.log("✅ JS cargado correctamente");

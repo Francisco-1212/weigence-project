@@ -1,36 +1,60 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WeiGence{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Weigence - Dashboard de Gestión de Inventario</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="logo">WeiGence</div>
-        <ul class="nav-links">
-            <li><a href="/">Vista Rapida</a></li>
-            <li><a href="/alertas">Alertas</a></li>
-            <li><a href="/historial">Historial</a></li>
-            <li><a href="">Dashboard/Analisis</a></li>
-            <li><a href="#">Configuración</a></li>
 
-        </ul>
-    </nav>
+<body class="bg-neutral-50 font-sans text-neutral-800" style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="relative flex h-auto w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+          
+            <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-neutral-200 bg-gray-800 px-6 py-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center justify-center rounded-lg bg-primary-600 p-2 text-white">
+                    <span class="material-symbols-outlined"> inventory_2 </span>
+                  </div>
+                  <h1 class="text-white text-xl font-bold tracking-tight">Weigence</h1>
+                </div>
 
-    <main class="contenido">
-        {% block contenido %}{% endblock %}
-    </main>
+                <nav class="hidden items-center gap-6 md:flex ml-6">
+                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Home</a>
+                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Inventario</a>
+                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Alertas</a>
+                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Historial</a>
+                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Reportes</a>
+                </nav>
 
-    <div id="toast" class="toast"></div>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="script.js" defer></script>
+                <div class="flex flex-1 items-center justify-end gap-4">
+                  <button class="relative flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full text-neutral-500 hover:bg-neutral-100 transition-colors">
+                    <span class="material-symbols-outlined"> notifications </span>
+                    <div class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-danger-500"></div>
+                  </button>
+                  <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCy-SZCdQvJqpm2jO2c-btwG9bmsn0os6DEyqbIwSKhYbrU-jPsRhutDcMHuWHQ6BF3NLC5KxAxY5NdjaHT1v_oGBRgL-0O0ZB_C0P-of4kJar5lPRZLe6ucp0-fUaE8BgAiP1eWXO4_aOgEJGxKYZYnE-QwQLaKg8vasGN4dBkLKbG9crL4Spet61QZwC_I6vlfCPeuGq_qsvPNcsM3w2iB_7ZcIiyC-em1OHgz7p3MPGG7TZd3Qkav7Exxqj4Nn51-Vpd6eS0rkw");'></div>
+                </div>
+            
+            </header>
+        
+        </div>
+    </div>
+</body>
+
+
+<main class="contenido">
+    {% block contenido %}{% endblock %}
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="script.js" defer></script>
 
 </body>
 </html>
