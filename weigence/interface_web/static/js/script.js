@@ -251,18 +251,32 @@ function mostrarGrafico(datos) {
   actualizarTabs("pesajes");
 });
 
-function mostrarModalAlerta(titulo, descripcion, peso, fecha, estante, producto) {
-    document.getElementById("modal-titulo").innerText = titulo;
-    document.getElementById("modal-descripcion").innerText = descripcion;
-    document.getElementById("modal-peso-detalle").innerText = peso + "g";
-    document.getElementById("modal-fecha-detalle").innerText = fecha;
-    document.getElementById("modal-estante").innerText = estante;
-    document.getElementById("modal-producto").innerText = producto;
-    document.getElementById("modal-alerta").style.display = "block";
-}
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggle = document.getElementById('theme-toggle');
+      const html = document.documentElement;
+      const lightIcon = document.querySelector('.light-icon');
+      const darkIcon = document.querySelector('.dark-icon');
 
-function cerrarModalAlerta() {
-    document.getElementById("modal-alerta").style.display = "none";
-}
+      // Aplicar modo guardado
+      if(localStorage.getItem('theme') === 'dark') {
+        html.classList.add('dark');
+        lightIcon.classList.add('hidden');
+        darkIcon.classList.remove('hidden');
+      } else {
+        html.classList.remove('dark');
+        lightIcon.classList.remove('hidden');
+        darkIcon.classList.add('hidden');
+      }
+
+      // Alternar modo
+      themeToggle.addEventListener('click', () => {
+        html.classList.toggle('dark');
+        lightIcon.classList.toggle('hidden');
+        darkIcon.classList.toggle('hidden');
+
+        localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+      });
+    });
 
 console.log("✅ JS cargado correctamente");
+

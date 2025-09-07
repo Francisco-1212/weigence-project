@@ -1,60 +1,73 @@
 <!DOCTYPE html>
-<html lang="es">
-<html><head>
-<meta charset="utf-8"/>
-<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<title>Weigence - Dashboard de Gestión de Inventario</title>
-<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<html lang="es" class="{{ 'dark' if session.get('theme') == 'dark' else '' }}">
+<head>
+  <meta charset="utf-8"/>
+  <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+  <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <title>Weigence - Dashboard de Gestión de Inventario</title>
+  <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
 </head>
 
-<body class="bg-neutral-50 font-sans text-neutral-800" style='font-family: Inter, "Noto Sans", sans-serif;'>
-    <div class="relative flex h-auto w-full flex-col group/design-root overflow-x-hidden">
-        <div class="layout-container flex h-full grow flex-col">
-          
-            <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-neutral-200 bg-gray-800 px-6 py-4 shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="flex items-center justify-center rounded-lg bg-primary-600 p-2 text-white">
-                    <span class="material-symbols-outlined"> inventory_2 </span>
-                  </div>
-                  <h1 class="text-white text-xl font-bold tracking-tight">Weigence</h1>
-                </div>
-
-                <nav class="hidden items-center gap-6 md:flex ml-6">
-                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Home</a>
-                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Inventario</a>
-                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Alertas</a>
-                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Historial</a>
-                  <a class="text-white hover:text-gray-300 text-sm font-medium transition-colors" href="#">Reportes</a>
-                </nav>
-
-                <div class="flex flex-1 items-center justify-end gap-4">
-                  <button class="relative flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full text-neutral-500 hover:bg-neutral-100 transition-colors">
-                    <span class="material-symbols-outlined"> notifications </span>
-                    <div class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-danger-500"></div>
-                  </button>
-                  <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCy-SZCdQvJqpm2jO2c-btwG9bmsn0os6DEyqbIwSKhYbrU-jPsRhutDcMHuWHQ6BF3NLC5KxAxY5NdjaHT1v_oGBRgL-0O0ZB_C0P-of4kJar5lPRZLe6ucp0-fUaE8BgAiP1eWXO4_aOgEJGxKYZYnE-QwQLaKg8vasGN4dBkLKbG9crL4Spet61QZwC_I6vlfCPeuGq_qsvPNcsM3w2iB_7ZcIiyC-em1OHgz7p3MPGG7TZd3Qkav7Exxqj4Nn51-Vpd6eS0rkw");'></div>
-                </div>
-            
-            </header>
-        
+<body class="bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50">
+<div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+  <div class="layout-container flex h-full grow flex-col">
+    <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-neutral-200 dark:border-neutral-800 px-6 py-4">
+      <div class="flex items-center gap-4 text-neutral-100 dark:text-neutral-50">
+        <div class="size-8 text-primary-500">
+          <!-- SVG Logo -->
+          <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_6_543)">
+              <path d="..." fill="currentColor"></path>
+              <path clip-rule="evenodd" d="..." fill="currentColor" fill-rule="evenodd"></path>
+            </g>
+            <defs>
+              <clipPath id="clip0_6_543"><rect fill="white" height="48" width="48"></rect></clipPath>
+            </defs>
+          </svg>
         </div>
+        <h2 class="text-neutral-100 dark:text-neutral-50 text-xl font-bold leading-tight tracking-[-0.015em]">Weigence</h2>
+      </div>
+
+      <div class="flex flex-1 justify-end gap-2">
+        <nav class="flex items-center gap-2">
+          <a class="text-neutral-100 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium leading-normal px-3 py-2 rounded-lg transition-colors" href="#">Dashboard</a>
+          <a class="text-neutral-100 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium leading-normal px-3 py-2 rounded-lg transition-colors" href="#">Inventory</a>
+          <a class="text-neutral-100 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium leading-normal px-3 py-2 rounded-lg transition-colors" href="#">Orders</a>
+          <a class="text-neutral-100 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium leading-normal px-3 py-2 rounded-lg transition-colors" href="#">Reports</a>
+          <a class="text-neutral-100 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50 text-sm font-medium leading-normal px-3 py-2 rounded-lg transition-colors" href="#">Settings</a>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <!-- Dark Mode Toggle -->
+          <button id="theme-toggle" class="flex items-center justify-center rounded-lg h-10 w-10 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            <span class="material-symbols-outlined light-icon">light_mode</span>
+            <span class="material-symbols-outlined dark-icon hidden">dark_mode</span>
+          </button>
+
+          <!-- User Avatar -->
+          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPYIEdnIJQhASqmepTdl17--eivO9QOAuPfQJyfAaOXSk9O_1ftWy-gL4yIGcld27s3T3NiSjq3jhyu3mfCurY_K0i0CBzuEvNiS-hPR5ASPeb6CSjYyuzRuSnt4igva2LweJojniYJkP4AMpdTZIDH0cBitqxpOw_nSG7tzztFZT85HjoAv3dkmApsnT9_vzUhe9pt3tNymCNhSr0zC_qq4-PzjdIi_wRDf7B5P7h7vxpVTeDZEKfVO7T1VbRsdtphDxrPsk9hKg");'></div>
+        </div>
+      </div>
+    </header>
+
+      <main class="flex-1 px-6 py-8">
+        {% block contenido %}{% endblock %}
+      </main>
+
+    <div id="toast" class="toast"></div>
+
+      <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     </div>
-</body>
-
-
-<main class="contenido">
-    {% block contenido %}{% endblock %}
-</main>
-
-<div id="toast" class="toast"></div>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="script.js" defer></script>
-
 </body>
 </html>
