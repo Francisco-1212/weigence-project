@@ -5,3 +5,24 @@ mysql-connector-python
 flask
 #pip install supabase 
 #pip install python-dotenv
+
+# Verifica en qué rama estás
+# git branch  
+
+# Trae los cambios más recientes desde GitHub
+# git pull origin main  
+
+# ---- Cuando terminas tus cambios ----
+
+# Verifica el estado de tus archivos (qué cambió)
+# git status  
+
+# Agrega todos los cambios al área de preparación
+# git add .  
+
+# Confirma los cambios con un mensaje
+# git commit -m "Descripción breve de lo que hiciste"  
+
+# Sube tus cambios a GitHub
+# git push origin main  
+
