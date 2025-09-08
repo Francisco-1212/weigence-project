@@ -9,11 +9,7 @@
   <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class'
-    }
-  </script>
+
 </head>
 
 <body class="bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50">
@@ -59,7 +55,9 @@
     </header>
 
       <main class="flex-1 px-6 py-8">
-        {% block contenido %}{% endblock %}
+        {% block contenido %}
+        
+        {% endblock %}
       </main>
 
     <div id="toast" class="toast"></div>

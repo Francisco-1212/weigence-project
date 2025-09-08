@@ -277,6 +277,13 @@ function mostrarGrafico(datos) {
         localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
       });
     });
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('change', () => {
+        document.documentElement.classList.toggle('dark');
+    });
 
+tailwind.config = {
+  darkMode: 'class'
+}
 console.log("✅ JS cargado correctamente");
 
