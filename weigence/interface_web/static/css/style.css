@@ -756,25 +756,105 @@ button.accion:hover {
     --success-500: #22c55e;
     --warning-500: #f59e0b;
     --danger-500: #f43f5e;
+    --darkmode: #0f111a;
     --bg-light: var(--neutral-50);
     --text-light: var(--neutral-900);
     --card-bg-light: #ffffff;
     --border-light: var(--neutral-200);
-    --bg-dark: var(--neutral-900);
+    --bg-dark: var(--darkmode);
     --text-dark: var(--neutral-100);
     --card-bg-dark: var(--neutral-800);
     --border-dark: var(--neutral-700);
-}
+  }
+
 .dark {
     --bg-light: var(--bg-dark);
     --text-light: var(--text-dark);
     --card-bg-light: var(--card-bg-dark);
     --border-light: var(--border-dark);
 }
+:root {
+    --bg: var(--bg-light);
+    --text: var(--text-light);
+    --card-bg: var(--card-bg-light);
+    --border: var(--border-light);
+}
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s;
+}
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--border);
+}
+.sidebar {
+  height: 100vh; /* Ocupa toda la ventana */
+  display: flex;
+  flex-direction: column;
+    
+}
+.sidebar-link {
+    transition: background-color 0.2s;
+}
+.sidebar-link:hover, .sidebar-link.active {
+    background-color: rgba(79, 70, 229, 0.1);
+    color: var(--primary-600);
+}
+.theme-toggle {
+    transition: background-color 0.3s;
+}
+/* Estilos para gráficos de barras de productos */
+.bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 220px;
+    justify-content: flex-end;
+}
+.bar {
+    width: 40px;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s ease;
+}
+/* Mejoras responsivas */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        z-index: 50;
+        height: 100%;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.open {
+        left: 0;
+    }
+    
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+    }
+    
+    .overlay.open {
+        display: block;
+    }
+}
+
 body {
     background-color: var(--bg-light);
     color: var(--text-light);
     font-family: 'Inter', sans-serif;
+}
+.card {
+  background-color: var(--card-bg-light);
+  border: 1px solid var(--border-light);
 }
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -804,3 +884,4 @@ body {
 }
 .text-danger {
     color: var(--danger-500);
+}

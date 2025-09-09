@@ -6,7 +6,7 @@ from conexion_bd.conexion_supabase import supabase
 app = Flask(__name__)
 
 @app.route("/")
-def dashboard():
+def index():
     productos = supabase.table("productos").select("*").execute().data
     pesajes = supabase.table("pesajes").select("*").execute().data
     usuarios = supabase.table("usuarios").select("*").execute().data
@@ -14,13 +14,18 @@ def dashboard():
     historial = supabase.table("historial").select("*").execute().data
 
     return render_template(
-        "index.html",
+        "pagina/index.html",
         productos=productos,
         pesajes=pesajes,
         usuarios=usuarios,
         estantes=estantes,
         historial=historial
     )
+
+@app.route("/inventario")
+def inventario():
+    return render_template("pagina/inventario.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
