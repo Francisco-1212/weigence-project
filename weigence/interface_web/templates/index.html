@@ -7,84 +7,9 @@
     <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <style type="text/tailwindcss">
-        :root {
-            --primary-50: #eef2ff;
-            --primary-100: #e0e7ff;
-            --primary-200: #c7d2fe;
-            --primary-300: #a5b4fc;
-            --primary-400: #818cf8;
-            --primary-500: #6366f1;
-            --primary-600: #4f46e5;
-            --primary-700: #4338ca;
-            --primary-800: #3730a3;
-            --primary-900: #312e81;
-            --primary-950: #1e1b4b;
-            --neutral-50: #f8fafc;
-            --neutral-100: #f1f5f9;
-            --neutral-200: #e2e8f0;
-            --neutral-300: #cbd5e1;
-            --neutral-400: #94a3b8;
-            --neutral-500: #64748b;
-            --neutral-600: #475569;
-            --neutral-700: #334155;
-            --neutral-800: #1e293b;
-            --neutral-900: #0f172a;
-            --neutral-950: #020617;
-            --success-500: #22c55e;
-            --warning-500: #f59e0b;
-            --danger-500: #f43f5e;
-            --bg-light: var(--neutral-50);
-            --text-light: var(--neutral-900);
-            --card-bg-light: #ffffff;
-            --border-light: var(--neutral-200);
-            --bg-dark: var(--neutral-900);
-            --text-dark: var(--neutral-100);
-            --card-bg-dark: var(--neutral-800);
-            --border-dark: var(--neutral-700);
-        }
-        .dark {
-            --bg-light: var(--bg-dark);
-            --text-light: var(--text-dark);
-            --card-bg-light: var(--card-bg-dark);
-            --border-light: var(--border-dark);
-        }
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-light);
-            font-family: 'Inter', sans-serif;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .sidebar-link.active {
-            background-color: var(--primary-500);
-            color: white;
-        }
-        .sidebar-link.active .material-symbols-outlined {
-           color: white;
-        }
-         .sidebar-link {
-            color: var(--neutral-400);
-        }
-        .sidebar-link:hover {
-            background-color: var(--primary-600);
-            color: white;
-        }
-        .sidebar-link:hover .material-symbols-outlined {
-            color: white;
-        }
-        .text-success {
-            color: var(--success-500);
-        }
-        .text-warning {
-            color: var(--warning-500);
-        }
-        .text-danger {
-            color: var(--danger-500);
-        }
-    </style>
+    
 </head>
 <body class="bg-[var(--bg-light)] text-[var(--text-light)]">
 <div class="flex min-h-screen">
@@ -238,7 +163,7 @@
                             <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Productos Más Vendidos</p>
                             <div class="grid min-h-[220px] flex-1 grid-flow-col gap-4 grid-rows-[1fr_auto] items-end justify-items-center">
                                 {% for producto in top_products %}
-                                <!-- <div class="{{ 'bg-primary-500' if producto.destacado else 'bg-primary-200 dark:bg-primary-800' }} rounded-t-md w-full" style="height: {{ producto.porcentaje }}%;"></div> -->
+                                <div class="{{ 'bg-primary-500' if producto.destacado else 'bg-primary-200 dark:bg-primary-800' }} rounded-t-md w-full" ></div>
                                 <p class="text-neutral-600 dark:text-neutral-400 text-xs font-medium leading-normal tracking-[0.015em]">{{ producto.nombre }}</p>
                                 {% endfor %}
                             </div>

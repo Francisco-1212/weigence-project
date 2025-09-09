@@ -5,6 +5,10 @@ function mostrarModal(peso, alerta, fecha) {
     document.getElementById("modal").style.display = "block";
 }
 
+tailwind.config = {
+  darkMode: 'class'
+}
+
 // Cerrar modal
 function cerrarModal() {
     document.getElementById("modal").style.display = "none";
@@ -277,13 +281,11 @@ function mostrarGrafico(datos) {
         localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
       });
     });
-    const themeToggle = document.getElementById('theme-toggle');
-    themeToggle.addEventListener('change', () => {
-        document.documentElement.classList.toggle('dark');
-    });
 
-tailwind.config = {
-  darkMode: 'class'
-}
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('change', () => {
+    document.documentElement.classList.toggle('dark');
+});
+
 console.log("✅ JS cargado correctamente");
 
