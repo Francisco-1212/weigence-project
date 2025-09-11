@@ -1,40 +1,40 @@
-<aside class="sidebar w-20 lg:w-64 flex-shrink-0 bg-neutral-900 flex flex-col transition-all duration-300 fixed lg:relative z-30 min-h-screen">
-    <div class="flex items-center justify-center lg:justify-start gap-3 h-20 px-6 border-b border-neutral-800">
-        <svg class="text-primary-500 h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <!-- tu SVG de logo -->
-        </svg>
-        <h1 class="text-white text-xl font-bold hidden lg:block">Weigence</h1>
-    </div>
-    <nav class="flex-1 px-4 py-4 space-y-2">
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link active" href="">
-            <span class="material-symbols-outlined">dashboard</span>
-            <span class="font-semibold hidden lg:block">Dashboard</span>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="{{ url_for('inventario') }}">
-            <span class="material-symbols-outlined">inventory_2</span>
-            <span class="font-semibold hidden lg:block">Inventario</span>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-            <span class="material-symbols-outlined">receipt_long</span>
-            <span class="font-semibold hidden lg:block">Ventas</span>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-            <span class="material-symbols-outlined">notifications</span>
-            <span class="font-semibold hidden lg:block">Alertas</span>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-            <span class="material-symbols-outlined">bar_chart</span>
-            <span class="font-semibold hidden lg:block">Estadisticas</span>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-            <span class="material-symbols-outlined">settings</span>
-            <span class="font-semibold hidden lg:block">Configuración</span>
-        </a>
-    </nav>
-    <div class="px-4 py-4 mt-auto">
-        <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-            <span class="material-symbols-outlined">logout</span>
-            <span class="font-semibold hidden lg:block">Logout</span>
-        </a>
-    </div>
+<aside class="w-20 lg:w-64 flex-shrink-0 bg-neutral-900 flex flex-col transition-all duration-300 shadow-lg">
+  <div class="flex items-center justify-center lg:justify-start gap-3 h-20 px-6 border-b border-neutral-800">
+    <svg class="text-primary-500 h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <!-- SVG path aquí (idéntico al archivo nuevainterfaz) -->
+    </svg>
+    <h1 class="text-white text-xl font-bold hidden lg:block">Weigence</h1>
+  </div>
+  <nav class="flex-1 px-4 py-4 space-y-2">
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="font-semibold hidden lg:block">Dashboard</span>
+    </a>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'inventario' %}active{% endif %}" href="{{ url_for('inventario') }}">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <span class="font-semibold hidden lg:block">Inventario</span>
+    </a>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'ventas' %}active{% endif %}" href="{{ url_for('ventas') }}">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="font-semibold hidden lg:block">Ventas</span>
+    </a>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="{{ url_for('alertas') }}">
+      <span class="material-symbols-outlined">notifications_active</span>
+      <span class="font-semibold hidden lg:block">Alertas</span>
+    </a>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="font-semibold hidden lg:block">Estadísticas</span>
+    </a>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
+      <span class="material-symbols-outlined">settings</span>
+      <span class="font-semibold hidden lg:block">Configuración</span>
+    </a>
+  </nav>
+  <div class="px-4 py-4 mt-auto">
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
+      <span class="material-symbols-outlined">logout</span>
+      <span class="font-semibold hidden lg:block">Cerrar sesión</span>
+    </a>
+  </div>
 </aside>

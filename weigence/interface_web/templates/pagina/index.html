@@ -1,226 +1,179 @@
 {% extends "base.html" %}
 {% block title %}Panel de Control - Weigence{% endblock %}
 
-{% block top %}
-  {% include "componentes/header.html" %}
-{% endblock %}
-
 {% block sidebar %}
   {% include "componentes/sidebar.html" %}
 {% endblock %}
 
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
 {% block contenido %}
-<body class="bg-[var(--bg)] text-[var(--text)]">
-<div class="flex min-h-screen">
-    <!-- Overlay para móvil -->
-    <div class="overlay" id="overlay"></div>
-    <main class="flex-1 lg:ml-0">
-        <div class="p-6 md:p-8 lg:p-10">
-            <!-- Resumen Ejecutivo -->
-            <section class="mb-8">
-                <h2 class="text-[var(--text)] text-2xl font-bold leading-tight tracking-[-0.015em] text-left mb-4"> Resumen Ejecutivo</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Valor Total del Inventario -->
-                    <div class="flex flex-col gap-2 rounded-xl p-6 card border shadow-sm">
-                        <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Valor Total del Inventario</p>
-                        <p class="text-neutral-900 dark:text-neutral-50 tracking-tight text-3xl font-bold leading-tight">${{ total_inventory_value }}</p>
-                        <div class="flex items-center gap-1 text-success-500 text-sm font-medium">
-                            <span class="material-symbols-outlined text-base">trending_up</span>
-                            <span>+{{ inventory_change }}% respecto al mes anterior</span>
-                        </div>
-                    </div>
-                    <!-- Artículos Vendidos -->
-                    <div class="flex flex-col gap-2 rounded-xl p-6 card border shadow-sm">
-                        <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Artículos Vendidos</p>
-                        <p class="text-neutral-900 dark:text-neutral-50 tracking-tight text-3xl font-bold leading-tight">{{ total_items_sold }}</p>
-                        <div class="flex items-center gap-1 text-danger-500 text-sm font-medium">
-                            <span class="material-symbols-outlined text-base">trending_down</span>
-                            <span>{{ items_sold_change }}% respecto al mes anterior</span>
-                        </div>
-                    </div>
-                    <!-- Productos Agotados -->
-                    <div class="flex flex-col gap-2 rounded-xl p-6 card border shadow-sm">
-                        <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Productos Agotados</p>
-                        <p class="text-neutral-900 dark:text-neutral-50 tracking-tight text-3xl font-bold leading-tight">{{ stockouts_count }}</p>
-                        <div class="flex items-center gap-1 text-warning-500 text-sm font-medium">
-                            <span class="material-symbols-outlined text-base">trending_up</span>
-                            <span>{{ stockouts_change }}% respecto al mes anterior</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+<body class="bg-neutral-900 text-neutral-100" style="font-family: Inter, 'Noto Sans', sans-serif;">
+  <main class="flex-1">
+    <div class="p-6">
+      <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
 
-            <!-- Gráficos Analíticos -->
-            <section class="mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-[var(--text)] text-2xl font-bold leading-tight tracking-[-0.015em]">Gráficos Analíticos</h2>
-                    <div class="flex h-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1">
-                        <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-white dark:has-[:checked]:bg-neutral-700 has-[:checked]:shadow-sm has-[:checked]:text-neutral-900 dark:has-[:checked]:text-neutral-50 text-neutral-600 dark:text-neutral-400 text-sm font-medium leading-normal transition-colors">
-                            <span class="truncate">Últimos 7 días</span>
-                            <input class="invisible w-0" name="periodo-graficos" type="radio" value="7"/>
-                        </label>
-                        <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-white dark:has-[:checked]:bg-neutral-700 has-[:checked]:shadow-sm has-[:checked]:text-neutral-900 dark:has-[:checked]:text-neutral-50 text-neutral-600 dark:text-neutral-400 text-sm font-medium leading-normal transition-colors">
-                            <span class="truncate">Últimos 30 días</span>
-                            <input checked class="invisible w-0" name="periodo-graficos" type="radio" value="30"/>
-                        </label>
-                        <label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-white dark:has-[:checked]:bg-neutral-700 has-[:checked]:shadow-sm has-[:checked]:text-neutral-900 dark:has-[:checked]:text-neutral-50 text-neutral-600 dark:text-neutral-400 text-sm font-medium leading-normal transition-colors">
-                            <span class="truncate">Trimestre</span>
-                            <input class="invisible w-0" name="periodo-graficos" type="radio" value="90"/>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Tendencia de Ventas -->
-                    <div class="flex flex-col gap-4 rounded-xl border border-[var(--border)] card shadow-sm p-6">
-                        <div class="flex flex-col gap-1">
-                            <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Tendencia de Ventas</p>
-                            <div class="flex items-baseline gap-2">
-                                <p class="text-neutral-900 dark:text-neutral-50 tracking-tight text-3xl font-bold leading-tight truncate">${{ ventas_totales }}</p>
-                                <div class="flex items-center gap-1 text-success-500 text-sm font-medium">
-                                    <span class="material-symbols-outlined text-base">trending_up</span>
-                                    <span>+{{ ventas_cambio }}%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex min-h-[220px] flex-1 flex-col justify-center items-center">
-                            <!-- Gráfico de ejemplo -->
-                            <div class="w-full h-40 bg-gradient-to-b from-primary-100 to-primary-50 dark:from-primary-900 dark:to-primary-800/50 rounded-lg flex items-end justify-around p-4">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 60%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Lun</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 40%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Mar</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 80%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Mié</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 30%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Jue</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 90%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Vie</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-500 dark:bg-primary-600 rounded-t-md" style="height: 100%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Sáb</p>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-6 bg-primary-400 dark:bg-primary-500 rounded-t-md" style="height: 70%"></div>
-                                    <p class="text-xs mt-2 text-neutral-500">Dom</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Productos Más Vendidos -->
-                    <div class="flex flex-col gap-4 rounded-xl border border-[var(--border)] card shadow-sm p-6">
-                        <div class="flex flex-col gap-1">
-                            <p class="text-neutral-600 dark:text-neutral-400 text-base font-medium leading-normal">Productos Más Vendidos</p>
-                        </div>
-                        <div class="grid min-h-[220px] grid-flow-col gap-4 grid-rows-[1fr_auto] items-end justify-items-center">
-                            {% for producto in top_products %}
-                            <div class="bar-container">
-                                <!-- <div class="bar" style="height: {{ producto.porcentaje }}%; background-color: {{ producto.color }};"></div> -->
-                                <p class="text-neutral-600 dark:text-neutral-400 text-xs font-medium leading-normal tracking-[0.015em] mt-2">{{ producto.nombre }}</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Alertas Críticas -->
-            <section class="mb-8">
-                <h2 class="text-[var(--text)] text-2xl font-bold leading-tight tracking-[-0.015em] mb-4">Alertas Críticas</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {% for alerta in alertas %}
-                    <div class="flex items-start gap-4 rounded-xl p-4 {{ 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' if alerta.tipo_color == 'danger' else 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800' if alerta.tipo_color == 'warning' else 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800' }}">
-                        <span class="material-symbols-outlined text-{{ alerta.tipo_color }}-500 text-2xl mt-0.5">{{ alerta.icono }}</span>
-                        <div class="flex flex-col gap-2">
-                            <p class="text-{{ alerta.tipo_color }}-600 dark:text-{{ alerta.tipo_color }}-400 font-bold">{{ alerta.titulo }}</p>
-                            <p class="text-neutral-700 dark:text-neutral-300 text-sm">{{ alerta.descripcion }}</p>
-                            <a class="text-sm font-medium text-{{ alerta.tipo_color }}-600 dark:text-{{ alerta.tipo_color }}-400 hover:underline" href="#">Ver detalles</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <!-- Ranking de Productos -->
-            <section class="mb-8">
-                <h2 class="text-[var(--text-light)] dark:text-[var(--text-dark)] text-2xl font-bold leading-tight tracking-[-0.015em] mb-4 text-left">
-                    Ranking de Productos
-                </h2>
-                <div class="overflow-hidden rounded-xl border border-[var(--border-light)] dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-sm">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left table-auto bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
-                            <thead class="bg-neutral-50 dark:bg-neutral-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                        Producto
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                        Categoría
-                                    </th>
-                                    <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                        Unidades Vendidas
-                                    </th>
-                                    <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                        Stock
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[var(--border-light)] dark:divide-[var(--border-dark)]">
-                                {% for producto in productos %}
-                                <tr class="hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-                                    <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-[var(--text-light)] dark:text-[var(--text-dark)]">
-                                        {{ producto.nombre }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-600 dark:text-neutral-400">
-                                        {{ producto.categoria }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="text-[var(--text-light)] dark:text-[var(--text-dark)] font-medium">
-                                                {{ producto.unidades_vendidas }}
-                                            </span>
-                                            <div class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                                                <div class="h-2 rounded-full" style=" background-color: var(--primary-500);"></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
-                                        {% if producto.stock > 50 %}
-                                            <span class="text-success-500 font-semibold">{{ producto.stock }}</span>
-                                        {% elif producto.stock > 20 %}
-                                            <span class="text-warning-500 font-semibold">{{ producto.stock }}</span>
-                                        {% else %}
-                                            <span class="text-danger-500 font-semibold">{{ producto.stock }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-left text-sm font-medium">
-                                        <a class="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 transition-colors" href="#">
-                                            Ver<span class="sr-only">, {{ producto.nombre }}</span>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+      <!-- Tarjetas resumen -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+          <p class="text-sm font-medium text-neutral-400 mb-1">Valor Total del Inventario</p>
+          <p class="text-3xl font-bold">${{ valor_total_inventario }}</p>
         </div>
-    </main>
-</div>
+        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+          <p class="text-sm font-medium text-neutral-400 mb-1">Artículos Vendidos</p>
+          <p class="text-3xl font-bold">{{ articulos_vendidos }}</p>
+        </div>
+        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+          <p class="text-sm font-medium text-yellow-500 mb-1">Productos Agotados</p>
+          <p class="text-3xl font-bold text-yellow-500">{{ productos_agotados }}</p>
+        </div>
+        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+          <p class="text-sm font-medium text-neutral-400 mb-1">Ventas Totales</p>
+          <p class="text-3xl font-bold text-green-500">${{ ventas_totales }}</p>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="grid grid-cols-3 gap-6">
+        <div class="col-span-3 lg:col-span-2 bg-neutral-800 p-6 rounded-md border border-neutral-700">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <p class="text-lg font-semibold">Tendencia de Ventas</p>
+              <p class="text-sm text-neutral-400">Últimos 30 días</p>
+            </div>
+            <div class="flex items-center gap-2 text-green-500">
+              <span class="material-symbols-outlined">trending_up</span>
+              <span class="font-semibold">+{{ ventas_cambio }}%</span>
+            </div>
+          </div>
+          <div class="h-80">
+            <!-- SVG gráfico dinámico -->
+            <svg fill="none" height="100%" preserveAspectRatio="none" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+              <!-- Aquí puedes dibujar el gráfico dinámico -->
+              <path d="M0 150 C 41.6 150, 41.6 50, 83.3 50 C 125 50, 125 80, 166.6 80 C 208.3 80, 208.3 120, 250 120 C 291.6 120, 291.6 10, 333.3 10 C 375 10, 375 90, 416.6 90 C 458.3 90, 458.3 30, 500 30" stroke="var(--primary-500)" stroke-linecap="round" stroke-width="3"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Alertas urgentes -->
+        <a href="{{ url_for('alertas') }}" class="inline-block w-full">
+          <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700 cursor-pointer hover:shadow-lg transition-shadow">
+            <h3 class="font-semibold mb-4">Alertas Críticas</h3>
+            <div class="space-y-4">
+              {% for alerta in alertas %}
+              <div class="flex items-start gap-4">
+                <div class="rounded-full p-2" 
+                     style="background-color: {% if alerta.tipo_color == 'danger' %}rgba(239,68,68,0.2){% elif alerta.tipo_color == 'warning' %}rgba(234,179,8,0.2){% else %}rgba(59,130,246,0.2){% endif %}; 
+                            color: var(--{{ alerta.tipo_color }}-500);">
+                  <span class="material-symbols-outlined text-base">{{ alerta.icono }}</span>
+                </div>
+                <div>
+                  <p class="font-medium">{{ alerta.titulo }}</p>
+                  <p class="text-sm text-neutral-400">{{ alerta.descripcion }}</p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </a>
+        
+
+          <!-- Enlaces Rápidos -->
+          <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+            <h3 class="font-semibold mb-4">Enlaces Rápidos</h3>
+            <div class="flex flex-col space-y-3">
+              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Inventario</button>
+              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Ventas</button>
+              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Alertas/Reportes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actividades recientes -->
+      <div class="mt-6 bg-neutral-800 p-6 rounded-md border border-neutral-700">
+        <h3 class="font-semibold mb-4">Actividades Recientes</h3>
+        <!-- <div class="divide-y divide-neutral-700">
+          {% for actividad in actividades %}
+          <div class="flex items-center gap-4 py-3">
+            <div class="bg-neutral-700 rounded-full p-2"><span class="material-symbols-outlined text-neutral-400">{{ actividad.icono }}</span></div>
+            <div class="flex-1">
+              <p class="font-medium">{{ actividad.descripcion_corta }}</p>
+              <p class="text-sm text-neutral-400">{{ actividad.tipo }}</p>
+            </div>
+            <p class="text-sm text-neutral-500">{{ actividad.tiempo }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div> tablaaa--> 
+        <div class="divide-y divide-neutral-700"></div>
+        <div class="flex items-center gap-4 py-3">
+        <div class="bg-neutral-700 rounded-full p-2"><span class="material-symbols-outlined text-neutral-400">inventory_2</span></div>
+        <div class="flex-1">
+        <p class="font-medium">Product D added to inventory.</p>
+        <p class="text-sm text-neutral-400">Inventory movement</p>
+        </div>
+        <p class="text-sm text-neutral-500">2 min ago</p>
+        </div>
+        <div class="flex items-center gap-4 py-3">
+        <div class="bg-neutral-700 rounded-full p-2"><span class="material-symbols-outlined text-neutral-400">monitoring</span></div>
+        <div class="flex-1">
+        <p class="font-medium">Sale #67890 confirmed.</p>
+        <p class="text-sm text-neutral-400">Sales transaction</p>
+        </div>
+        <p class="text-sm text-neutral-500">15 min ago</p>
+        </div>
+        <div class="flex items-center gap-4 py-3">
+        <div class="bg-neutral-700 rounded-full p-2"><span class="material-symbols-outlined text-neutral-400">inventory_2</span></div>
+        <div class="flex-1">
+        <p class="font-medium">Product E stock updated.</p>
+        <p class="text-sm text-neutral-400">Inventory movement</p>
+        </div>
+        <p class="text-sm text-neutral-500">1 hour ago</p>
+
+      <!-- Tabla Ranking de Productos
+      <div class="overflow-hidden rounded-md border border-neutral-700 bg-neutral-800 mt-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left table-auto bg-neutral-800">
+            <thead class="bg-neutral-700">
+              <tr>
+                <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Producto</th>
+                <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Categoría</th>
+                <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400 text-right">Unidades Vendidas</th>
+                <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400 text-right">Stock</th>
+                <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Acciones</th>
+              </tr>
+            </thead> -->
+            <!-- <tbody class="divide-y divide-neutral-700">
+              {% for producto in productos %}
+              <tr class="hover:bg-neutral-700 transition-colors">
+                <td class="py-4 pl-6 pr-3 text-sm font-medium">{{ producto.nombre }}</td>
+                <td class="px-3 py-4 text-sm text-neutral-400">{{ producto.categoria }}</td>
+                <td class="px-3 py-4 text-sm text-right">{{ producto.unidades_vendidas }}</td>
+                <td class="px-3 py-4 text-sm text-right
+                  {% if producto.stock > 50 %}
+                    text-green-500
+                  {% elif producto.stock > 20 %}
+                    text-yellow-500
+                  {% else %}
+                    text-red-500
+                  {% endif %}
+                  font-semibold">
+                  {{ producto.stock }}
+                </td>
+                <td class="py-4 pl-3 pr-6 text-left text-sm font-medium">
+                  <a href="#" class="text-primary-500 hover:text-primary-400 transition-colors">Ver</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody> -->
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
 </body>
 {% endblock %}

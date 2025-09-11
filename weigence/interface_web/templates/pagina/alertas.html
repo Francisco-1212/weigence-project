@@ -1,143 +1,44 @@
 {% extends "base.html" %}
 
-{% block title %}Alertas - Weigence{% endblock %}
+{% block content %}
+  {% block title %}Alertas - Weigence{% endblock %}
 
-{% block contenido %}
-<h2 style="text-align:center; margin-top: 20px;">
-    Alertas Activas: 
-    <span style="color: #dc2626; font-weight: bold;">{{ alertas_activas }}</span>
-</h2>
+  {% block sidebar %}
+    {% include "componentes/sidebar.html" %}
+  {% endblock %}
 
-<div style="margin-bottom: 20px; text-align: right;">
-    <label for="filtro-revisadas"><strong>Filtrar:</strong></label>
-    <select id="filtro-revisadas" onchange="filtrarAlertas()">
-        <option value="todas">Todas las alertas</option>
-        <option value="no-revisadas" selected>Solo no revisadas</option>
-        <option value="revisadas">Solo revisadas</option>
-    </select>
+  {% block top %}
+    {% include "componentes/header.html" %}
+  {% endblock %}
+
+  {% block contenido %}
+<div class="col-span-3 lg:col-span-1 space-y-6">
+<div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+<h3 class="font-semibold mb-4">Urgent Alerts</h3>
+<div class="space-y-4">
+<div class="flex items-start gap-4">
+<div class="bg-red-500/20 text-red-500 rounded-full p-2"><span class="material-symbols-outlined text-base">priority_high</span></div>
+<div>
+<p class="font-medium">Low stock: Product B</p>
+<p class="text-sm text-neutral-400">Only 3 units left.</p>
 </div>
-
-{% if registros %}
-<table id="tabla-alertas">
-    <thead>
-        <tr>
-            <th>Tipo</th>
-            <th>Producto</th>
-            <th>Estante</th>
-            <th>Peso (g)</th>
-            <th>Gravedad</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for r in registros %}
-        <tr class="alerta-true" data-gravedad="{{ r.gravedad }}" data-estado="{{ r.estado }}">
-            <td>
-                <span class="tipo-alerta tipo-{{ r.tipo_alerta }}">
-                    {% if r.tipo_alerta == 'bajo_stock' %}
-                        📉 Bajo Stock
-                    {% elif r.tipo_alerta == 'sobrepeso' %}
-                        ⚖️ Sobrepeso
-                    {% elif r.tipo_alerta == 'peso_anormal' %}
-                        ⚠️ Peso Anormal
-                    {% else %}
-                        🔔 {{ r.tipo_alerta.title() }}
-                    {% endif %}
-                </span>
-            </td>
-            <td>{{ r.producto }}</td>
-            <td>{{ r.estante }}</td>
-            <td>{{ r.peso }}</td>
-            <td>
-                <span class="gravedad gravedad-{{ r.gravedad }}">
-                    {% if r.gravedad == 'alta' %}
-                        🔴 Alta
-                    {% elif r.gravedad == 'media' %}
-                        🟡 Media
-                    {% elif r.gravedad == 'baja' %}
-                        🟢 Baja
-                    {% else %}
-                        ⚪ {{ r.gravedad.title() }}
-                    {% endif %}
-                </span>
-            </td>
-            <td>{{ r.fecha_creacion }}</td>
-            <td>
-                <span class="estado-{{ r.estado }}">
-                    {{ "✅ Revisada" if r.revisada else "❌ Pendiente" }}
-                </span>
-            </td>
-            <td>
-                <button class="accion ver" onclick="mostrarModalAlerta('{{ r.titulo }}', '{{ r.descripcion }}', '{{ r.peso }}', '{{ r.fecha_creacion }}', '{{ r.estante }}', '{{ r.producto }}')">
-                    <i class="fas fa-eye"></i>
-                </button>
-                {% if not r.revisada %}
-                <button class="accion revisar" onclick="marcarRevisada(this)">
-                    ✔️ Revisar
-                </button>
-                {% else %}
-                <button class="accion revisada" disabled>
-                    ✔️ Revisada
-                </button>
-                {% endif %}
-                <button class="accion eliminar" onclick="eliminarFila(this)">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div style="text-align: center; padding: 50px; color: #666;">
-    <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 20px;"></i>
-    <h3>No hay alertas registradas</h3>
-    <p>Cuando se detecten anomalías en los pesajes, aparecerán aquí.</p>
 </div>
-{% endif %}
-
-<!-- Modal para detalles de alerta -->
-<div id="modal-alerta" class="modal">
-    <div class="modal-contenido" style="max-width: 500px;">
-        <span class="cerrar" onclick="cerrarModalAlerta()">&times;</span>
-        <h3>📋 Detalle de la Alerta</h3>
-        
-        <div style="margin: 15px 0;">
-            <strong>Título:</strong>
-            <p id="modal-titulo" style="margin: 5px 0; font-weight: normal;"></p>
-        </div>
-        
-        <div style="margin: 15px 0;">
-            <strong>Descripción:</strong>
-            <p id="modal-descripcion" style="margin: 5px 0; font-weight: normal; color: #555;"></p>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-            <div>
-                <strong>Peso:</strong>
-                <p id="modal-peso-detalle" style="margin: 5px 0; font-weight: normal;"></p>
-            </div>
-            <div>
-                <strong>Fecha:</strong>
-                <p id="modal-fecha-detalle" style="margin: 5px 0; font-weight: normal;"></p>
-            </div>
-            <div>
-                <strong>Estante:</strong>
-                <p id="modal-estante" style="margin: 5px 0; font-weight: normal;"></p>
-            </div>
-            <div>
-                <strong>Producto:</strong>
-                <p id="modal-producto" style="margin: 5px 0; font-weight: normal;"></p>
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 20px;">
-            <button onclick="cerrarModalAlerta()" style="background: #3b82f6; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer;">
-                Cerrar
-            </button>
-        </div>
-    </div>
+<div class="flex items-start gap-4">
+<div class="bg-yellow-500/20 text-yellow-500 rounded-full p-2"><span class="material-symbols-outlined text-base">warning</span></div>
+<div>
+<p class="font-medium">High-value sale</p>
+<p class="text-sm text-neutral-400">Transaction #12345</p>
 </div>
+</div>
+<div class="flex items-start gap-4">
+<div class="bg-red-500/20 text-red-500 rounded-full p-2"><span class="material-symbols-outlined text-base">error</span></div>
+<div>
+<p class="font-medium">Critical: Product C</p>
+<p class="text-sm text-neutral-400">Out of stock.</p>
+</div>
+</div>
+</div>
+</div>
+  {% endblock %}
 {% endblock %}
+
