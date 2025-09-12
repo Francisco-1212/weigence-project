@@ -10,73 +10,159 @@
 {% endblock %}
 
 {% block contenido %}
+<body class="bg-neutral-100 text-slate-900 dark:bg-neutral-900 dark:text-slate-100" style="font-family: Inter, 'Noto Sans', sans-serif;">
+  <main class="flex-1 p-8">
 
-  <!-- Main -->
-<body class="bg-neutral-900 text-neutral-100" style="font-family: Inter, 'Noto Sans', sans-serif;">
-    <main class="flex-1">
-    <div class="p-6">
-        <h2 class="text-3xl font-bold mb-6">Inventario</h2>
+    <h2 class="text-3xl font-bold mb-8">Inventario</h2>
+
+    <!-- Dashboards métricos superiores -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-400">
+          <span class="material-symbols-outlined">inventory_2</span>
+        </div>
+        <div>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Total Products</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos|length }} #} 0</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <div>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Total In Stock (Units)</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos | sum(attribute='stock') }} #} 0</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500 dark:text-yellow-400">
+          <span class="material-symbols-outlined">attach_money</span>
+        </div>
+        <div>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Total Economic Value</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">${# {{"%.2f"|format(productos | map(attribute='precio') | sum)}} #} 0.00</p>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
+        <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-500 dark:text-red-400">
+          <span class="material-symbols-outlined">warning</span>
+        </div>
+        <div>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">productos en baja rotacion</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos | selectattr('stock', 'lt', 10) | list | length }} #} 0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de herramientas -->
+    <div class="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm mb-6">
+      <div class="flex flex-wrap justify-between gap-4 items-center mb-6">
+        <div class="flex gap-4 flex-wrap">
+          <label class="flex items-center gap-2 bg-slate-100 dark:bg-gray-700 px-4 py-2 rounded-lg w-full max-w-xs">
+            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">search</span>
+            <input class="form-input flex w-full min-w-0 flex-1 resize-none rounded-lg text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-gray-700 focus:border-none h-full placeholder:text-slate-500 dark:placeholder:text-slate-400 p-0 text-sm" placeholder="Search products..." value=""/>
+          </label>
+          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+            <p class="text-sm font-medium">Category</p>
+            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+          </button>
+          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+            <p class="text-sm font-medium">Status</p>
+            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+          </button>
+          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+            <p class="text-sm font-medium">Date Range</p>
+            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button class="flex items-center justify-center gap-2 h-10 px-4 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-gray-600">
+            <span class="material-symbols-outlined text-base">download</span>
+            <span class="truncate">Export</span>
+          </button>
+          <button id="addProductBtn" class="flex items-center justify-center gap-2 h-10 px-4 bg-[var(--primary-color)] text-white rounded-lg text-sm font-medium shadow-sm hover:bg-[var(--primary-600)]">
+            <span class="material-symbols-outlined">add</span>
+            <span class="truncate">Add Product</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla productos con botón Gestionar -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-neutral-800">
+          <thead>
+            <tr class="border-b border-slate-200" style="background-color: var(--card-bg-dark);">
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID/Code</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current Stock</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Weight</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Weight</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Update</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+            {% for p in productos %}
+            <tr class="hover:bg-slate-100 dark:hover:bg-gray-700">
+              <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ p.codigo or p.idproducto }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">{{ p.nombre }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.categoria }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.stock }} units</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.peso }}g</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
+                {{ '%.2f' % (p.peso * p.stock) }}g
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                {% if p.stock == 0 %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400">
+                  <span class="material-symbols-outlined text-base mr-1">close</span> Out of Stock
+                </span>
+                {% elif p.stock < 10 %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400">
+                  <span class="material-symbols-outlined text-base mr-1">hourglass_top</span> Low Stock
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400">
+                  <span class="material-symbols-outlined text-base mr-1">check</span> Normal
+                </span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.updated_at or 'N/A' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap font-medium">
+                <button class="text-[var(--primary-color)] hover:text-white font-semibold gestionar-btn"
+                  data-producto='{{ p | tojson }}' title="Gestionar">Gestionar</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="9" class="px-4 py-3 text-center text-sm text-slate-500 dark:text-slate-400">No hay productos registrados</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- Modal para gestión de productos -->
-        <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-          <div class="bg-[#1C2427] rounded-lg w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-              <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-2xl font-bold">Gestionar Producto</h3>
-                <button id="closeModal" class="text-gray-400 hover:text-white">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Contenido del modal -->
-              <div id="modalContent">
-                <!-- Los detalles del producto se cargarán aquí dinámicamente -->
-              </div>
-            </div>
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="bg-white dark:bg-neutral-800 rounded-lg w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h3 id="modalTitle" class="text-2xl font-bold text-slate-900 dark:text-slate-100">Gestionar Producto</h3>
+            <button id="closeModal" class="text-gray-400 dark:text-gray-300 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Cerrar modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
+          <div id="modalContent"><!-- Carga dinámica del contenido --></div>
         </div>
+      </div>
+    </div>
 
-        <!-- Tabla de productos -->
-        <div class="rounded-lg border border-gray-800 bg-[#181E21] overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left">
-              <thead class="bg-[#1C2427]">
-                <tr>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">ID</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Nombre</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Categoría</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Stock</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Peso</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Descripción</th>
-                  <th class="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Acciones</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-800">
-                {% for p in productos %}
-                <tr class="hover:bg-gray-800/50">
-                  <td class="px-6 py-4 text-sm text-gray-400">{{ p.idproducto }}</td>
-                  <td class="px-6 py-4 text-sm font-medium text-white">{{ p.nombre }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-400">{{ p.categoria }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-400">{{ p.stock }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-400">{{ p.peso }} g</td>
-                  <td class="px-6 py-4 text-sm text-gray-400 max-w-xs truncate">{{ p.descripcion }}</td>
-                  <td class="px-6 py-4 text-sm">
-                    <button class="text-[var(--primary-color)] hover:text-white font-semibold gestionar-btn" 
-                            data-producto='{{ p | tojson }}'>Gestionar</button>
-                  </td>
-                </tr>
-                {% else %}
-                <tr>
-                  <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No hay productos registrados</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-    </main>
+  </main>
 </body>
-
 {% endblock %}

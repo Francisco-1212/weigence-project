@@ -79,6 +79,11 @@ def inventario():
     productos = supabase.table("productos").select("*").execute().data
     return render_template("pagina/inventario.html", productos=productos)
 
+# --- Ruta Login ---
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
 #--- Ruta Ventas ---
 @app.route("/ventas")
 def ventas():

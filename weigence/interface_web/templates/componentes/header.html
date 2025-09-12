@@ -1,34 +1,49 @@
-<header class="bg-[var(--card-bg-light)] border-b border-[var(--border-light)] px-6 py-4 flex items-center justify-between h-20 shadow-sm">
-        <div class="flex items-center gap-4">
-          <button class="lg:hidden text-[var(--text-light)]">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-          <div class="relative w-64">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">search</span>
-            <input class="bg-neutral-100 dark:bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-2 w-full focus:ring-2 focus:ring-primary-500 transition" placeholder="Buscar..." type="text"/>
-          </div>
-        </div>
-        <div class="flex items-center gap-6">
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-neutral-500">light_mode</span>
-            <label class="relative inline-flex items-center cursor-pointer" for="theme-toggle">
-              <input class="sr-only peer" id="theme-toggle" type="checkbox" value=""/>
-              <div class="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
-            </label>
-            <span class="material-symbols-outlined text-neutral-400">dark_mode</span>
-          </div>
-          <button class="relative rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-700 dark:hover:text-white transition-colors">
-            <span class="material-symbols-outlined">notifications</span>
-            {% if alertas|length > 0 %}
-            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-danger-500 rounded-full border-2 border-white dark:border-neutral-800"></span>
-            {% endif %}
-          </button>
-          <div class="flex items-center gap-3">
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD9UREHo-oRzge84yn2w9n6YAQfb86oAm7tcjODbBsPvkSnjA-vVafsiIFoSnJqi4YFqRwcevZxfQh0XT_fPfg_QEh-QO3lPPBSfZuB9EszDKhJ4qP_zMEbNmJs_VVC7hrWWOzAv2Que4JJEykgEvU4AagnrCYu1zoMr14OOITzU8zi5xsXwWiuf6AKmLO-Ag6N0KRux9bi98zk-wG7GeZtzS8g8JC0CIms59F7vO51d2OUzap1fbSfwNnj3eOvOxPIzBPt6fUEXyE");'></div>
-            <div class="hidden md:block">
-              <p class="font-semibold text-[var(--text-light)] text-sm">John Doe</p>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400">Admin</p>
-            </div>
-          </div>
-        </div>
-</header>
+
+  <div class="flex items-center gap-4">
+    <!-- Botón menú móvil -->
+    <button class="lg:hidden text-[var(--text-light)]">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+
+    <!-- Barra de búsqueda -->
+    <div class="relative w-full max-w-sm lg:w-64">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+        search
+      </span>
+      <input 
+        class="form-input w-full rounded-md bg-neutral-100 dark:bg-neutral-800 border-none pl-10 pr-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition" 
+        placeholder="Buscar..." 
+        type="text" />
+    </div>
+  </div>
+
+  <!-- Iconos y perfil -->
+  <div class="flex items-center gap-6">
+    <!-- Toggle modo claro/oscuro -->
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-neutral-500 dark:text-neutral-400">light_mode</span>
+      <label class="relative inline-flex items-center cursor-pointer" for="theme-toggle">
+        <input class="sr-only peer" id="theme-toggle" type="checkbox" value="" />
+        <div class="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
+      </label>
+      <span class="material-symbols-outlined text-neutral-400 dark:text-neutral-500">dark_mode</span>
+    </div>
+
+    <!-- Notificaciones -->
+    <button class="relative rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-700 dark:hover:text-white transition-colors">
+      <span class="material-symbols-outlined">notifications</span>
+      {% if alertas|length > 0 %}
+      <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-danger-500 rounded-full border-2 border-white dark:border-neutral-800"></span>
+      {% endif %}
+    </button>
+
+    <!-- Perfil -->
+    <div class="flex items-center gap-3">
+      <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10"
+        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD9UREHo-oRzge84yn2w9n6YAQfb86oAm7tcjODbBsPvkSnjA-vVafsiIFoSnJqi4YFqRwcevZxfQh0XT_fPfg_QEh-QO3lPPBSfZuB9EszDKhJ4qP_zMEbNmJs_VVC7hrWWOzAv2Que4JJEykgEvU4AagnrCYu1zoMr14OOITzU8zi5xsXwWiuf6AKmLO-Ag6N0KRux9bi98zk-wG7GeZtzS8g8JC0CIms59F7vO51d2OUzap1fbSfwNnj3eOvOxPIzBPt6fUEXyE');"></div>
+      <div class="hidden md:block">
+        <p class="font-semibold text-[var(--text-light)] text-sm dark:text-white">John Doe</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Admin</p>
+      </div>
+    </div>
+  </div>

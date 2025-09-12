@@ -5,7 +5,6 @@ body {
 }
 
 header {
-    background-color: #004a99;
     padding: 10px 0;
 }
 
@@ -752,18 +751,18 @@ button.accion:hover {
     --neutral-700: #334155;
     --neutral-800: #1e293b;
     --neutral-900: #0f172a;
-    --neutral-950: #020617;
+    --neutral-950: #0d0d0ef7;
     --success-500: #22c55e;
     --warning-500: #f59e0b;
     --danger-500: #f43f5e;
-
     --bg-light: var(--neutral-50);
     --text-light: var(--neutral-900);
     --card-bg-light: #ffffff;
     --border-light: var(--neutral-200);
+    
 
     /* Actualizado para que --bg-dark sea neutral-900 según el segundo bloque */
-    --bg-dark: var(--neutral-900);
+    --bg-dark: var(--neutral-950);
     --text-dark: var(--neutral-100);
     --card-bg-dark: var(--neutral-800);
     --border-dark: var(--neutral-700);

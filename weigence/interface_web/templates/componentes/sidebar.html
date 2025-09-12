@@ -1,15 +1,17 @@
-<aside class="w-20 lg:w-64 flex-shrink-0 bg-neutral-900 flex flex-col transition-all duration-300 shadow-lg">
+<aside class="w-64 shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300 shadow-lg">
   <div class="flex items-center justify-center lg:justify-start gap-3 h-20 px-6 border-b border-neutral-800">
     <svg class="text-primary-500 h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
       <!-- SVG path aquí (idéntico al archivo nuevainterfaz) -->
     </svg>
-    <h1 class="text-white text-xl font-bold hidden lg:block">Weigence</h1>
+    <h1 class="text-xl font-bold hidden lg:block">Weigence</h1>
   </div>
   <nav class="flex-1 px-4 py-4 space-y-2">
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
       <span class="material-symbols-outlined">dashboard</span>
-      <span class="font-semibold hidden lg:block">Dashboard</span>
+      <span class="font-semibold hidden lg:block text-lg ml-0">Dashboard</span>
     </a>
+
+
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'inventario' %}active{% endif %}" href="{{ url_for('inventario') }}">
       <span class="material-symbols-outlined">inventory_2</span>
       <span class="font-semibold hidden lg:block">Inventario</span>

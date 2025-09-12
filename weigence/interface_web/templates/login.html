@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Weigence{% endblock %}
+
+{% block sidebar %}{% endblock %}
+{% block top %}{% endblock %}
+
+{% block contenido %}
+
+<!-- Colores globales -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/colors.css') }}">
+
+<div class="min-h-screen flex items-center justify-center"
+     style="background-color: var(--bg-light); color: var(--text-light);">
+
+  <!-- Switch Modo Oscuro -->
+  <div class="absolute top-4 right-4 flex items-center gap-2">
+    <!-- Sol -->
+    <span class="material-symbols-outlined text-yellow-500">light_mode</span>
+    
+    <!-- Switch -->
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="dark-switch" class="sr-only peer">
+      <div class="w-11 h-6 rounded-full bg-gray-300 peer dark:bg-gray-600
+                  peer-checked:after:translate-x-full peer-checked:after:border-white
+                  after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white 
+                  after:border-gray-400 after:border after:rounded-full after:h-5 after:w-5 
+                  after:transition-all peer-checked:bg-white"></div>
+    </label>
+
+    <!-- Luna -->
+    <span class="material-symbols-outlined text-gray-500 dark:text-gray-300">dark_mode</span>
+  </div>
+
+  <!-- Card -->
+  <div class="w-full max-w-md rounded-2xl shadow-xl p-8"
+       style="background-color: var(--card-bg-light); border: 1px solid var(--border-light);">
+
+    <!-- Encabezado -->
+    <div class="text-center mb-8">
+      <h1 class="text-2xl font-bold" style="color: var(--text-light);">
+        Inventario de Medicamentos
+      </h1>
+      <p class="mt-2" style="color: var(--neutral-500);">
+        Accede con tus credenciales
+      </p>
+    </div>
+
+    <!-- Formulario -->
+    <form action="/login" method="POST" class="space-y-6">
+      <!-- Usuario -->
+      <div>
+        <label for="usuario" class="block text-sm font-medium" style="color: var(--text-light);">
+          Usuario
+        </label>
+        <input 
+          type="text" 
+          id="usuario" 
+          name="usuario" 
+          required
+          class="mt-1 w-full px-4 py-2 rounded-lg focus:ring-2 focus:outline-none"
+          style="background-color: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-light);"
+          placeholder="Ingresa tu usuario">
+      </div>
+
+      <!-- Contraseña -->
+      <div>
+        <label for="password" class="block text-sm font-medium" style="color: var(--text-light);">
+          Contraseña
+        </label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          required
+          class="mt-1 w-full px-4 py-2 rounded-lg focus:ring-2 focus:outline-none"
+          style="background-color: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-light);"
+          placeholder="••••••••">
+      </div>
+
+      <!-- Recordarme y olvidar contraseña -->
+      <div class="flex items-center justify-between text-sm" style="color: var(--neutral-500);">
+        <label class="flex items-center">
+          <input type="checkbox" class="h-4 w-4 border rounded" style="border-color: var(--border-light);">
+          <span class="ml-2">Recordarme</span>
+        </label>
+        <a href="#" style="color: var(--primary-500);" class="hover:underline">
+          ¿Olvidaste tu contraseña?
+        </a>
+      </div>
+
+      <!-- Botón -->
+      <button 
+        type="submit"
+        class="w-full py-2.5 rounded-lg font-semibold transition"
+        style="background-color: var(--primary-600); color: white;">
+        Ingresar
+      </button>
+    </form>
+
+    <!-- Pie -->
+    <p class="text-center text-xs mt-6" style="color: var(--neutral-500);">
+      © 2025 Sistema de Inventario. Todos los derechos reservados.
+    </p>
+  </div>
+</div>
+
+<!-- Script para alternar modo oscuro -->
+<script>
+  const darkSwitch = document.getElementById("dark-switch");
+  const html = document.documentElement;
+
+  // Cargar preferencia
+  if (localStorage.getItem("theme") === "dark") {
+    html.classList.add("dark");
+    darkSwitch.checked = true;
+  }
+
+  darkSwitch.addEventListener("change", () => {
+    if (darkSwitch.checked) {
+      html.classList.add("dark");
+      document.body.style.backgroundColor = "var(--primary-950)";
+      localStorage.setItem("theme", "dark");
+    } else {
+      html.classList.remove("dark");
+      document.body.style.backgroundColor = "var(--bg-light)";
+      localStorage.setItem("theme", "light");
+    }
+  });
+</script>
+{% endblock %}

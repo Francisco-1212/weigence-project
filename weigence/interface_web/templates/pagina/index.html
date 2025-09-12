@@ -17,49 +17,49 @@
 
       <!-- Tarjetas resumen -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Valor Total del Inventario</p>
           <p class="text-3xl font-bold">${{ valor_total_inventario }}</p>
         </div>
-        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Artículos Vendidos</p>
           <p class="text-3xl font-bold">{{ articulos_vendidos }}</p>
         </div>
-        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-yellow-500 mb-1">Productos Agotados</p>
           <p class="text-3xl font-bold text-yellow-500">{{ productos_agotados }}</p>
         </div>
-        <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
+        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Ventas Totales</p>
           <p class="text-3xl font-bold text-green-500">${{ ventas_totales }}</p>
         </div>
       </div>
 
-      <!-- Gráficos -->
-      <div class="grid grid-cols-3 gap-6">
-        <div class="col-span-3 lg:col-span-2 bg-neutral-800 p-6 rounded-md border border-neutral-700">
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <p class="text-lg font-semibold">Tendencia de Ventas</p>
-              <p class="text-sm text-neutral-400">Últimos 30 días</p>
-            </div>
-            <div class="flex items-center gap-2 text-green-500">
-              <span class="material-symbols-outlined">trending_up</span>
-              <span class="font-semibold">+{{ ventas_cambio }}%</span>
-            </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Gráfico -->
+      <div class="col-span-3 lg:col-span-2 bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <p class="text-lg font-semibold">Tendencia de Ventas</p>
+            <p class="text-sm text-neutral-400">Últimos 30 días</p>
           </div>
-          <div class="h-80">
-            <!-- SVG gráfico dinámico -->
-            <svg fill="none" height="100%" preserveAspectRatio="none" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg">
-              <!-- Aquí puedes dibujar el gráfico dinámico -->
-              <path d="M0 150 C 41.6 150, 41.6 50, 83.3 50 C 125 50, 125 80, 166.6 80 C 208.3 80, 208.3 120, 250 120 C 291.6 120, 291.6 10, 333.3 10 C 375 10, 375 90, 416.6 90 C 458.3 90, 458.3 30, 500 30" stroke="var(--primary-500)" stroke-linecap="round" stroke-width="3"></path>
-            </svg>
+          <div class="flex items-center gap-2 text-green-500">
+            <span class="material-symbols-outlined">trending_up</span>
+            <span class="font-semibold">+{{ ventas_cambio }}%</span>
           </div>
         </div>
-
+        <div class="h-80">
+          <svg fill="none" height="100%" preserveAspectRatio="none" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 150 C 41.6 150, 41.6 50, 83.3 50 C 125 50, 125 80, 166.6 80 C 208.3 80, 208.3 120, 250 120 C 291.6 120, 291.6 10, 333.3 10 C 375 10, 375 90, 416.6 90 C 458.3 90, 458.3 30, 500 30" stroke="var(--primary-500)" stroke-linecap="round" stroke-width="3"></path>
+          </svg>
+        </div>
+      </div>
+    
+      <!-- Contenedor de Alertas + Enlaces -->
+      <div class="col-span-3 lg:col-span-1 flex flex-col gap-6">
         <!-- Alertas urgentes -->
         <a href="{{ url_for('alertas') }}" class="inline-block w-full">
-          <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700 cursor-pointer hover:shadow-lg transition-shadow">
+          <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow h-full">
             <h3 class="font-semibold mb-4">Alertas Críticas</h3>
             <div class="space-y-4">
               {% for alerta in alertas %}
@@ -78,22 +78,28 @@
             </div>
           </div>
         </a>
-        
-
-          <!-- Enlaces Rápidos -->
-          <div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
-            <h3 class="font-semibold mb-4">Enlaces Rápidos</h3>
-            <div class="flex flex-col space-y-3">
-              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Inventario</button>
-              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Ventas</button>
-              <button class="w-full text-left py-2 px-4 bg-neutral-700 hover:bg-neutral-600 rounded-md text-sm font-semibold">Ir a Alertas/Reportes</button>
-            </div>
+      
+        <!-- Enlaces Rápidos -->
+        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border-gray-300 border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-sm">
+          <h3 class="font-semibold mb-4 text-[var(--text-light)] dark:text-[var(--text-dark)]">Enlaces Rápidos</h3>
+          <div class="flex flex-col gap-3">
+            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+                Ir a Inventario
+            </button>
+            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+                Ir a Ventas
+            </button>
+            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+                Ir a Alertas/Reportes
+            </button>
           </div>
         </div>
       </div>
+    </div>
+
 
       <!-- Actividades recientes -->
-      <div class="mt-6 bg-neutral-800 p-6 rounded-md border border-neutral-700">
+      <div class="bg-white dark:bg-neutral-800 mt-6 bg-neutral-800 p-6 rounded-md border border-neutral-700">
         <h3 class="font-semibold mb-4">Actividades Recientes</h3>
         <!-- <div class="divide-y divide-neutral-700">
           {% for actividad in actividades %}
