@@ -12,32 +12,163 @@
   {% endblock %}
 
   {% block contenido %}
-<div class="col-span-3 lg:col-span-1 space-y-6">
-<div class="bg-neutral-800 p-6 rounded-md border border-neutral-700">
-<h3 class="font-semibold mb-4">Urgent Alerts</h3>
-<div class="space-y-4">
-<div class="flex items-start gap-4">
-<div class="bg-red-500/20 text-red-500 rounded-full p-2"><span class="material-symbols-outlined text-base">priority_high</span></div>
+<div class="p-8">
+<div class="flex justify-between items-center mb-6">
 <div>
-<p class="font-medium">Low stock: Product B</p>
-<p class="text-sm text-neutral-400">Only 3 units left.</p>
+<h1 class="text-3xl font-bold">Alerts Management</h1>
+<p class="text-slate-500 dark:text-slate-400 text-sm">Manage and monitor all system alerts in real-time.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-md text-slate-500 dark:text-slate-400 bg-[var(--primary-color)] dark:bg-[var(--primary-950)] text-sm font-medium">
+<span class="material-symbols-outlined text-base"> download </span>
+                Export
+              </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+<span class="material-symbols-outlined text-base"> add </span>
+                Create Alert
+              </button>
 </div>
 </div>
-<div class="flex items-start gap-4">
-<div class="bg-yellow-500/20 text-yellow-500 rounded-full p-2"><span class="material-symbols-outlined text-base">warning</span></div>
-<div>
-<p class="font-medium">High-value sale</p>
-<p class="text-sm text-neutral-400">Transaction #12345</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+  <p class="text-slate-500 dark:text-slate-400 text-sm font-medium ">Active Alerts</p>
+  <p class="text-black dark:text-white text-3xl font-bold">23</p>
+</div>
+<div class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 ">
+  <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Avg. Resolution Time</p>
+  <p class="text-3xl font-bold">2h 30m</p>
+</div>
+<div class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Critical Alert %</p>
+<p class="text-3xl font-bold">15%</p>
 </div>
 </div>
-<div class="flex items-start gap-4">
-<div class="bg-red-500/20 text-red-500 rounded-full p-2"><span class="material-symbols-outlined text-base">error</span></div>
-<div>
-<p class="font-medium">Critical: Product C</p>
-<p class="text-sm text-neutral-400">Out of stock.</p>
+<div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-md">
+<div class="p-6 flex justify-between items-center">
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-md bg-[var(--primary-color)] dark:bg-[var(--primary-950)] text-sm font-medium">All</button>
+<button class="px-4 py-2 rounded-md text-slate-500 dark:text-slate-400 text-sm font-medium hover:bg-[#272f3a]">Pending</button>
+<button class="px-4 py-2 rounded-md text-slate-500 dark:text-slate-400 text-sm font-medium hover:bg-[#272f3a]">In Review</button>
+<button class="px-4 py-2 rounded-md text-slate-500 dark:text-slate-400 text-sm font-medium hover:bg-[#272f3a]">Resolved</button>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-md bg-[var(--primary-color)] dark:bg-[var(--primary-950)] text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Filter
+                        <span class="material-symbols-outlined text-base"> filter_list </span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto ">
+<table class="w-full text-left bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+<thead class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+<tr class="border-b border-[#272f3a] hover:bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Description</th>
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" >User</th>
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date &amp; Time</th>
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Priority</th>
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#272f3a] ">
+<tr class="hover:bg-[#272f3a]/50">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400 ">Low stock for Product A</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">SKU: 12345-ABC</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">System</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">2024-03-15, 10:30 AM</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-400">High</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-400">Pending</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+<a class="text-[var(--primary-color)] hover:text-[var(--primary-color)]/80" href="#">View Details</a>
+</td>
+</tr>
+<tr class="hover:bg-[#272f3a]/50">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400">Excessive withdrawal for Product B</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">SKU: 67890-DEF</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">John Doe</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">2024-03-15, 11:15 AM</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-900/50 text-orange-400">Medium</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">In Review</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+<a class="text-[var(--primary-color)] hover:text-[var(--primary-color)]/80" href="#">View Details</a>
+</td>
+</tr>
+<tr class="hover:bg-[#272f3a]/50">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400">Inventory inconsistency for Product C</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">SKU: 54321-GHI</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">System</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">2024-03-15, 12:00 PM</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-400">Low</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">Resolved</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+<a class="text-[var(--primary-color)] hover:text-[var(--primary-color)]/80" href="#">View Details</a>
+</td>
+</tr>
+<tr class="hover:bg-[#272f3a]/50">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400">Predicted stock depletion for Product D</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">SKU: 98765-JKL</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">System</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">2024-03-15, 01:45 PM</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-400">High</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-400">Pending</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+<a class="text-[var(--primary-color)] hover:text-[var(--primary-color)]/80" href="#">View Details</a>
+</td>
+</tr>
+<tr class="hover:bg-[#272f3a]/50">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400">Delayed replenishment for Product E</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">SKU: 13579-MNO</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">Jane Smith</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">2024-03-15, 02:30 PM</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-900/50 text-orange-400">Medium</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">In Review</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+<a class="text-[var(--primary-color)] hover:text-[var(--primary-color)]/80" href="#">View Details</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 flex justify-between items-center">
+<span class="text-sm ">Showing 1 to 5 of 23 results</span>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-md bg-[#272f3a] text-sm font-medium text-slate-500 dark:text-slate-400">Previous</button>
+<button class="px-4 py-2 rounded-md bg-[#272f3a] text-sm font-medium text-white">Next</button>
 </div>
 </div>
 </div>
+</div>
+</main>
 </div>
   {% endblock %}
 {% endblock %}

@@ -52,7 +52,6 @@ th, td {
 }
 
 th {
-    background-color: #004a99;
     color: white;
 }
 tr:hover {
@@ -730,6 +729,7 @@ button.accion:hover {
 
 /* base.html */
 :root {
+    --primary-color: #9ba9bb;
     --primary-50: #eef2ff;
     --primary-100: #e0e7ff;
     --primary-200: #c7d2fe;
@@ -740,7 +740,7 @@ button.accion:hover {
     --primary-700: #4338ca;
     --primary-800: #3730a3;
     --primary-900: #312e81;
-    --primary-950: #1e1b4b;
+    --primary-950: #0f0d2d;
     --neutral-50: #f8fafc;
     --neutral-100: #f1f5f9;
     --neutral-200: #e2e8f0;
@@ -755,17 +755,17 @@ button.accion:hover {
     --success-500: #22c55e;
     --warning-500: #f59e0b;
     --danger-500: #f43f5e;
+    --darkcard: #181C21;
+
     --bg-light: var(--neutral-50);
     --text-light: var(--neutral-900);
-    --card-bg-light: #ffffff;
+    --card-bg-light: #e0e7ff;
     --border-light: var(--neutral-200);
-    
-
-    /* Actualizado para que --bg-dark sea neutral-900 según el segundo bloque */
+  
     --bg-dark: var(--neutral-950);
     --text-dark: var(--neutral-100);
-    --card-bg-dark: var(--neutral-800);
-    --border-dark: var(--neutral-700);
+    --card-bg-dark: var(--darkcard);
+    --border-dark: var(--neutral-300);
 }
 
 .dark {
@@ -775,20 +775,13 @@ button.accion:hover {
     --border-light: var(--border-dark);
 }
 
-/* Se mantiene esta asignación para variables de uso general */
-:root {
-    --bg: var(--bg-light);
-    --text: var(--text-light);
-    --card-bg: var(--card-bg-light);
-    --border: var(--border-light);
-}
 
 /* Estilos base del body, actualizado con font-family combinada */
 body {
     background-color: var(--bg-light);
     color: var(--text-light);
     font-family: 'Inter', 'Noto Sans', sans-serif;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .card {

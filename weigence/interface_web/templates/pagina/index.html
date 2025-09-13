@@ -13,31 +13,31 @@
 <body class="bg-neutral-900 text-neutral-100" style="font-family: Inter, 'Noto Sans', sans-serif;">
   <main class="flex-1">
     <div class="p-6">
-      <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+      <h2 class="text-3xl font-bold mb-6 text-left">Panel de Control</h2>
 
       <!-- Tarjetas resumen -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Valor Total del Inventario</p>
-          <p class="text-3xl font-bold">${{ valor_total_inventario }}</p>
+          <p class="text-3xl font-bold">${{ valor_total_inventario }} 13123</p>
         </div>
-        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Artículos Vendidos</p>
-          <p class="text-3xl font-bold">{{ articulos_vendidos }}</p>
+          <p class="text-3xl font-bold">{{ articulos_vendidos }} 2</p>
         </div>
-        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-yellow-500 mb-1">Productos Agotados</p>
-          <p class="text-3xl font-bold text-yellow-500">{{ productos_agotados }}</p>
+          <p class="text-3xl font-bold text-yellow-500">{{ productos_agotados }} 4</p>
         </div>
-        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-400 mb-1">Ventas Totales</p>
-          <p class="text-3xl font-bold text-green-500">${{ ventas_totales }}</p>
+          <p class="text-3xl font-bold text-green-500">${{ ventas_totales }} 213455</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Gráfico -->
-      <div class="col-span-3 lg:col-span-2 bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+      <div class="col-span-3 lg:col-span-2 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
         <div class="flex justify-between items-center mb-4">
           <div>
             <p class="text-lg font-semibold">Tendencia de Ventas</p>
@@ -45,7 +45,7 @@
           </div>
           <div class="flex items-center gap-2 text-green-500">
             <span class="material-symbols-outlined">trending_up</span>
-            <span class="font-semibold">+{{ ventas_cambio }}%</span>
+            <span class="font-semibold">+{{ ventas_cambio }}% 100</span>
           </div>
         </div>
         <div class="h-80">
@@ -59,7 +59,7 @@
       <div class="col-span-3 lg:col-span-1 flex flex-col gap-6">
         <!-- Alertas urgentes -->
         <a href="{{ url_for('alertas') }}" class="inline-block w-full">
-          <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow h-full">
+          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow h-full">
             <h3 class="font-semibold mb-4">Alertas Críticas</h3>
             <div class="space-y-4">
               {% for alerta in alertas %}
@@ -80,16 +80,16 @@
         </a>
       
         <!-- Enlaces Rápidos -->
-        <div class="bg-white dark:bg-neutral-800 p-6 rounded-md border-gray-300 border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-sm">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border-gray-300 border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-sm">
           <h3 class="font-semibold mb-4 text-[var(--text-light)] dark:text-[var(--text-dark)]">Enlaces Rápidos</h3>
           <div class="flex flex-col gap-3">
-            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+            <button class="w-full text-left py-2 px-4 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
                 Ir a Inventario
             </button>
-            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+            <button class="w-full text-left py-2 px-4 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
                 Ir a Ventas
             </button>
-            <button class="w-full text-left py-2 px-4 bg-white dark:bg-neutral-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
+            <button class="w-full text-left py-2 px-4 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-md text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] hover:bg-[var(--primary-200)] dark:hover:bg-[var(--primary-700)] transition-colors">
                 Ir a Alertas/Reportes
             </button>
           </div>
@@ -99,7 +99,7 @@
 
 
       <!-- Actividades recientes -->
-      <div class="bg-white dark:bg-neutral-800 mt-6 bg-neutral-800 p-6 rounded-md border border-neutral-700">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] mt-6 bg-neutral-800 p-6 rounded-md border border-neutral-700">
         <h3 class="font-semibold mb-4">Actividades Recientes</h3>
         <!-- <div class="divide-y divide-neutral-700">
           {% for actividad in actividades %}

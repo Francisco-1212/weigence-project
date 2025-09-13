@@ -19,8 +19,8 @@
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'ventas' %}active{% endif %}" href="{{ url_for('ventas') }}">
       <span class="material-symbols-outlined">receipt_long</span>
       <span class="font-semibold hidden lg:block">Ventas</span>
-    </a>
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="{{ url_for('alertas') }}">
+    </a> 
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'alertas' %}active{% endif %}" href="{{ url_for('alertas') }}">
       <span class="material-symbols-outlined">notifications_active</span>
       <span class="font-semibold hidden lg:block">Alertas</span>
     </a>

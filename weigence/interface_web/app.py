@@ -3,7 +3,7 @@ from livereload import Server
 from sys import path
 import os
 
-# Agregar ruta del proyecto para importar conexion_supabase
+# ruta del proyecto para importar conexion_supabase
 path.append(r"e:\Github\weigence-project\weigence")
 from conexion_bd.conexion_supabase import supabase
 
@@ -87,8 +87,12 @@ def login():
 #--- Ruta Ventas ---
 @app.route("/ventas")
 def ventas():
-    return render_template("pagina/ventas.html")
+    ventas = supabase.table("ventas").select("*").execute().data
+    detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data
+    # Puedes agregar más consultas si necesitas mostrar productos o usuarios
+    return render_template("pagina/ventas.html", ventas=ventas, detalle_ventas=detalle_ventas)
 
+#--- Ruta Alertas ---
 @app.route("/alertas")
 def alertas():
     alertas = [
