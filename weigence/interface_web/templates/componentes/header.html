@@ -44,6 +44,8 @@
       <div class="hidden md:block">
         <p class="font-semibold text-[var(--text-light)] text-sm dark:text-white">John Doe</p>
         <p class="text-xs text-neutral-500 dark:text-neutral-400">Admin</p>
+        <a href="{{ url_for('logout') }}" class="text-blue-600 hover:underline">Cerrar sesión</a>
+        <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Iniciar sesión</a>
       </div>
     </div>
   </div>

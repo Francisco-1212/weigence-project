@@ -43,18 +43,19 @@
             <p class="text-lg font-semibold">Tendencia de Ventas</p>
             <p class="text-sm text-neutral-400">Últimos 30 días</p>
           </div>
-          <div class="flex items-center gap-2 text-green-500">
-            <span class="material-symbols-outlined">trending_up</span>
-            <span class="font-semibold">+{{ ventas_cambio }}% 100</span>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-green-500">trending_up</span>
+            <span class="font-semibold text-green-500" id="totalVentasIcon"></span>
           </div>
         </div>
         <div class="h-80">
-          <svg fill="none" height="100%" preserveAspectRatio="none" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 150 C 41.6 150, 41.6 50, 83.3 50 C 125 50, 125 80, 166.6 80 C 208.3 80, 208.3 120, 250 120 C 291.6 120, 291.6 10, 333.3 10 C 375 10, 375 90, 416.6 90 C 458.3 90, 458.3 30, 500 30" stroke="var(--primary-500)" stroke-linecap="round" stroke-width="3"></path>
-          </svg>
+          <canvas id="tendenciaVentas" width="500" height="200"></canvas>
         </div>
       </div>
-    
+
+
+
+
       <!-- Contenedor de Alertas + Enlaces -->
       <div class="col-span-3 lg:col-span-1 flex flex-col gap-6">
         <!-- Alertas urgentes -->

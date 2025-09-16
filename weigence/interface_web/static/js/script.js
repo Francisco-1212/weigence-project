@@ -125,6 +125,86 @@ function inicializarAplicacion() {
     });
 }
 
+// tendencia de ventas por día
+async function crearGraficoVentas() {
+    const ctx = document.getElementById("tendenciaVentas").getContext("2d");
+
+    // Detectar modo oscuro/claro
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    // Traer datos desde API
+    const res = await fetch("/api/tendencia_ventas");
+    const data = await res.json();
+
+    const ventas = data.data_ventas;
+
+    // Calcular cambio porcentual
+    const totalHoy = ventas[ventas.length - 1] || 0;
+    const totalAyer = ventas[ventas.length - 2] || 0;
+    const cambio = totalAyer > 0 ? ((totalHoy - totalAyer) / totalAyer * 100).toFixed(1) : 0;
+    const totalIcon = document.getElementById("totalVentasIcon");
+    totalIcon.innerText = `${cambio > 0 ? '+' : ''}${cambio}%`;
+    totalIcon.classList.toggle('text-green-500', cambio >= 0);
+    totalIcon.classList.toggle('text-red-500', cambio < 0);
+
+    // Crear gradiente lineal para línea
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, isDarkMode ? 'rgba(0,255,128,0.7)' : 'rgba(0,128,0,0.7)');
+    gradient.addColorStop(1, isDarkMode ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)');
+
+    // Configuración Chart.js
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: "Total Ventas",
+                data: ventas,
+                fill: true,
+                backgroundColor: gradient,
+                borderColor: isDarkMode ? 'rgba(0,255,128,1)' : 'rgba(0,128,0,1)',
+                borderWidth: 3,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: isDarkMode ? 'rgba(0,255,128,1)' : 'rgba(0,128,0,1)',
+                pointBorderColor: isDarkMode ? '#000' : '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: isDarkMode ? '#222' : '#fff',
+                    titleColor: isDarkMode ? '#fff' : '#000',
+                    bodyColor: isDarkMode ? '#fff' : '#000',
+                    borderColor: isDarkMode ? '#444' : '#ccc',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: isDarkMode ? '#fff' : '#000' }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: isDarkMode ? '#fff' : '#000' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', crearGraficoVentas);
+
+
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarAplicacion);
