@@ -1,42 +1,64 @@
-<aside class="w-64 shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300 shadow-lg">
-  <div class="flex items-center justify-center lg:justify-start gap-3 h-20 px-6 border-b border-neutral-800">
-    <svg class="text-primary-500 h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <!-- SVG path aquí (idéntico al archivo nuevainterfaz) -->
+<aside class="w-64 shrink-0 bg-[var(--sbar)] dark:bg-[var(--card-bg-dark)] border-r border-neutral-300 dark:border-neutral-700 flex flex-col transition-colors duration-300 shadow-lg">
+  <!-- Logo y marca -->
+  <div class="flex items-center justify-center lg:justify-start gap-3 h-20 px-6 border-b border-neutral-300 dark:border-neutral-700">
+    <svg class="text-primary-600 dark:text-primary-400 h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <!-- SVG path aquí -->
     </svg>
-    <h1 class="text-xl font-bold hidden lg:block">Weigence</h1>
+    <h1 class="text-xl font-bold hidden lg:block text-neutral-900 dark:text-neutral-100">Weigence</h1>
   </div>
-  <nav class="flex-1 px-4 py-4 space-y-2">
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'inicio' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-      <span class="material-symbols-outlined">dashboard</span>
-      <span class="font-semibold hidden lg:block text-lg ml-0">Dashboard</span>
+  
+  <!-- Navegación principal -->
+  <nav class="flex-1 px-3 py-4 space-y-1 text-neutral-700 dark:text-neutral-300">
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 {% if request.endpoint == 'inicio' %}bg-primary-600 text-white{% else %}text-neutral-700 dark:text-neutral-300{% endif %}" href="{{ url_for('dashboard') }}">
+      <span class="material-symbols-outlined text-xl">dashboard</span>
+      <span class="font-medium hidden lg:block">Dashboard</span>
     </a>
 
-
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'inventario' %}active{% endif %}" href="{{ url_for('inventario') }}">
-      <span class="material-symbols-outlined">inventory_2</span>
-      <span class="font-semibold hidden lg:block">Inventario</span>
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 {% if request.endpoint == 'inventario' %}bg-primary-600 text-white{% else %}text-neutral-700 dark:text-neutral-300{% endif %}" href="{{ url_for('inventario') }}">
+      <span class="material-symbols-outlined text-xl">inventory_2</span>
+      <span class="font-medium hidden lg:block">Inventario</span>
     </a>
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'ventas' %}active{% endif %}" href="{{ url_for('ventas') }}">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <span class="font-semibold hidden lg:block">Ventas</span>
+    
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 {% if request.endpoint == 'ventas' %}bg-primary-600 text-white{% else %}text-neutral-700 dark:text-neutral-300{% endif %}" href="{{ url_for('ventas') }}">
+      <span class="material-symbols-outlined text-xl">receipt_long</span>
+      <span class="font-medium hidden lg:block">Ventas</span>
     </a> 
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link {% if request.endpoint == 'alertas' %}active{% endif %}" href="{{ url_for('alertas') }}">
-      <span class="material-symbols-outlined">notifications_active</span>
-      <span class="font-semibold hidden lg:block">Alertas</span>
+    
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 {% if request.endpoint == 'alertas' %}bg-primary-600 text-white{% else %}text-neutral-700 dark:text-neutral-300{% endif %}" href="{{ url_for('alertas') }}">
+      <span class="material-symbols-outlined text-xl">notifications_active</span>
+      <span class="font-medium hidden lg:block">Alertas</span>
+      <span class="ml-auto bg-red-600 text-white text-xs px-2 py-1 rounded-full hidden lg:block select-none">{{ alertas|length }}</span>
     </a>
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-      <span class="material-symbols-outlined">analytics</span>
-      <span class="font-semibold hidden lg:block">Estadísticas</span>
+    
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 text-neutral-700 dark:text-neutral-300" href="#">
+      <span class="material-symbols-outlined text-xl">analytics</span>
+      <span class="font-medium hidden lg:block">Estadísticas</span>
     </a>
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-      <span class="material-symbols-outlined">settings</span>
-      <span class="font-semibold hidden lg:block">Configuración</span>
+    
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 text-neutral-700 dark:text-neutral-300" href="#">
+      <span class="material-symbols-outlined text-xl">settings</span>
+      <span class="font-medium hidden lg:block">Configuración</span>
     </a>
   </nav>
-  <div class="px-4 py-4 mt-auto">
-    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link" href="#">
-      <span class="material-symbols-outlined">logout</span>
-      <span class="font-semibold hidden lg:block">Cerrar sesión</span>
+  
+  <!-- Separador visual -->
+  <div class="px-3 my-2">
+    <div class="border-t border-neutral-300 dark:border-neutral-700"></div>
+  </div>
+  
+  <!-- Usuario y cierre de sesión -->
+  <div class="px-3 py-2 mb-4">
+    <div class="flex items-center gap-3 px-3 py-2 text-neutral-600 dark:text-neutral-400">
+      <span class="material-symbols-outlined text-xl">account_circle</span>
+      <div class="hidden lg:block">
+        <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Nombre Usuario</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Administrador</p>
+      </div>
+    </div>
+    
+    <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-red-600 hover:text-white transition-colors duration-200 mt-2 text-neutral-700 dark:text-neutral-300" href="{{ url_for('logout') }}">
+      <span class="material-symbols-outlined text-xl">logout</span>
+      <span class="font-medium hidden lg:block">Cerrar sesión</span>
     </a>
   </div>
 </aside>

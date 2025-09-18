@@ -11,17 +11,17 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 </head>
 <body class="bg-[var(--bg-light)] text-[var(--text-light)]">
-<div class="flex h-screen">
+<div class="flex h-screen ">
   <!-- Sidebar -->
   {% block sidebar %}{% endblock %}
 
   <!-- Contenedor derecho -->
   <div class="flex flex-col flex-1">
     <!-- Header -->
-    <header class="bg-white dark:bg-neutral-900 flex h-20 items-center justify-between px-6 shadow-sm bg-neutral-900 text-neutral-100 border-b border-neutral-800">
-
+    <header class="sticky top-0 z-50 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
       {% block top %}{% endblock %}
     </header>
+
 
     <!-- Contenido -->
     <main class="flex-1 px-6 py-8 overflow-y-auto">

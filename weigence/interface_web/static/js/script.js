@@ -189,11 +189,11 @@ async function crearGraficoVentas() {
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: { color: isDarkMode ? '#fff' : '#000' }
+                    ticks: { color: isDarkMode ? '#000000ff' : '#ffffffff' }
                 },
                 y: {
                     grid: { display: false },
-                    ticks: { color: isDarkMode ? '#fff' : '#000' },
+                    ticks: { color: isDarkMode ? '#000000ff' : '#000' },
                     beginAtZero: true
                 }
             }

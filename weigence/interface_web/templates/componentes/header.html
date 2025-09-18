@@ -1,51 +1,77 @@
-
-  <div class="flex items-center gap-4">
+<div class="flex items-center justify-between px-6 py-4 bg-[var(--header-bg-light)] dark:bg-[var(--header-bg-dark)] border-b border-neutral-300 dark:border-neutral-700 transition-colors duration-300">
+  <!-- Parte izquierda: Navegación y búsqueda -->
+  <div class="flex items-center gap-5">
     <!-- Botón menú móvil -->
-    <button class="lg:hidden text-[var(--text-light)]">
-      <span class="material-symbols-outlined">menu</span>
+    <button class="lg:hidden p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="Abrir menú" id="mobile-menu-button">
+      <span class="material-symbols-outlined text-neutral-700 dark:text-neutral-300">menu</span>
     </button>
 
-    <!-- Barra de búsqueda -->
-    <div class="relative w-full max-w-sm lg:w-64">
-      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
-        search
-      </span>
-      <input 
-        class="form-input w-full rounded-md bg-neutral-100 dark:bg-neutral-800 border-none pl-10 pr-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition" 
-        placeholder="Buscar..." 
-        type="text" />
-    </div>
-  </div>
-
-  <!-- Iconos y perfil -->
-  <div class="flex items-center gap-6">
-    <!-- Toggle modo claro/oscuro -->
-    <div class="flex items-center gap-2">
-      <span class="material-symbols-outlined text-neutral-500 dark:text-neutral-400">light_mode</span>
-      <label class="relative inline-flex items-center cursor-pointer" for="theme-toggle">
-        <input class="sr-only peer" id="theme-toggle" type="checkbox" value="" />
-        <div class="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
-      </label>
-      <span class="material-symbols-outlined text-neutral-400 dark:text-neutral-500">dark_mode</span>
-    </div>
-
-    <!-- Notificaciones -->
-    <button class="relative rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-700 dark:hover:text-white transition-colors">
-      <span class="material-symbols-outlined">notifications</span>
-      {% if alertas|length > 0 %}
-      <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-danger-500 rounded-full border-2 border-white dark:border-neutral-800"></span>
-      {% endif %}
-    </button>
-
-    <!-- Perfil -->
-    <div class="flex items-center gap-3">
-      <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10"
-        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD9UREHo-oRzge84yn2w9n6YAQfb86oAm7tcjODbBsPvkSnjA-vVafsiIFoSnJqi4YFqRwcevZxfQh0XT_fPfg_QEh-QO3lPPBSfZuB9EszDKhJ4qP_zMEbNmJs_VVC7hrWWOzAv2Que4JJEykgEvU4AagnrCYu1zoMr14OOITzU8zi5xsXwWiuf6AKmLO-Ag6N0KRux9bi98zk-wG7GeZtzS8g8JC0CIms59F7vO51d2OUzap1fbSfwNnj3eOvOxPIzBPt6fUEXyE');"></div>
-      <div class="hidden md:block">
-        <p class="font-semibold text-[var(--text-light)] text-sm dark:text-white">John Doe</p>
-        <p class="text-xs text-neutral-500 dark:text-neutral-400">Admin</p>
-        <a href="{{ url_for('logout') }}" class="text-blue-600 hover:underline">Cerrar sesión</a>
-        <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Iniciar sesión</a>
+    <!-- Selector de rango de fechas -->
+    <div class="hidden md:flex items-center gap-3">
+      <h1 class="text-xl font-bold text-[var(--text-light)] dark:text-[var(--text-dark)]">Filtrar</h1>
+      <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+        <button class="px-3 py-1 rounded-md text-sm font-medium bg-white dark:bg-neutral-700 shadow-sm">Hoy</button>
+        <button class="px-3 py-1 rounded-md text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white">Semana</button>
+        <button class="px-3 py-1 rounded-md text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-white">Mes</button>
       </div>
     </div>
   </div>
+
+
+  <!-- Parte central: Búsqueda -->
+  <div class="relative">
+    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">search</span>
+    <input 
+      class="w-full rounded-xl bg-neutral-200 dark:bg-neutral-800 border border-transparent pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-neutral-700 transition-all placeholder-neutral-500 dark:placeholder-neutral-400 text-sm text-neutral-900 dark:text-neutral-100" 
+      placeholder="Buscar en el sistema..." 
+      type="search"
+      aria-label="Buscar en el sistema" />
+  </div>
+
+
+  <!-- Parte derecha: Controles -->
+  <div class="flex items-center gap-4">
+    <!-- Toggle modo claro/oscuro -->
+    <div class="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-800 rounded-full p-1">
+      <span class="material-symbols-outlined text-neutral-500 dark:text-neutral-400 text-sm">light_mode</span>
+      <label class="relative inline-flex items-center cursor-pointer m-0" for="theme-toggle">
+        <input class="sr-only peer" id="theme-toggle" type="checkbox" />
+        <div class="w-9 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
+      </label>
+      <span class="material-symbols-outlined text-neutral-400 dark:text-neutral-500 text-sm">dark_mode</span>
+    </div>
+
+    <!-- Notificaciones -->
+    <button class="relative p-3 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400" aria-label="Notificaciones">
+      <span class="material-symbols-outlined text-neutral-700 dark:text-neutral-300 text-xl leading-none">notifications</span>
+      {% if alertas|length > 0 %}
+      <span class="absolute top-0 right-0 min-w-[22px] h-[22px] bg-red-600 text-white text-xs font-semibold flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900 px-[6px] transform translate-x-1/4 -translate-y-1/4 select-none shadow-sm">
+        {{ alertas|length }}
+      </span>
+      {% endif %}
+    </button>
+
+    <!-- Mensajes -->
+    <button class="relative p-3 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400" aria-label="Mensajes">
+      <span class="material-symbols-outlined text-neutral-700 dark:text-neutral-300 text-xl leading-none">chat</span>
+      <span class="absolute top-0 right-0 w-3 h-3 bg-primary-600 rounded-full border-2 border-white dark:border-gray-900 transform translate-x-1/4 -translate-y-1/4 shadow-sm"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Barra de estado -->
+<div class="px-6 py-2 bg-neutral-200 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 transition-colors duration-300">
+  <div class="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+    <div class="flex items-center gap-4">
+      <span>Última actualización: hoy 10:30 AM</span>
+      <div class="flex items-center gap-1 text-success-500">
+        <span class="material-symbols-outlined text-base">check_circle</span>
+        <span class="text-green-500">Sistema en línea</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="text-primary-600 dark:text-primary-400 hover:underline">Actualizar datos</button>
+      <button class="text-neutral-600 dark:text-neutral-400 hover:underline">Ver historial</button>
+    </div>
+  </div>
+</div>
