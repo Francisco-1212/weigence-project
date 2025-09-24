@@ -27,8 +27,13 @@
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 {% if request.endpoint == 'alertas' %}bg-primary-600 text-white{% else %}text-neutral-700 dark:text-neutral-300{% endif %}" href="{{ url_for('alertas') }}">
       <span class="material-symbols-outlined text-xl">notifications_active</span>
       <span class="font-medium hidden lg:block">Alertas</span>
-      <span class="ml-auto bg-red-600 text-white text-xs px-2 py-1 rounded-full hidden lg:block select-none">{{ alertas|length }}</span>
+      {% if alertas_criticas|length > 0 %}
+      <span class="ml-auto bg-red-600 text-white text-xs px-2 py-1 rounded-full hidden lg:block select-none">
+        {{ alertas_criticas|length }}
+      </span>
+      {% endif %}
     </a>
+
     
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 text-neutral-700 dark:text-neutral-300" href="#">
       <span class="material-symbols-outlined text-xl">analytics</span>

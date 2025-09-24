@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Ventas - Weigence{% endblock %}
+{% block title %}Inventario - Weigence{% endblock %}
 
 {% block top %}
 {% include "componentes/header.html" %}
@@ -17,100 +17,152 @@
 
     <!-- Dashboards métricos superiores -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
         <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-400">
           <span class="material-symbols-outlined">inventory_2</span>
         </div>
         <div>
-          <p class="text-slate-500 dark:text-slate-400 text-sm">Total Products</p>
-          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos|length }} #} 0</p>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Total Productos</p>
+         <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ productos|length }}</p>
         </div>
       </div>
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
         <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
           <span class="material-symbols-outlined">check_circle</span>
         </div>
         <div>
-          <p class="text-slate-500 dark:text-slate-400 text-sm">Total In Stock (Units)</p>
-          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos | sum(attribute='stock') }} #} 0</p>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Total en Stock (Unidades)</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ productos | sum(attribute='stock') }}</p>
         </div>
       </div>
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
         <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500 dark:text-yellow-400">
           <span class="material-symbols-outlined">attach_money</span>
         </div>
         <div>
-          <p class="text-slate-500 dark:text-slate-400 text-sm">Total Economic Value</p>
-          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">${# {{"%.2f"|format(productos | map(attribute='precio') | sum)}} #} 0.00</p>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Valor Económico Total</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">${{ productos | sum(attribute='precio_unitario') | int }}</p>
         </div>
       </div>
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
         <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-500 dark:text-red-400">
           <span class="material-symbols-outlined">warning</span>
         </div>
         <div>
-          <p class="text-slate-500 dark:text-slate-400 text-sm">productos en baja rotacion</p>
-          <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{# {{ productos | selectattr('stock', 'lt', 10) | list | length }} #} 0</p>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">Productos en Baja Rotación</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ productos | selectattr('stock', 'lt', 10) | list | length }}</p>
         </div>
       </div>
     </div>
 
     <!-- Barra de herramientas -->
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm mb-6">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm mb-6">
       <div class="flex flex-wrap justify-between gap-4 items-center mb-6">
         <div class="flex gap-4 flex-wrap">
           <label class="flex items-center gap-2 bg-slate-100 dark:bg-gray-700 px-4 py-2 rounded-lg w-full max-w-xs">
             <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">search</span>
-            <input class="form-input flex w-full min-w-0 flex-1 resize-none rounded-lg text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-gray-700 focus:border-none h-full placeholder:text-slate-500 dark:placeholder:text-slate-400 p-0 text-sm" placeholder="Search products..." value=""/>
+            <input id="searchInput" class="form-input flex w-full min-w-0 flex-1 resize-none rounded-lg text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-gray-700 focus:border-none h-full placeholder:text-slate-500 dark:placeholder:text-slate-400 p-0 text-sm" placeholder="Buscar productos..." value=""/>
           </label>
-          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
-            <p class="text-sm font-medium">Category</p>
-            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
-          </button>
-          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
-            <p class="text-sm font-medium">Status</p>
-            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
-          </button>
-          <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
-            <p class="text-sm font-medium">Date Range</p>
-            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
-          </button>
+          
+          <!-- Dropdown Categoría -->
+          <div class="relative">
+            <button id="categoryBtn" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+              <p class="text-sm font-medium">Categoría</p>
+              <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+            </button>
+            <div id="categoryDropdown" class="absolute z-10 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg hidden">
+              <div class="py-1">
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="">Todas las categorías</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Antiinflamatorio">Antiinflamatorio</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Antibiótico">Antibiótico</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Suplemento">Suplemento</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Antihistamínico">Antihistamínico</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Broncodilatador">Broncodilatador</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Analgésico">Analgésico</button>
+                <button class="category-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-category="Antidiabetico">Antidiabetico</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dropdown Estado -->
+          <div class="relative">
+            <button id="statusBtn" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+              <p class="text-sm font-medium">Estado</p>
+              <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+            </button>
+            <div id="statusDropdown" class="absolute z-10 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg hidden">
+              <div class="py-1">
+                <button class="status-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-status="">Todos los estados</button>
+                <button class="status-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-status="normal">Stock Normal</button>
+                <button class="status-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-status="bajo">Stock Bajo</button>
+                <button class="status-option block w-full px-4 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-status="agotado">Sin Stock</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dropdown Rango de Fechas -->
+          <div class="relative">
+            <button id="dateRangeBtn" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-gray-700 pl-4 pr-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600">
+              <p class="text-sm font-medium">Rango de Fechas</p>
+              <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">arrow_drop_down</span>
+            </button>
+            <div id="dateRangeDropdown" class="absolute z-10 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg hidden">
+              <div class="p-4">
+                <div class="mb-3">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha Inicio</label>
+                  <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                </div>
+                <div class="mb-3">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha Fin</label>
+                  <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                </div>
+                <div class="flex gap-2">
+                  <button id="applyDateRange" class="flex-1 px-3 py-2 bg-[var(--primary-color)] text-white text-sm rounded-md hover:bg-[var(--primary-600)]">Aplicar</button>
+                  <button id="clearDateRange" class="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-slate-700 dark:text-slate-300 text-sm rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">Limpiar</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="flex gap-2">
-          <button class="flex items-center justify-center gap-2 h-10 px-4 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-gray-600">
+          <button id="exportBtn" class="flex items-center justify-center gap-2 h-10 px-4 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-gray-600">
             <span class="material-symbols-outlined text-base">download</span>
-            <span class="truncate">Export</span>
+            <span class="truncate">Exportar</span>
           </button>
           <button id="addProductBtn" class="flex items-center justify-center gap-2 h-10 px-4 bg-[var(--primary-color)] text-white rounded-lg text-sm font-medium shadow-sm hover:bg-[var(--primary-600)]">
             <span class="material-symbols-outlined">add</span>
-            <span class="truncate">Add Product</span>
+            <span class="truncate">Agregar Producto</span>
           </button>
         </div>
       </div>
 
-      <!-- Tabla productos con botón Gestionar -->
+      <!-- Tabla productos -->
       <div class="overflow-x-auto colored-scrollbar">
-        <table class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700">
+        <table class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700" id="productTable">
           <thead class="border-b border-slate-200 dark:border-gray-700">
-            <tr class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700">
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID/Code</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current Stock</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Weight</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Weight</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Update</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+            <tr class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID/Código</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nombre</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Categoría</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stock Actual</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Peso Unitario</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Peso Total</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estado</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Última Actualización</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
             {% for p in productos %}
-            <tr class="hover:bg-slate-100 dark:hover:bg-gray-700">
+            <tr class="hover:bg-slate-100 dark:hover:bg-gray-700 product-row" 
+                data-category="{{ p.categoria }}" 
+                data-stock="{{ p.stock }}"
+                data-name="{{ p.nombre|lower }}"
+                data-date="{{ p.fecha_modificacion }}">
               <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ p.codigo or p.idproducto }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">{{ p.nombre }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.categoria }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.stock }} units</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.stock }} unidades</td>
               <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.peso }}g</td>
               <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">
                 {{ '%.2f' % (p.peso * p.stock) }}g
@@ -118,11 +170,11 @@
               <td class="px-4 py-3 whitespace-nowrap">
                 {% if p.stock == 0 %}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400">
-                  <span class="material-symbols-outlined text-base mr-1">close</span> Out of Stock
+                  <span class="material-symbols-outlined text-base mr-1">close</span> Sin Stock
                 </span>
                 {% elif p.stock < 10 %}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400">
-                  <span class="material-symbols-outlined text-base mr-1">hourglass_top</span> Low Stock
+                  <span class="material-symbols-outlined text-base mr-1">hourglass_top</span> Stock Bajo
                 </span>
                 {% else %}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400">
@@ -130,14 +182,14 @@
                 </span>
                 {% endif %}
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.updated_at or 'N/A' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ p.fecha_modificacion or 'N/A' }}</td>
               <td class="px-4 py-3 whitespace-nowrap font-medium">
                 <button class="text-[var(--primary-color)] hover:text-white font-semibold gestionar-btn"
                   data-producto='{{ p | tojson }}' title="Gestionar">Gestionar</button>
               </td>
             </tr>
             {% else %}
-            <tr>
+            <tr id="noProductsRow">
               <td colspan="9" class="px-4 py-3 text-center text-sm text-slate-500 dark:text-slate-400">No hay productos registrados</td>
             </tr>
             {% endfor %}
@@ -148,7 +200,7 @@
 
     <!-- Modal para gestión de productos -->
     <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 border-gray-300 dark:border-neutral-700 rounded-lg w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <h3 id="modalTitle" class="text-2xl font-bold text-slate-900 dark:text-slate-100">Gestionar Producto</h3>
@@ -164,5 +216,485 @@
     </div>
 
   </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Variables globales
+      const searchInput = document.getElementById('searchInput');
+      const productTable = document.getElementById('productTable');
+      const productRows = document.querySelectorAll('.product-row');
+      
+      // Funcionalidad de búsqueda
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterProducts();
+      });
+
+      // Funcionalidad de dropdowns
+      setupDropdowns();
+      
+      // Funcionalidad de filtros
+      let currentFilters = {
+        category: '',
+        status: '',
+        dateStart: '',
+        dateEnd: ''
+      };
+
+      function setupDropdowns() {
+        // Dropdown Categoría
+        const categoryBtn = document.getElementById('categoryBtn');
+        const categoryDropdown = document.getElementById('categoryDropdown');
+        const categoryOptions = document.querySelectorAll('.category-option');
+
+        categoryBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          categoryDropdown.classList.toggle('hidden');
+          document.getElementById('statusDropdown').classList.add('hidden');
+          document.getElementById('dateRangeDropdown').classList.add('hidden');
+        });
+
+        categoryOptions.forEach(option => {
+          option.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            currentFilters.category = category;
+            categoryBtn.querySelector('p').textContent = category || 'Categoría';
+            categoryDropdown.classList.add('hidden');
+            filterProducts();
+          });
+        });
+
+        // Dropdown Estado
+        const statusBtn = document.getElementById('statusBtn');
+        const statusDropdown = document.getElementById('statusDropdown');
+        const statusOptions = document.querySelectorAll('.status-option');
+
+        statusBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          statusDropdown.classList.toggle('hidden');
+          document.getElementById('categoryDropdown').classList.add('hidden');
+          document.getElementById('dateRangeDropdown').classList.add('hidden');
+        });
+
+        statusOptions.forEach(option => {
+          option.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            currentFilters.status = status;
+            statusBtn.querySelector('p').textContent = this.textContent;
+            statusDropdown.classList.add('hidden');
+            filterProducts();
+          });
+        });
+
+        // Dropdown Rango de Fechas
+        const dateRangeBtn = document.getElementById('dateRangeBtn');
+        const dateRangeDropdown = document.getElementById('dateRangeDropdown');
+        const applyDateRange = document.getElementById('applyDateRange');
+        const clearDateRange = document.getElementById('clearDateRange');
+
+        dateRangeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dateRangeDropdown.classList.toggle('hidden');
+          document.getElementById('categoryDropdown').classList.add('hidden');
+          document.getElementById('statusDropdown').classList.add('hidden');
+          
+          // Mantener las fechas seleccionadas en los inputs
+          if (currentFilters.dateStart) {
+              document.getElementById('startDate').value = currentFilters.dateStart;
+          }
+          if (currentFilters.dateEnd) {
+              document.getElementById('endDate').value = currentFilters.dateEnd;
+          }
+        });
+
+        applyDateRange.addEventListener('click', function() {
+          const startDate = document.getElementById('startDate').value;
+          const endDate = document.getElementById('endDate').value;
+          currentFilters.dateStart = startDate;
+          currentFilters.dateEnd = endDate;
+          dateRangeDropdown.classList.add('hidden');
+          filterProducts();
+        });
+
+        clearDateRange.addEventListener('click', function() {
+            currentFilters.dateStart = '';
+            currentFilters.dateEnd = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            dateRangeBtn.querySelector('p').textContent = 'Rango de Fechas';
+            dateRangeDropdown.classList.add('hidden');
+            filterProducts();
+        });
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', function() {
+          categoryDropdown.classList.add('hidden');
+          statusDropdown.classList.add('hidden');
+          dateRangeDropdown.classList.add('hidden');
+        });
+      }
+
+function filterProducts() {
+    const searchTerm = searchInput.value.toLowerCase();
+    let visibleCount = 0;
+
+    productRows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const category = row.getAttribute('data-category') || '';
+        const stock = parseInt(row.getAttribute('data-stock')) || 0;
+        const dateStr = row.getAttribute('data-date');
+        
+        let visible = true;
+
+        // Filtro de búsqueda
+        if (searchTerm && !name.includes(searchTerm)) {
+            visible = false;
+        }
+
+        // Filtro de categoría
+        if (currentFilters.category && category !== currentFilters.category) {
+            visible = false;
+        }
+
+        // Filtro de estado
+        if (currentFilters.status) {
+            if (currentFilters.status === 'normal' && stock < 10) visible = false;
+            if (currentFilters.status === 'bajo' && (stock >= 10 || stock === 0)) visible = false;
+            if (currentFilters.status === 'agotado' && stock !== 0) visible = false;
+        }
+
+        // Filtro de fechas
+        if (currentFilters.dateStart && currentFilters.dateEnd && dateStr) {
+            const date = new Date(dateStr);
+            const startDate = new Date(currentFilters.dateStart);
+            const endDate = new Date(currentFilters.dateEnd);
+            endDate.setHours(23, 59, 59);
+
+            if (isNaN(date.getTime())) {
+                visible = false;
+            } else if (date < startDate || date > endDate) {
+                visible = false;
+            }
+        }
+
+        row.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+    });
+
+    // Actualizar texto del botón de rango de fechas
+    const dateRangeBtn = document.getElementById('dateRangeBtn');
+    if (currentFilters.dateStart && currentFilters.dateEnd) {
+        const start = new Date(currentFilters.dateStart).toLocaleDateString();
+        const end = new Date(currentFilters.dateEnd).toLocaleDateString();
+        dateRangeBtn.querySelector('p').textContent = `${start} - ${end}`;
+    } else {
+        dateRangeBtn.querySelector('p').textContent = 'Rango de Fechas';
+    }
+
+    // Mostrar/ocultar mensaje de "no hay productos"
+    const noProductsRow = document.getElementById('noProductsRow');
+    if (noProductsRow) {
+        noProductsRow.style.display = visibleCount === 0 ? '' : 'none';
+        if (visibleCount === 0) {
+            noProductsRow.querySelector('td').textContent = 'No se encontraron productos que coincidan con los filtros';
+        }
+    }
+}
+
+      // Funcionalidad del botón Exportar
+      document.getElementById('exportBtn').addEventListener('click', function() {
+        // Recopilar datos visibles
+        const visibleRows = Array.from(productRows).filter(row => row.style.display !== 'none');
+        
+        if (visibleRows.length === 0) {
+          alert('No hay datos para exportar');
+          return;
+        }
+
+        // Crear CSV
+        let csv = 'ID/Código,Nombre,Categoría,Stock Actual,Peso Unitario,Peso Total,Estado,Última Actualización\n';
+        
+        visibleRows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          const rowData = [];
+          for (let i = 0; i < cells.length - 1; i++) { // Excluir la columna de acciones
+            let cellText = cells[i].textContent.trim();
+            // Escapar comillas y comas en CSV
+            if (cellText.includes(',') || cellText.includes('"')) {
+              cellText = '"' + cellText.replace(/"/g, '""') + '"';
+            }
+            rowData.push(cellText);
+          }
+          csv += rowData.join(',') + '\n';
+        });
+
+        // Descargar archivo
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'inventario_' + new Date().toISOString().split('T')[0] + '.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      // Funcionalidad del botón Agregar Producto
+      document.getElementById('addProductBtn').addEventListener('click', function() {
+        // Aquí deberías abrir el modal con el formulario para agregar producto
+        // O redirigir a una página de creación
+        document.getElementById('modalTitle').textContent = 'Agregar Nuevo Producto';
+        document.getElementById('modalContent').innerHTML = `
+          <form id="addProductForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre del Producto</label>
+                <input type="text" name="nombre" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código</label>
+                <input type="text" name="codigo" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
+                <select name="categoria" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                  <option value="">Seleccionar categoría</option>
+                  <option value="Alimentos">Alimentos</option>
+                  <option value="Bebidas">Bebidas</option>
+                  <option value="Electrónicos">Electrónicos</option>
+                  <option value="Hogar">Hogar</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stock Inicial</label>
+                <input type="number" name="stock" min="0" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Peso (gramos)</label>
+                <input type="number" name="peso" min="0" step="0.01" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Precio</label>
+                <input type="number" name="precio" min="0" step="0.01" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
+              <textarea name="descripcion" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+              <button type="button" id="cancelAddProduct" class="px-4 py-2 text-slate-600 dark:text-slate-300 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-md hover:bg-[var(--primary-600)]">Guardar Producto</button>
+            </div>
+          </form>
+        `;
+        
+        document.getElementById('productModal').classList.remove('hidden');
+
+        // Manejar cancelación
+        document.getElementById('cancelAddProduct').addEventListener('click', function() {
+          document.getElementById('productModal').classList.add('hidden');
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('addProductForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const productData = Object.fromEntries(formData);
+          
+          // Aquí deberías enviar los datos al servidor
+          console.log('Datos del nuevo producto:', productData);
+          
+          // Simulación de guardado exitoso
+          alert('Producto agregado exitosamente');
+          document.getElementById('productModal').classList.add('hidden');
+          
+          // En una implementación real, recargarías la página o actualizarías la tabla dinámicamente
+        });
+      });
+
+      // Funcionalidad de gestionar producto existente
+      document.querySelectorAll('.gestionar-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const productData = JSON.parse(this.getAttribute('data-producto'));
+          
+          document.getElementById('modalTitle').textContent = 'Gestionar Producto: ' + productData.nombre;
+          document.getElementById('modalContent').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Información del Producto -->
+              <div class="md:col-span-2">
+                <h4 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Información del Producto</h4>
+                <form id="editProductForm" class="space-y-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre</label>
+                      <input type="text" name="nombre" value="${productData.nombre || ''}" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código</label>
+                      <input type="text" name="codigo" value="${productData.codigo || productData.idproducto || ''}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
+                      <select name="categoria" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                        <option value="Alimentos" ${productData.categoria === 'Alimentos' ? 'selected' : ''}>Alimentos</option>
+                        <option value="Bebidas" ${productData.categoria === 'Bebidas' ? 'selected' : ''}>Bebidas</option>
+                        <option value="Electrónicos" ${productData.categoria === 'Electrónicos' ? 'selected' : ''}>Electrónicos</option>
+                        <option value="Hogar" ${productData.categoria === 'Hogar' ? 'selected' : ''}>Hogar</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Peso (gramos)</label>
+                      <input type="number" name="peso" value="${productData.peso || ''}" min="0" step="0.01" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Precio</label>
+                      <input type="number" name="precio" value="${productData.precio || ''}" min="0" step="0.01" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                    </div>
+                  </div>
+                  <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="deleteProduct" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Eliminar</button>
+                    <button type="submit" class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-md hover:bg-[var(--primary-600)]">Actualizar</button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Gestión de Stock -->
+              <div>
+                <h4 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Gestión de Stock</h4>
+                <div class="bg-slate-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
+                  <div class="text-center">
+                    <p class="text-sm text-slate-600 dark:text-green-400">Stock Actual</p>
+                    <p class="text-3xl font-bold text-slate-900 dark:text-slate-100">${productData.stock || 0}</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">unidades</p>
+                  </div>
+                </div>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Agregar Stock</label>
+                    <div class="flex gap-2">
+                      <input type="number" id="addStockInput" min="1" placeholder="Cantidad" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                      <button id="addStockBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm">Agregar</button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Quitar Stock</label>
+                    <div class="flex gap-2">
+                      <input type="number" id="removeStockInput" min="1" max="${productData.stock || 0}" placeholder="Cantidad" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                      <button id="removeStockBtn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm">Quitar</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Establecer Stock</label>
+                    <div class="flex gap-2">
+                      <input type="number" id="setStockInput" min="0" placeholder="Nueva cantidad" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-slate-100">
+                      <button id="setStockBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">Establecer</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Historial de Movimientos -->
+                <div class="mt-6">
+                  <h5 class="text-md font-medium text-slate-900 dark:text-slate-100 mb-2">Movimientos Recientes</h5>
+                  <div class="space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex justify-between text-sm p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                      <span class="text-green-600 dark:text-green-400">+10 unidades</span>
+                      <span class="text-slate-500 dark:text-slate-400">Hace 2 días</span>
+                    </div>
+                    <div class="flex justify-between text-sm p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                      <span class="text-red-600 dark:text-red-400">-5 unidades</span>
+                      <span class="text-slate-500 dark:text-slate-400">Hace 1 semana</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          document.getElementById('productModal').classList.remove('hidden');
+
+          // Manejar botones de stock
+          let currentStock = productData.stock || 0;
+          const stockDisplay = document.querySelector('.text-3xl.font-bold');
+
+          function updateStockDisplay(newStock) {
+            currentStock = newStock;
+            stockDisplay.textContent = newStock;
+            document.getElementById('removeStockInput').max = newStock;
+          }
+
+          document.getElementById('addStockBtn').addEventListener('click', function() {
+            const amount = parseInt(document.getElementById('addStockInput').value);
+            if (amount > 0) {
+              updateStockDisplay(currentStock + amount);
+              document.getElementById('addStockInput').value = '';
+              // Aquí enviarías la actualización al servidor
+              console.log('Agregando stock:', amount);
+            }
+          });
+
+          document.getElementById('removeStockBtn').addEventListener('click', function() {
+            const amount = parseInt(document.getElementById('removeStockInput').value);
+            if (amount > 0 && amount <= currentStock) {
+              updateStockDisplay(currentStock - amount);
+              document.getElementById('removeStockInput').value = '';
+              // Aquí enviarías la actualización al servidor
+              console.log('Quitando stock:', amount);
+            }
+          });
+
+          document.getElementById('setStockBtn').addEventListener('click', function() {
+            const newStock = parseInt(document.getElementById('setStockInput').value);
+            if (newStock >= 0) {
+              updateStockDisplay(newStock);
+              document.getElementById('setStockInput').value = '';
+              // Aquí enviarías la actualización al servidor
+              console.log('Estableciendo stock:', newStock);
+            }
+          });
+
+          // Manejar actualización de producto
+          document.getElementById('editProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const updatedData = Object.fromEntries(formData);
+            
+            // Aquí enviarías los datos actualizados al servidor
+            console.log('Datos actualizados:', updatedData);
+            alert('Producto actualizado exitosamente');
+            document.getElementById('productModal').classList.add('hidden');
+          });
+
+          // Manejar eliminación de producto
+          document.getElementById('deleteProduct').addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
+              // Aquí enviarías la petición de eliminación al servidor
+              console.log('Eliminando producto:', productData.idproducto);
+              alert('Producto eliminado exitosamente');
+              document.getElementById('productModal').classList.add('hidden');
+            }
+          });
+        });
+      });
+
+      // Cerrar modal
+      document.getElementById('closeModal').addEventListener('click', function() {
+        document.getElementById('productModal').classList.add('hidden');
+      });
+
+      // Cerrar modal al hacer clic fuera
+      document.getElementById('productModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.add('hidden');
+        }
+      });
+    });
+  </script>
+
 </body>
+
 {% endblock %}
