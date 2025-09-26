@@ -125,86 +125,114 @@ function inicializarAplicacion() {
     });
 }
 
-// tendencia de ventas por día
-async function crearGraficoVentas() {
-    const ctx = document.getElementById("tendenciaVentas").getContext("2d");
+async function cargarVentasPorProducto() {
+    try {
+        const response = await fetch('/api/ventas_por_producto');
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-    // Detectar modo oscuro/claro
-    const isDarkMode = document.documentElement.classList.contains('dark');
+        const data = await response.json();
 
-    // Traer datos desde API
-    const res = await fetch("/api/tendencia_ventas");
-    const data = await res.json();
-
-    const ventas = data.data_ventas;
-
-    // Calcular cambio porcentual
-    const totalHoy = ventas[ventas.length - 1] || 0;
-    const totalAyer = ventas[ventas.length - 2] || 0;
-    const cambio = totalAyer > 0 ? ((totalHoy - totalAyer) / totalAyer * 100).toFixed(1) : 0;
-    const totalIcon = document.getElementById("totalVentasIcon");
-    totalIcon.innerText = `${cambio > 0 ? '+' : ''}${cambio}%`;
-    totalIcon.classList.toggle('text-green-500', cambio >= 0);
-    totalIcon.classList.toggle('text-red-500', cambio < 0);
-
-    // Crear gradiente lineal para línea
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, isDarkMode ? 'rgba(0,255,128,0.7)' : 'rgba(0,128,0,0.7)');
-    gradient.addColorStop(1, isDarkMode ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)');
-
-    // Configuración Chart.js
-    new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: "Total Ventas",
-                data: ventas,
-                fill: true,
-                backgroundColor: gradient,
-                borderColor: isDarkMode ? 'rgba(0,255,128,1)' : 'rgba(0,128,0,1)',
-                borderWidth: 3,
-                tension: 0.3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: isDarkMode ? 'rgba(0,255,128,1)' : 'rgba(0,128,0,1)',
-                pointBorderColor: isDarkMode ? '#000' : '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: isDarkMode ? '#222' : '#fff',
-                    titleColor: isDarkMode ? '#fff' : '#000',
-                    bodyColor: isDarkMode ? '#fff' : '#000',
-                    borderColor: isDarkMode ? '#444' : '#ccc',
-                    borderWidth: 1
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: isDarkMode ? '#000000ff' : '#ffffffff' }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: { color: isDarkMode ? '#000000ff' : '#000' },
-                    beginAtZero: true
-                }
-            }
+        if (!data.productos || data.productos.length === 0) {
+            mostrarEstado('No hay datos de ventas disponibles');
+            return;
         }
+
+        actualizarGrafico(data);
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarEstado('Error al cargar los datos: ' + error.message);
+    }
+}
+
+function actualizarGrafico(data) {
+    const productos = data.productos.slice(0, 6); // Top 8
+    const totalVentas = productos.reduce((sum, p) => sum + p.ventas, 0);
+    const crecimientoTotal = data.crecimiento;
+
+    // Actualizar totales
+    document.getElementById('totalSales').textContent = `$${totalVentas.toFixed(0)}`;
+    const growthEl = document.getElementById('growthPercentage');
+    growthEl.textContent = `${crecimientoTotal >= 0 ? '+' : ''}${crecimientoTotal}%`;
+    growthEl.className = `text-sm font-medium ${crecimientoTotal >= 0 ? 'text-green-500' : 'text-red-500'}`;
+
+    // Generar gráfico
+    generarBarras(productos);
+}
+
+function generarBarras(productos) {
+    const chartContainer = document.getElementById('chartContainer');
+    const chartLabels = document.getElementById('chartLabels');
+
+    chartContainer.innerHTML = '';
+    chartLabels.innerHTML = '';
+
+    const maxVentas = Math.max(...productos.map(p => p.ventas));
+    const color = 'bg-blue-500/40';
+
+    productos.forEach(p => {
+        // Barra
+        const altura = maxVentas > 0 ? (p.ventas / maxVentas) * 100 : 10;
+        const barra = document.createElement('div');
+        barra.className = `w-full ${color} rounded-t-lg transition-all duration-500 hover:bg-blue-500 cursor-pointer`;
+        barra.style.height = `${altura}%`;
+        barra.title = `${p.nombre}: $${p.ventas.toFixed(0)}`;
+        chartContainer.appendChild(barra);
+
+        // Label debajo de la barra
+        const label = document.createElement('div');
+        label.textContent = p.nombre;
+        label.className = 'text-center text-sm font-medium mt-1 truncate';
+        chartLabels.appendChild(label);
     });
 }
 
-// Ejecutar al cargar la página
-document.addEventListener('DOMContentLoaded', crearGraficoVentas);
+function mostrarEstado(msg) {
+    const chartContainer = document.getElementById('chartContainer');
+    const chartLabels = document.getElementById('chartLabels');
+    chartContainer.innerHTML = '';
+    chartLabels.innerHTML = '';
+    chartContainer.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">${msg}</div>`;
+}
+
+const topSales = [
+      { name: "Producto A", sales: 150, rotation: "Alta", tagClass: "tag-green" },
+      { name: "Producto B", sales: 120, rotation: "Media", tagClass: "tag-blue" },
+      { name: "Producto C", sales: 100, rotation: "Media", tagClass: "tag-blue" },
+      { name: "Producto D", sales: 95, rotation: "Media", tagClass: "tag-blue" },
+      { name: "Producto E", sales: 80, rotation: "Media", tagClass: "tag-blue" }
+    ];
+
+    const lowSales = [
+      { name: "Producto X", sales: 10, rotation: "Baja", tagClass: "tag-red" },
+      { name: "Producto Y", sales: 15, rotation: "Baja", tagClass: "tag-red" },
+      { name: "Producto Z", sales: 20, rotation: "Baja", tagClass: "tag-red" },
+      { name: "Producto W", sales: 25, rotation: "Muy Baja", tagClass: "tag-yellow" },
+      { name: "Producto V", sales: 30, rotation: "Muy Baja", tagClass: "tag-yellow" }
+    ];
+
+    function renderProducts(containerId, products) {
+      const container = document.getElementById(containerId);
+      const template = document.getElementById("product-card-template");
+      container.innerHTML = "";
+      products.forEach(({ name, sales, rotation, tagClass }) => {
+        const clone = template.content.cloneNode(true);
+        clone.querySelector("div:nth-child(1)").textContent = name;
+        clone.querySelector("div:nth-child(2)").textContent = sales;
+        const span = clone.querySelector("span");
+        span.textContent = rotation;
+        span.className = tagClass;
+        container.appendChild(clone);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProducts('top-sales-container', topSales);
+      renderProducts('low-sales-container', lowSales);
+    });
 
 
+// Cargar grafico al cargar la página
+document.addEventListener('DOMContentLoaded', cargarVentasPorProducto);
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarAplicacion);

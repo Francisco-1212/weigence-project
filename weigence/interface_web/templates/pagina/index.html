@@ -19,7 +19,7 @@
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Stock Total</p>
-          <p class="text-3xl font-bold text-blue-500">{{ valor_total_inventario }} </p>
+          <p class="text-3xl font-bold text-blue-500">{{ productos | sum(attribute='stock') }}</p>
         </div>
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Artículos vendidos</p>
@@ -35,124 +35,196 @@
         </div>
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
           <p class="text-sm font-medium text-green-600 mb-1">Ventas Totales</p>
-          <p class="text-3xl font-bold text-green-500">${{ ventas_totales }}</p>
+          <p class="text-3xl font-bold text-green-500">${{ ventas_totales|int }}</p>
         </div>
       </div>
-
+      <!-- Grid principal: 2 columnas en desktop -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Gráfico -->
-      <div class="col-span-3 lg:col-span-2 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
-        <div class="flex justify-between items-center mb-4">
-          <div>
-            <p class="text-lg font-semibold">Tendencia de Ventas</p>
-            <p class="text-sm text-neutral-400">Análisis mensual de ventas</p>
+
+        <!-- Sección Ventas por Producto -->
+        <div class="lg:col-span-2 p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg  border border-gray-300 dark:border-neutral-700">
+          <h3 class="text-lg font-semibold">Ventas Totales</h3>
+          <div class="flex items-baseline gap-2 mt-1">
+            <p id="totalSales" class="text-3xl font-bold">$0</p>
+            <p id="growthPercentage" class="text-sm font-medium text-success-light dark:text-success-dark">0%</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-green-500">trending_up</span>
-            <span class="font-semibold text-green-500" id="totalVentasIcon"></span>
+
+          <!-- Contenedor gráfico tipo columnas -->
+          <div class="h-64 mt-4">
+            <div id="chartContainer" class="grid h-full grid-flow-col gap-4 items-end justify-items-center"></div>
+          </div>
+
+          <!-- Nombres de productos -->
+          <div id="chartLabels" class="grid grid-flow-col gap-4 text-center text-sm font-medium mt-1 justify-items-center"></div>
+        </div>
+
+        <!-- Columna derecha: Alertas + Resumen -->
+        <div class="flex flex-col gap-6 lg:col-span-1">
+
+          <!-- Alertas -->
+          <a href="{{ url_for('alertas') }}" class="inline-block w-full">
+            <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow">
+              <h3 class="font-semibold mb-4">Alertas Críticas</h3>
+              <div class="space-y-4">
+                {% for alerta in alertas_criticas %}
+                <div class="flex items-start gap-4">
+                  <div class="rounded-full p-2" style="background-color: {% if alerta.tipo_color == 'danger' %}rgba(239,68,68,0.2){% elif alerta.tipo_color == 'warning' %}rgba(234,179,8,0.2){% else %}rgba(59,130,246,0.2){% endif %}; color: var(--{{ alerta.tipo_color }}-500);">
+                    <span class="material-symbols-outlined text-base">{{ alerta.icono }}</span>
+                  </div>
+                  <div>
+                    <p class="font-medium">{{ alerta.titulo }}</p>
+                    <p class="text-sm text-neutral-400">{{ alerta.descripcion }}</p>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </a>
+
+          <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-border-light dark:border-border-dark transition-colors">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Acciones rápidas</h3>
+          <div class="mt-4 space-y-3">
+            <button
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+              type="button"
+            >
+              <span class="material-symbols-outlined">file_download</span>
+              Exportar reporte (PDF/Excel)
+            </button>
+            <button
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-border-light dark:border-border-dark text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+              type="button"
+            >
+              <span class="material-symbols-outlined">analytics</span>
+              Ir a detalle (Inventario/Ventas)
+            </button>
           </div>
         </div>
-        <div class="h-80">
-          <canvas id="tendenciaVentas" width="500" height="200"></canvas>
+
+
         </div>
       </div>
-
-      <!-- Contenedor de Alertas + Enlaces -->
-      <div class="col-span-3 lg:col-span-1 flex flex-col gap-6">
-        <!-- Alertas urgentes -->
-        <a href="{{ url_for('alertas') }}" class="inline-block w-full">
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow h-full">
-            <h3 class="font-semibold mb-4">Alertas Críticas</h3>
-            <div class="space-y-4">
-              {% for alerta in alertas_criticas %}
-              <div class="flex items-start gap-4">
-                <div class="rounded-full p-2" 
-                     style="background-color: {% if alerta.tipo_color == 'danger' %}rgba(239,68,68,0.2){% elif alerta.tipo_color == 'warning' %}rgba(234,179,8,0.2){% else %}rgba(59,130,246,0.2){% endif %}; 
-                            color: var(--{{ alerta.tipo_color }}-500);">
-                  <span class="material-symbols-outlined text-base">{{ alerta.icono }}</span>
-                </div>
-                <div>
-                  <p class="font-medium">{{ alerta.titulo }}</p>
-                  <p class="text-sm text-neutral-400">{{ alerta.descripcion }}</p>
-                </div>
-              </div>
-              {% endfor %}
+      <section class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
+      <!-- Top 5 Productos Más Vendidos -->
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-md overflow-hidden">
+        <div class="p-4 border-b border-neutral-300 dark:border-neutral-700">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-200">Top 5 Productos Más Vendidos</h3>
+        </div>
+        <div class="divide-y divide-neutral-300 dark:divide-neutral-700">
+          <!-- Encabezado de la tabla -->
+          <div class="grid grid-cols-3 text-left text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800">
+            <div class="p-4">Producto</div>
+            <div class="p-4">Ventas</div>
+            <div class="p-4">Rotación</div>
+          </div>
+          
+          <!-- Fila 1 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto A</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">150</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Alta</span>
             </div>
           </div>
-        </a>
-        <!-- Enlaces rápidos -->
-      </div>
-    </div>
-
-
-    <!-- Actividades recientes -->
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] mt-6 p-6 rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-md">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h3 class="font-semibold text-neutral-900 dark:text-neutral-200 text-lg">Actividades Recientes</h3>
-          <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Últimas actualizaciones del sistema</p>
+          
+          <!-- Fila 2 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto B</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">120</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Media</span>
+            </div>
+          </div>
+          
+          <!-- Fila 3 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto C</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">100</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Media</span>
+            </div>
+          </div>
+          
+          <!-- Fila 4 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto D</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">95</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Media</span>
+            </div>
+          </div>
+          
+          <!-- Fila 5 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto E</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">80</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Media</span>
+            </div>
+          </div>
         </div>
-        <span class="text-xs text-neutral-500 dark:text-neutral-600 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-full">5 nuevas</span>
       </div>
       
-      <div class="space-y-3">
-        <!-- Item 1 -->
-        <div class="flex items-center gap-4 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-800 rounded-lg transition-all duration-200 cursor-pointer group border border-transparent hover:border-neutral-600 dark:hover:border-neutral-600">
-          <div class="bg-blue-900/20 dark:bg-blue-900/30 rounded-xl p-3 group-hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-blue-500 dark:text-blue-400 text-xl">inventory_2</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-neutral-900 dark:text-neutral-200 truncate">Producto D añadido al inventario</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Movimiento de inventario</span>
-              <span class="text-neutral-600 dark:text-neutral-600">•</span>
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Hace 2 min</span>
-            </div>
-          </div>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-600 text-lg group-hover:text-neutral-800 dark:group-hover:text-neutral-300 opacity-0 group-hover:opacity-100 transition-all">chevron_right</span>
+      <!-- Top 5 Productos Menos Vendidos -->
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-md overflow-hidden">
+        <div class="p-4 border-b border-neutral-300 dark:border-neutral-700">
+          <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-200">Top 5 Productos Menos Vendidos</h3>
         </div>
-
-        <!-- Item 2 -->
-        <div class="flex items-center gap-4 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-800 rounded-lg transition-all duration-200 cursor-pointer group border border-transparent hover:border-neutral-600 dark:hover:border-neutral-600">
-          <div class="bg-green-900/20 dark:bg-green-900/30 rounded-xl p-3 group-hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-green-500 dark:text-green-400 text-xl">receipt</span>
+        <div class="divide-y divide-neutral-300 dark:divide-neutral-700">
+          <!-- Encabezado de la tabla -->
+          <div class="grid grid-cols-3 text-left text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800">
+            <div class="p-4">Producto</div>
+            <div class="p-4">Ventas</div>
+            <div class="p-4">Rotación</div>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-neutral-900 dark:text-neutral-200 truncate">Venta #67890 confirmada</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Transacción de venta</span>
-              <span class="text-neutral-600 dark:text-neutral-600">•</span>
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Hace 15 min</span>
+          
+          <!-- Fila 1 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto X</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">10</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Baja</span>
             </div>
           </div>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-600 text-lg group-hover:text-neutral-800 dark:group-hover:text-neutral-300 opacity-0 group-hover:opacity-100 transition-all">chevron_right</span>
-        </div>
-
-        <!-- Item 3 -->
-        <div class="flex items-center gap-4 p-4 hover:bg-neutral-300 dark:hover:bg-neutral-800 rounded-lg transition-all duration-200 cursor-pointer group border border-transparent hover:border-neutral-600 dark:hover:border-neutral-600">
-          <div class="bg-purple-900/20 dark:bg-purple-900/30 rounded-xl p-3 group-hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-purple-500 dark:text-purple-400 text-xl">inventory</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-neutral-900 dark:text-neutral-200 truncate">Stock del Producto E actualizado</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Movimiento de inventario</span>
-              <span class="text-neutral-600 dark:text-neutral-600">•</span>
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Hace 1 hora</span>
+          
+          <!-- Fila 2 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto Y</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">15</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Baja</span>
             </div>
           </div>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-600 text-lg group-hover:text-neutral-800 dark:group-hover:text-neutral-300 opacity-0 group-hover:opacity-100 transition-all">chevron_right</span>
+          
+          <!-- Fila 3 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto Z</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">20</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Baja</span>
+            </div>
+          </div>
+          
+          <!-- Fila 4 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto W</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">25</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Muy Baja</span>
+            </div>
+          </div>
+          
+          <!-- Fila 5 -->
+          <div class="grid grid-cols-3 text-sm">
+            <div class="p-4 font-medium text-neutral-900 dark:text-neutral-200">Producto V</div>
+            <div class="p-4 text-neutral-600 dark:text-neutral-400">30</div>
+            <div class="p-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Muy Baja</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Footer con acción -->
-      <div class="mt-6 pt-4 border-t border-neutral-300 dark:border-neutral-700">
-        <button class="w-full py-2.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg">
-          Ver todas las actividades
-          <span class="material-symbols-outlined text-base">arrow_forward</span>
-        </button>
-      </div>
-    </div>
+    </section>
   </main>
 </body>
 {% endblock %}

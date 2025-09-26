@@ -1,5 +1,15 @@
+// Variables globales
 let currentProduct = null;
 let editMode = false;
+let currentFilters = {
+    category: '',
+    status: '',
+    dateStart: '',
+    dateEnd: ''
+};
+let searchInput;
+let productTable;
+let productRows;
 
 // Función para cerrar el modal
 function cerrarModal() {
@@ -179,72 +189,311 @@ function eliminarProducto(id) {
   }
 }
 
+// Funciones nuevas de filtrado
+function setupDropdowns() {
+    // Dropdown Categoría
+    const categoryBtn = document.getElementById('categoryBtn');
+    const categoryDropdown = document.getElementById('categoryDropdown');
+    const categoryOptions = document.querySelectorAll('.category-option');
+
+    if (categoryBtn) {
+        categoryBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            categoryDropdown.classList.toggle('hidden');
+            document.getElementById('statusDropdown')?.classList.add('hidden');
+            document.getElementById('dateRangeDropdown')?.classList.add('hidden');
+        });
+    }
+    categoryOptions?.forEach(option => {
+        option.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            currentFilters.category = category;
+            categoryBtn.querySelector('p').textContent = category || 'Categoría';
+            categoryDropdown.classList.add('hidden');
+            filterProducts();
+        });
+    });
+
+    // Configurar dropdown de Estado
+    const statusBtn = document.getElementById('statusBtn');
+    const statusDropdown = document.getElementById('statusDropdown');
+    const statusOptions = document.querySelectorAll('.status-option');
+
+    if (statusBtn) {
+        statusBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            statusDropdown.classList.toggle('hidden');
+            categoryDropdown?.classList.add('hidden');
+            document.getElementById('dateRangeDropdown')?.classList.add('hidden');
+        });
+    }
+
+    if (statusOptions) {
+        statusOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const status = this.getAttribute('data-status');
+                currentFilters.status = status;
+                statusBtn.querySelector('p').textContent = this.textContent;
+                statusDropdown.classList.add('hidden');
+                filterProducts();
+            });
+        });
+    }
+
+    // Configurar dropdown de Fechas
+    setupDateRangeDropdown();
+}
+
+function filterProducts() {
+    if (!productRows) return;
+    
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    let visibleCount = 0;
+
+    productRows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const category = row.getAttribute('data-category') || '';
+        const stock = parseInt(row.getAttribute('data-stock')) || 0;
+        const dateStr = row.getAttribute('data-date');
+        
+        let visible = true;
+
+        // Aplicar filtros
+        if (searchTerm && !name.includes(searchTerm)) {
+            visible = false;
+        }
+
+        if (currentFilters.category && category !== currentFilters.category) {
+            visible = false;
+        }
+
+        if (currentFilters.status) {
+            if (currentFilters.status === 'normal' && stock < 10) visible = false;
+            if (currentFilters.status === 'bajo' && (stock >= 10 || stock === 0)) visible = false;
+            if (currentFilters.status === 'agotado' && stock !== 0) visible = false;
+        }
+
+        if (currentFilters.dateStart && currentFilters.dateEnd && dateStr) {
+            const date = new Date(dateStr);
+            const startDate = new Date(currentFilters.dateStart);
+            const endDate = new Date(currentFilters.dateEnd);
+            endDate.setHours(23, 59, 59);
+
+            if (isNaN(date.getTime())) {
+                visible = false;
+            } else if (date < startDate || date > endDate) {
+                visible = false;
+            }
+        }
+
+        row.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+    });
+
+    updateFilterUI(visibleCount);
+}
+
+// Función para manejar el rango de fechas
+function setupDateRangeDropdown() {
+    const dateRangeBtn = document.getElementById('dateRangeBtn');
+    const dateRangeDropdown = document.getElementById('dateRangeDropdown');
+    const applyDateRange = document.getElementById('applyDateRange');
+    const clearDateRange = document.getElementById('clearDateRange');
+
+    if (dateRangeBtn) {
+        dateRangeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dateRangeDropdown.classList.toggle('hidden');
+            document.getElementById('categoryDropdown')?.classList.add('hidden');
+            document.getElementById('statusDropdown')?.classList.add('hidden');
+        });
+    }
+
+    if (applyDateRange) {
+        applyDateRange.addEventListener('click', function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Por favor seleccione ambas fechas');
+                return;
+            }
+
+            currentFilters.dateStart = startDate;
+            currentFilters.dateEnd = endDate;
+            dateRangeDropdown.classList.add('hidden');
+            filterProducts();
+        });
+    }
+
+    if (clearDateRange) {
+        clearDateRange.addEventListener('click', function() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            currentFilters.dateStart = '';
+            currentFilters.dateEnd = '';
+            dateRangeBtn.querySelector('p').textContent = 'Rango de Fechas';
+            dateRangeDropdown.classList.add('hidden');
+            filterProducts();
+        });
+    }
+}
+
+// Función para manejar la exportación
+function exportProducts() {
+    const visibleRows = Array.from(productRows).filter(row => row.style.display !== 'none');
+    
+    if (visibleRows.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+
+    const csv = generateCSV(visibleRows);
+    downloadCSV(csv);
+}
+
+function generateCSV(rows) {
+    let csv = 'ID/Código,Nombre,Categoría,Stock Actual,Peso Unitario,Peso Total,Estado,Última Actualización\n';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData = [];
+        for (let i = 0; i < cells.length - 1; i++) {
+            let cellText = cells[i].textContent.trim();
+            if (cellText.includes(',') || cellText.includes('"')) {
+                cellText = '"' + cellText.replace(/"/g, '""') + '"';
+            }
+            rowData.push(cellText);
+        }
+        csv += rowData.join(',') + '\n';
+    });
+
+    return csv;
+}
+
+function downloadCSV(csv) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventario_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function updateFilterUI(visibleCount) {
+    const dateRangeBtn = document.getElementById('dateRangeBtn');
+    if (dateRangeBtn && currentFilters.dateStart && currentFilters.dateEnd) {
+        const start = new Date(currentFilters.dateStart).toLocaleDateString();
+        const end = new Date(currentFilters.dateEnd).toLocaleDateString();
+        dateRangeBtn.querySelector('p').textContent = `${start} - ${end}`;
+    }
+
+    const noProductsRow = document.getElementById('noProductsRow');
+    if (noProductsRow) {
+        noProductsRow.style.display = visibleCount === 0 ? '' : 'none';
+        if (visibleCount === 0) {
+            noProductsRow.querySelector('td').textContent = 'No se encontraron productos que coincidan con los filtros';
+        }
+    }
+}
+
 // Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', function() {
-  const modal = document.getElementById('productModal');
-  const closeModal = document.getElementById('closeModal');
-  const gestionarBtns = document.querySelectorAll('.gestionar-btn');
-  const modalContent = document.getElementById('modalContent');
-  
-  // Evento para cerrar el modal con la X
-  if (closeModal) {
-    closeModal.addEventListener('click', cerrarModal);
-  }
-  
-  // Cerrar modal al hacer clic fuera del contenido
-  if (modal) {
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        cerrarModal();
-      }
-    });
-  }
-  
-  // Event delegation para los botones dentro del modal
-  if (modalContent) {
-    modalContent.addEventListener('click', function(e) {
-      // Botón Cerrar
-      if (e.target.classList.contains('btn-cerrar')) {
-        cerrarModal();
-      }
-      // Botón Eliminar
-      else if (e.target.classList.contains('btn-eliminar')) {
-        if (currentProduct) {
-          eliminarProducto(currentProduct.idproducto);
-        }
-      }
-      // Botón Editar
-      else if (e.target.classList.contains('btn-editar')) {
-        editarProducto();
-      }
-      // Botón Cancelar (en modo edición)
-      else if (e.target.classList.contains('btn-cancelar')) {
-        if (currentProduct) {
-          mostrarDetalles(currentProduct);
-        }
-      }
-    });
+    // Inicializar variables de filtrado
+    searchInput = document.getElementById('searchInput');
+    productTable = document.getElementById('productTable');
+    productRows = document.querySelectorAll('.product-row');
     
-    // Event listener para el formulario de edición
-    modalContent.addEventListener('submit', function(e) {
-      if (e.target.id === 'editProductForm') {
-        e.preventDefault();
-        guardarCambiosProducto(e.target);
-      }
+    // Configurar búsqueda
+    if (searchInput) {
+        searchInput.addEventListener('input', filterProducts);
+    }
+
+    // Configurar dropdowns y filtros
+    setupDropdowns();
+
+    // Configurar exportación
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportProducts);
+    }
+
+    // --- Configuración del Modal ---
+    const modal = document.getElementById('productModal');
+    const closeModal = document.getElementById('closeModal');
+    const gestionarBtns = document.querySelectorAll('.gestionar-btn');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Evento para cerrar el modal con la X
+    if (closeModal) {
+        closeModal.addEventListener('click', cerrarModal);
+    }
+    
+    // Cerrar modal al hacer clic fuera del contenido
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModal();
+            }
+        });
+    }
+    
+    // Event delegation para los botones dentro del modal
+    if (modalContent) {
+        modalContent.addEventListener('click', function(e) {
+            // Botón Cerrar
+            if (e.target.classList.contains('btn-cerrar')) {
+                cerrarModal();
+            }
+            // Botón Eliminar
+            else if (e.target.classList.contains('btn-eliminar')) {
+                if (currentProduct) {
+                    eliminarProducto(currentProduct.idproducto);
+                }
+            }
+            // Botón Editar
+            else if (e.target.classList.contains('btn-editar')) {
+                editarProducto();
+            }
+            // Botón Cancelar (en modo edición)
+            else if (e.target.classList.contains('btn-cancelar')) {
+                if (currentProduct) {
+                    mostrarDetalles(currentProduct);
+                }
+            }
+        });
+        
+        // Event listener para el formulario de edición
+        modalContent.addEventListener('submit', function(e) {
+            if (e.target.id === 'editProductForm') {
+                e.preventDefault();
+                guardarCambiosProducto(e.target);
+            }
+        });
+    }
+    
+    // Añadir eventos a los botones de gestionar
+    if (gestionarBtns) {
+        gestionarBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                try {
+                    const producto = JSON.parse(this.getAttribute('data-producto'));
+                    mostrarDetalles(producto);
+                } catch (e) {
+                    console.error('Error al parsear datos del producto:', e);
+                }
+            });
+        });
+    }
+
+    // Cerrar dropdowns al hacer clic fuera
+    document.addEventListener('click', function() {
+        document.getElementById('categoryDropdown')?.classList.add('hidden');
+        document.getElementById('statusDropdown')?.classList.add('hidden');
+        document.getElementById('dateRangeDropdown')?.classList.add('hidden');
     });
-  }
-  
-  // Añadir eventos a los botones de gestionar
-  if (gestionarBtns) {
-    gestionarBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        try {
-          const producto = JSON.parse(this.getAttribute('data-producto'));
-          mostrarDetalles(producto);
-        } catch (e) {
-          console.error('Error al parsear datos del producto:', e);
-        }
-      });
-    });
-  }
 });
+
