@@ -11,14 +11,136 @@ let searchInput;
 let productTable;
 let productRows;
 
-// Función para cerrar el modal
-function cerrarModal() {
+// Función para mostrar formulario de agregar producto
+function mostrarFormularioAgregar() {
   const modal = document.getElementById('productModal');
-  if (modal) {
-    modal.classList.add('hidden');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalContent = document.getElementById('modalContent');
+  
+  if (!modal || !modalTitle || !modalContent) return;
+  
+  modalTitle.textContent = 'Agregar Nuevo Producto';
+  
+  modalContent.innerHTML = `
+    <form id="addProductForm" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Nombre *</label>
+          <input type="text" name="nombre" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Categoría *</label>
+          <select name="categoria" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" required>
+            <option value="">Seleccionar categoría</option>
+            <option value="Antiinflamatorio">Antiinflamatorio</option>
+            <option value="Antibiótico">Antibiótico</option>
+            <option value="Suplemento">Suplemento</option>
+            <option value="Antihistamínico">Antihistamínico</option>
+            <option value="Broncodilatador">Broncodilatador</option>
+            <option value="Analgésico">Analgésico</option>
+            <option value="Antidiabetico">Antidiabetico</option>
+            <option value="Antihipertensivo">Antihipertensivo</option>
+            <option value="Dermocosmética">Dermocosmética</option>
+            <option value="Desinfectante">Desinfectante</option>
+            <option value="Primeros Auxilios">Primeros Auxilios</option>
+            <option value="Equipamiento">Equipamiento</option>
+            <option value="Higiene">Higiene</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Stock Inicial *</label>
+          <input type="number" name="stock" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" required min="0" value="0">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Peso Unitario (gramos) *</label>
+          <input type="number" name="peso" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" required min="0" step="0.01">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Precio Unitario *</label>
+          <input type="number" name="precio_unitario" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" required min="0" step="0.01" placeholder="0.00">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Estante</label>
+          <input type="text" name="d_estante" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" placeholder="Ej: A1, B2">
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium mb-1">Descripción</label>
+        <textarea name="descripcion" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2 text-slate-100" rows="3" placeholder="Descripción del producto (opcional)"></textarea>
+      </div>
+      
+      <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+        <button type="button" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md btn-cancelar-add">Cancelar</button>
+        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md">
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">add</span>
+            Guardar Producto
+          </span>
+        </button>
+      </div>
+    </form>
+  `;
+  
+  modal.classList.remove('hidden');
+  
+  // Event listener para el botón cancelar
+  const btnCancelar = modalContent.querySelector('.btn-cancelar-add');
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModal);
   }
-  editMode = false;
-  currentProduct = null;
+}
+
+// Función para guardar nuevo producto
+function guardarNuevoProducto(form) {
+  const formData = new FormData(form);
+  const nuevoProducto = {
+    nombre: formData.get('nombre'),
+    categoria: formData.get('categoria'),
+    stock: parseInt(formData.get('stock')),
+    peso: parseFloat(formData.get('peso')),
+    precio_unitario: parseFloat(formData.get('precio_unitario')),
+    descripcion: formData.get('descripcion') || '',
+    d_estante: formData.get('d_estante') || ''
+  };
+  
+  // Deshabilitar botón de envío
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const btnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="flex items-center gap-2"><span class="material-symbols-outlined text-base animate-spin">progress_activity</span>Guardando...</span>';
+  
+  // Enviar datos al servidor
+  fetch('/api/productos/agregar', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(nuevoProducto)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('¡Producto agregado correctamente!');
+      cerrarModal();
+      location.reload();
+    } else {
+      alert('Error al agregar producto: ' + data.error);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = btnText;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error al conectar con el servidor');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = btnText;
+  });
 }
 
 // Función para mostrar detalles del producto
@@ -119,31 +241,6 @@ function editarProducto() {
         <textarea name="descripcion" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2" rows="3">${currentProduct.descripcion || ''}</textarea>
       </div>
       
-      <div class="bg-[#181E21] p-4 rounded-lg mt-4">
-        <h4 class="text-lg font-semibold mb-3 text-[var(--primary-color)]">Información de Auditoría (solo lectura)</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Fecha de Ingreso</label>
-            <input type="text" value="${currentProduct.fecha_ingreso || 'N/A'}" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2" disabled>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium mb-1">Ingresado por</label>
-            <input type="text" value="${currentProduct.ingresado_por || 'N/A'}" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2" disabled>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium mb-1">Modificado por</label>
-            <input type="text" value="${currentProduct.modificado_por || 'N/A'}" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2" disabled>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium mb-1">Fecha de Modificación</label>
-            <input type="text" value="${currentProduct.fecha_modificacion || 'N/A'}" class="w-full bg-[#181E21] border border-gray-700 rounded-md px-3 py-2" disabled>
-          </div>
-        </div>
-      </div>
-      
       <div class="flex justify-end space-x-3 pt-4">
         <button type="button" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md btn-cancelar">Cancelar</button>
         <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md">Guardar Cambios</button>
@@ -169,10 +266,8 @@ function guardarCambiosProducto(form) {
     fecha_modificacion: new Date().toLocaleString()
   };
   
-  // Simular envío al servidor
   console.log('Datos a enviar al servidor:', updatedProduct);
   
-  // Simular respuesta exitosa
   setTimeout(() => {
     currentProduct = {...currentProduct, ...updatedProduct};
     alert('¡Producto actualizado correctamente!');
@@ -189,7 +284,16 @@ function eliminarProducto(id) {
   }
 }
 
-// Funciones nuevas de filtrado
+// Función para formatear fecha de forma compacta
+function formatDateCompact(dateStr) {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+// Configurar dropdowns
 function setupDropdowns() {
     // Dropdown Categoría
     const categoryBtn = document.getElementById('categoryBtn');
@@ -204,6 +308,7 @@ function setupDropdowns() {
             document.getElementById('dateRangeDropdown')?.classList.add('hidden');
         });
     }
+    
     categoryOptions?.forEach(option => {
         option.addEventListener('click', function() {
             const category = this.getAttribute('data-category');
@@ -214,7 +319,7 @@ function setupDropdowns() {
         });
     });
 
-    // Configurar dropdown de Estado
+    // Dropdown Estado
     const statusBtn = document.getElementById('statusBtn');
     const statusDropdown = document.getElementById('statusDropdown');
     const statusOptions = document.querySelectorAll('.status-option');
@@ -240,10 +345,92 @@ function setupDropdowns() {
         });
     }
 
-    // Configurar dropdown de Fechas
+    // Configurar rango de fechas
     setupDateRangeDropdown();
 }
 
+// Función para manejar el rango de fechas
+function setupDateRangeDropdown() {
+    const dateRangeBtn = document.getElementById('dateRangeBtn');
+    const dateRangeDropdown = document.getElementById('dateRangeDropdown');
+    const applyDateRange = document.getElementById('applyDateRange');
+    const clearDateRange = document.getElementById('clearDateRange');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+
+    if (dateRangeBtn) {
+        dateRangeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isHidden = dateRangeDropdown.classList.contains('hidden');
+            
+            // Cerrar otros dropdowns
+            document.getElementById('categoryDropdown')?.classList.add('hidden');
+            document.getElementById('statusDropdown')?.classList.add('hidden');
+            
+            dateRangeDropdown.classList.toggle('hidden');
+            
+            // Focus en el primer input si se abre
+            if (isHidden && startDateInput) {
+                setTimeout(() => startDateInput.focus(), 100);
+            }
+        });
+    }
+
+    if (applyDateRange) {
+        applyDateRange.addEventListener('click', function() {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (!startDate || !endDate) {
+                alert('Por favor seleccione ambas fechas');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('La fecha de inicio no puede ser mayor a la fecha de fin');
+                return;
+            }
+
+            currentFilters.dateStart = startDate;
+            currentFilters.dateEnd = endDate;
+            
+            // Actualizar el texto del botón con formato compacto
+            const btnText = `${formatDateCompact(startDate)} → ${formatDateCompact(endDate)}`;
+            dateRangeBtn.querySelector('p').textContent = btnText;
+            
+            dateRangeDropdown.classList.add('hidden');
+            filterProducts();
+        });
+    }
+
+    if (clearDateRange) {
+        clearDateRange.addEventListener('click', function() {
+            startDateInput.value = '';
+            endDateInput.value = '';
+            currentFilters.dateStart = '';
+            currentFilters.dateEnd = '';
+            dateRangeBtn.querySelector('p').textContent = 'Rango de Fechas';
+            dateRangeDropdown.classList.add('hidden');
+            filterProducts();
+        });
+    }
+
+    // Cerrar el dropdown al presionar Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !dateRangeDropdown.classList.contains('hidden')) {
+            dateRangeDropdown.classList.add('hidden');
+        }
+    });
+
+    // Prevenir que el dropdown se cierre al hacer clic dentro
+    if (dateRangeDropdown) {
+        dateRangeDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+}
+
+// Función de filtrado de productos
 function filterProducts() {
     if (!productRows) return;
     
@@ -258,30 +445,40 @@ function filterProducts() {
         
         let visible = true;
 
-        // Aplicar filtros
+        // Filtro de búsqueda
         if (searchTerm && !name.includes(searchTerm)) {
             visible = false;
         }
 
+        // Filtro de categoría
         if (currentFilters.category && category !== currentFilters.category) {
             visible = false;
         }
 
+        // Filtro de estado
         if (currentFilters.status) {
             if (currentFilters.status === 'normal' && stock < 10) visible = false;
             if (currentFilters.status === 'bajo' && (stock >= 10 || stock === 0)) visible = false;
             if (currentFilters.status === 'agotado' && stock !== 0) visible = false;
         }
 
+        // Filtro de rango de fechas mejorado
         if (currentFilters.dateStart && currentFilters.dateEnd && dateStr) {
-            const date = new Date(dateStr);
-            const startDate = new Date(currentFilters.dateStart);
-            const endDate = new Date(currentFilters.dateEnd);
-            endDate.setHours(23, 59, 59);
+            try {
+                // Extraer solo la fecha (sin hora) del atributo
+                const datePart = dateStr.split('T')[0] || dateStr.split(' ')[0];
+                const date = new Date(datePart);
+                const startDate = new Date(currentFilters.dateStart);
+                const endDate = new Date(currentFilters.dateEnd);
+                endDate.setHours(23, 59, 59, 999);
 
-            if (isNaN(date.getTime())) {
-                visible = false;
-            } else if (date < startDate || date > endDate) {
+                if (isNaN(date.getTime())) {
+                    visible = false;
+                } else if (date < startDate || date > endDate) {
+                    visible = false;
+                }
+            } catch (e) {
+                console.warn('Error al parsear fecha:', dateStr, e);
                 visible = false;
             }
         }
@@ -293,53 +490,18 @@ function filterProducts() {
     updateFilterUI(visibleCount);
 }
 
-// Función para manejar el rango de fechas
-function setupDateRangeDropdown() {
-    const dateRangeBtn = document.getElementById('dateRangeBtn');
-    const dateRangeDropdown = document.getElementById('dateRangeDropdown');
-    const applyDateRange = document.getElementById('applyDateRange');
-    const clearDateRange = document.getElementById('clearDateRange');
-
-    if (dateRangeBtn) {
-        dateRangeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dateRangeDropdown.classList.toggle('hidden');
-            document.getElementById('categoryDropdown')?.classList.add('hidden');
-            document.getElementById('statusDropdown')?.classList.add('hidden');
-        });
-    }
-
-    if (applyDateRange) {
-        applyDateRange.addEventListener('click', function() {
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            
-            if (!startDate || !endDate) {
-                alert('Por favor seleccione ambas fechas');
-                return;
-            }
-
-            currentFilters.dateStart = startDate;
-            currentFilters.dateEnd = endDate;
-            dateRangeDropdown.classList.add('hidden');
-            filterProducts();
-        });
-    }
-
-    if (clearDateRange) {
-        clearDateRange.addEventListener('click', function() {
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            currentFilters.dateStart = '';
-            currentFilters.dateEnd = '';
-            dateRangeBtn.querySelector('p').textContent = 'Rango de Fechas';
-            dateRangeDropdown.classList.add('hidden');
-            filterProducts();
-        });
+// Función para actualizar el UI de filtros
+function updateFilterUI(visibleCount) {
+    const noProductsRow = document.getElementById('noProductsRow');
+    if (noProductsRow) {
+        noProductsRow.style.display = visibleCount === 0 ? '' : 'none';
+        if (visibleCount === 0) {
+            noProductsRow.querySelector('td').textContent = 'No se encontraron productos que coincidan con los filtros';
+        }
     }
 }
 
-// Función para manejar la exportación
+// Función para exportar productos
 function exportProducts() {
     const visibleRows = Array.from(productRows).filter(row => row.style.display !== 'none');
     
@@ -383,23 +545,6 @@ function downloadCSV(csv) {
     document.body.removeChild(link);
 }
 
-function updateFilterUI(visibleCount) {
-    const dateRangeBtn = document.getElementById('dateRangeBtn');
-    if (dateRangeBtn && currentFilters.dateStart && currentFilters.dateEnd) {
-        const start = new Date(currentFilters.dateStart).toLocaleDateString();
-        const end = new Date(currentFilters.dateEnd).toLocaleDateString();
-        dateRangeBtn.querySelector('p').textContent = `${start} - ${end}`;
-    }
-
-    const noProductsRow = document.getElementById('noProductsRow');
-    if (noProductsRow) {
-        noProductsRow.style.display = visibleCount === 0 ? '' : 'none';
-        if (visibleCount === 0) {
-            noProductsRow.querySelector('td').textContent = 'No se encontraron productos que coincidan con los filtros';
-        }
-    }
-}
-
 // Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar variables de filtrado
@@ -414,6 +559,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Configurar dropdowns y filtros
     setupDropdowns();
+
+    // Configurar botón de agregar producto
+    const addProductBtn = document.getElementById('addProductBtn');
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', mostrarFormularioAgregar);
+    }
 
     // Configurar exportación
     const exportBtn = document.getElementById('exportBtn');
@@ -466,11 +617,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Event listener para el formulario de edición
+        // Event listener para el formulario de edición y agregado
         modalContent.addEventListener('submit', function(e) {
             if (e.target.id === 'editProductForm') {
                 e.preventDefault();
                 guardarCambiosProducto(e.target);
+            } else if (e.target.id === 'addProductForm') {
+                e.preventDefault();
+                guardarNuevoProducto(e.target);
             }
         });
     }
@@ -496,4 +650,3 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dateRangeDropdown')?.classList.add('hidden');
     });
 });
-

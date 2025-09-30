@@ -12,7 +12,7 @@
   --primary-800: #3730a3;
   --primary-900: #312e81;
   --primary-950: #0f0d2d;
-  
+
   /* Colores neutrales */
   --neutral-100: #f1f5f9;
   --neutral-200: #e2e8f0;
@@ -24,12 +24,12 @@
   --neutral-800: #1e293b;
   --neutral-900: #0f172a;
   --neutral-950: #0d0d0ef7;
-  
+
   /* Colores semánticos */
   --success-500: #22c55e;
   --warning-500: #f59e0b;
   --danger-500: #f43f5e;
-  
+
   /* Colores específicos de la aplicación */
   --darkcard: #181C21;
   --primary-color: #9ba9bb;
@@ -38,7 +38,7 @@
   /* Variables para modo claro */
   --bg-light: var(--neutral-50);
   --text-light: var(--neutral-900);
-  --card-bg-light: #F5F5F5     ;
+  --card-bg-light: #F5F5F5;
   --border-light: var(--neutral-200);
   --grid-light: rgba(0, 0, 0, 0.05);
   /* Modo oscuro */
@@ -75,7 +75,6 @@ body {
 }
 
 /* ===== GRAFICO ===== */
-
 #chartContainer div:hover {
   transform: translateY(-5%);
 }
@@ -85,11 +84,7 @@ body {
   margin-top: -2px; /* Ajusta labels cerca del gráfico */
 }
 
-
-
-
 /* ===== COMPONENTES REUTILIZABLES ===== */
-
 /* Tarjetas */
 .card {
   background-color: var(--card-bg-light);
@@ -304,7 +299,6 @@ button.accion:hover {
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   color: var(--text-light);
-
 }
 
 /* Barras de gráficos */
@@ -322,7 +316,7 @@ button.accion:hover {
   transition: height 0.3s ease;
 }
 
-/* Toast notifications */
+/* Toast notifications (sin cambios) */
 .toast {
   visibility: hidden;
   opacity: 0;
@@ -344,122 +338,278 @@ button.accion:hover {
   opacity: 1;
   bottom: 30px;
 }
+/* Overlay fondo con difuminado */
+#overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
 
-/* ===== COMPONENTES ESPECÍFICOS ===== */
+#overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 
-/* Sidebar */
-.sidebar {
+/* Panel lateral */
+#side-notifications {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background-color: var(--card-bg-light);
+  color: var(--text-light);
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.16);
+  padding: 1.5rem 1.25rem 2rem;
+  z-index: 1010;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  outline: none;
 }
 
-.sidebar-link {
-  color: var(--neutral-400);
-  transition: background-color 0.2s, box-shadow 0.3s;
+#side-notifications.hidden {
+  transform: translateX(100%);
 }
 
-.sidebar-link:hover {
-  background-color: var(--primary-600);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+#side-notifications:not(.hidden) {
+  transform: translateX(0);
 }
 
-.sidebar-link:hover .material-symbols-outlined {
-  color: white;
+/* Modo oscuro */
+.dark #side-notificaciones {
+  background-color: var(--card-bg-dark);
+  color: var(--text-dark);
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.5);
 }
 
-.sidebar-link.active {
-  background-color: var(--primary-500);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+/* Botón cerrar */
+#close-notifications {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
 }
 
-.sidebar-link.active .material-symbols-outlined {
-  color: white;
+#close-notifications:hover,
+#close-notifications:focus {
+  opacity: 1;
+  outline: none;
 }
 
-/* Toggle de tema */
-.theme-toggle {
+/* Título */
+#notifications-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: inherit;
+}
+
+/* Acciones arriba */
+.notifications-actions button {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
   background-color: var(--card-bg-light);
   border: 1px solid var(--border-light);
-  transition: background-color 0.3s;
-}
-.theme-toggle .material-symbols-outlined {
   color: var(--text-light);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 
-/* Sombras */
-.shadow-soft {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+.notifications-actions button:hover,
+.notifications-actions button:focus {
+  background-color: var(--primary-50);
+  border-color: var(--primary-300);
+  outline: none;
 }
 
-.dark .shadow-soft {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+.dark .notifications-actions button {
+  background-color: var(--card-bg-dark);
+  border-color: var(--border-dark);
+  color: var(--text-dark);
 }
 
-/* Utilidades de texto */
-.text-success {
+.dark .notifications-actions button:hover,
+.dark .notifications-actions button:focus {
+  background-color: var(--primary-900);
+  border-color: var(--primary-700);
+}
+
+/* Notificaciones */
+.notification-item {
+  user-select: none;
+  outline-offset: 2px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.notification-item:hover,
+.notification-item:focus {
+  background-color: var(--primary-50);
+}
+
+.dark .notification-item:hover,
+.dark .notification-item:focus {
+  background-color: var(--primary-900);
+}
+#notification-panel {
+  background-color: var(--card-bg-light); /* tu variable clara */
+  color: var(--text-light);
+  box-shadow: -3px 0 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark #notification-panel {
+  background-color: var(--card-bg-dark); /* tu variable oscura */
+  color: var(--text-dark);
+  box-shadow: -3px 0 15px rgba(0,0,0,0.5);
+}
+
+/* El overlay sigue con transparencia y blur */
+#notification-backdrop {
+  backdrop-filter: blur(8px);
+  background-color: rgba(0,0,0,0.4);
+}
+
+/* Icono */
+.notification-icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-100);
+  color: var(--primary-600);
+  transition: background-color 0.3s ease;
+}
+
+.dark .notification-icon {
+  background-color: var(--primary-800);
+  color: var(--primary-400);
+}
+
+/* Texto truncado */
+.notification-text h4,
+.notification-text p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Botones acción rápida */
+.notification-actions button {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+.notification-actions button:hover,
+.notification-actions button:focus {
+  outline: none;
+}
+
+.notification-actions button[aria-label*="✓"] {
   color: var(--success-500);
 }
 
-.text-warning {
-  color: var(--warning-500);
-}
-
-.text-danger {
+.notification-actions button[aria-label*="×"] {
   color: var(--danger-500);
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 768px) {
-  .filtros-container {
-    flex-direction: column;
-    align-items: stretch;
+.notification-actions button[aria-label*="✓"]:hover,
+.notification-actions button[aria-label*="✓"]:focus {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.notification-actions button[aria-label*="×"]:hover,
+.notification-actions button[aria-label*="×"]:focus {
+  background-color: rgba(244, 63, 94, 0.15);
+}
+
+/* Botón del Icono Notificaciones */
+#btn-notificaciones {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  color: var(--text-light);
+  transition: color 0.3s ease;
+}
+
+#btn-notificaciones:hover,
+#btn-notificaciones:focus {
+  color: var(--primary-600);
+  outline: none;
+}
+
+#btn-notificaciones svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  transition: stroke 0.3s ease;
+}
+
+/* Contador de notificaciones */
+.notification-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: var(--danger-500);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 2px solid var(--card-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.8);
+  animation: pulse 2s infinite;
+  user-select: none;
+}
+
+.dark .notification-count {
+  border-color: var(--darkcard);
+}
+
+/* Animación pulso */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
   }
-  
-  .filtros-container input[type="text"],
-  .filtros-container input[type="date"],
-  .filtros-container select {
-    width: 100%;
-  }
-  
-  .chart-toggle {
-    flex-direction: column;
-  }
-  
-  .chart-container {
-    padding: 1rem;
-    overflow-x: auto;
-  }
-  
-  /* Sidebar móvil */
-  .sidebar {
-    position: fixed;
-    left: -100%;
-    z-index: 50;
-    height: 100%;
-    transition: left 0.3s ease;
-    width: 80%;
-    max-width: 300px;
-  }
-  
-  .sidebar.open {
-    left: 0;
-  }
-  
-  .overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 40;
-  }
-  
-  .overlay.open {
-    display: block;
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
   }
 }

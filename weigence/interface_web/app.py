@@ -151,7 +151,7 @@ def dashboard():
     alertas_criticas = alertas_criticas[-3:]  # Últimas 3 críticas
 
     # --- Notificaciones recientes (para campana) ---
-    notificaciones = alertas_completas[:5]
+    notificaciones = alertas_completas
 
     # --- Renderizar plantilla ---
     return render_template(
@@ -170,15 +170,14 @@ def dashboard():
         ventas_totales=ventas_totales
     )
 
-
-# --- INVENTARIO ---
+# --- RUTA INVENTARIO ---
 @app.route("/inventario")
 @requiere_login
 def inventario():
     try:
         # Obtener productos con información básica
         productos = supabase.table("productos").select("*").execute().data
-        
+
         # Calcular estadísticas
         estadisticas = {
             "total_productos": len(productos),
@@ -187,11 +186,10 @@ def inventario():
             "productos_baja_rotacion": len([p for p in productos if p.get("stock", 0) <= 5])
         }
 
-
         # Enriquecer datos de productos
         for producto in productos:
             stock = producto.get("stock", 0)
-            # Determinar estado del producto
+            # Estado
             if stock == 0:
                 producto["status"] = "Agotado"
                 producto["status_class"] = "text-red-500 bg-red-100 dark:bg-red-900"
@@ -202,11 +200,11 @@ def inventario():
                 producto["status"] = "Normal"
                 producto["status_class"] = "text-green-500 bg-green-100 dark:bg-green-900"
             
-            # Agregar formato de moneda y cálculos
+            # Formato moneda y cálculos
             producto["precio_formato"] = f"${producto.get('precio_unitario', 0):,.0f}"
             producto["valor_total"] = f"${(stock * producto.get('precio_unitario', 0)):,.0f}"
-            
-            # Formatear fecha
+
+            # Fecha
             if producto.get("fecha_modificacion"):
                 fecha = datetime.fromisoformat(str(producto["fecha_modificacion"]).replace('Z', '+00:00'))
                 producto["fecha_formato"] = fecha.strftime("%d/%m/%Y %H:%M")
@@ -223,6 +221,80 @@ def inventario():
         print(f"Error en ruta inventario: {e}")
         flash("Error al cargar el inventario", "error")
         return redirect(url_for("dashboard"))
+
+# Funciones para conversiones seguras
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+# --- API: AGREGAR PRODUCTO ---
+@app.route("/api/productos/agregar", methods=["POST"])
+@requiere_login
+def agregar_producto():
+    try:
+        data = request.json
+
+        # Validación campos obligatorios
+        if not data.get('nombre') or not data.get('categoria'):
+            return jsonify({"success": False, "error": "Nombre y categoría son requeridos"}), 400
+
+        # Construir diccionario con datos validados y convertidos
+        nuevo_producto = {
+            "nombre": data["nombre"],
+            "categoria": data.get("categoria"),
+            "stock": safe_int(data.get("stock")),
+            "precio_unitario": safe_float(data.get("precio_unitario")),
+            "peso": safe_float(data.get("peso"), default=1.0),  # peso > 0 requerido
+            "descripcion": data.get("descripcion", ""),
+            "id_estante": safe_int(data.get("id_estante")) if data.get("id_estante") not in (None, "") else None,
+            "fecha_ingreso": datetime.now().isoformat(),
+            "ingresado_por": session.get("usuario_id"),
+            "fecha_modificacion": datetime.now().isoformat(),
+            "modificado_por": session.get("usuario_id")
+        }
+
+        # Insertar producto en la base de datos vía supabase
+        result = supabase.table("productos").insert(nuevo_producto).execute()
+
+        # Registrar historial si la inserción fue exitosa
+        if result.data:
+            producto_id = result.data[0].get('idproducto')
+            supabase.table("historial").insert({
+                "idproducto": producto_id,
+                "fecha_cambio": datetime.now().isoformat(),
+                "id_estante": nuevo_producto.get("id_estante"),
+                "cambio_de_peso": nuevo_producto.get("peso"),
+                "realizado_por": session.get("usuario_id")
+            }).execute()
+
+        return jsonify({"success": True, "mensaje": "Producto agregado correctamente", "data": result.data})
+
+    except Exception as e:
+        print(f"Error al agregar producto: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+# --- API: ELIMINAR PRODUCTO ---
+@app.route("/api/productos/<int:id>", methods=["DELETE"])
+@requiere_login
+def eliminar_producto(id):
+    try:
+        result = supabase.table("productos").delete().eq("idproducto", id).execute()
+        if result.error:
+            return jsonify({"success": False, "error": str(result.error)}), 400
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
 
 # --- APIs de Inventario ---
 @app.route("/api/productos/filtrar", methods=["GET"])
@@ -278,32 +350,37 @@ def actualizar_stock(id):
     """API para gestionar stock"""
     try:
         data = request.json
-        producto = supabase.table("productos").select("*").eq("idproducto", id).execute().data[0]
+        productos_resp = supabase.table("productos").select("*").eq("idproducto", id).execute()
+        if not productos_resp.data:
+            return jsonify({"error": "Producto no encontrado"}), 404
         
+        producto = productos_resp.data[0]
         nuevo_stock = producto["stock"]
-        if data["action"] == "add":
-            nuevo_stock += int(data["amount"])
-        elif data["action"] == "remove":
-            if nuevo_stock >= int(data["amount"]):
-                nuevo_stock -= int(data["amount"])
+
+        amount = safe_int(data.get("amount"))
+        if data.get("action") == "add":
+            nuevo_stock += amount
+        elif data.get("action") == "remove":
+            if nuevo_stock >= amount:
+                nuevo_stock -= amount
             else:
                 return jsonify({"error": "Stock insuficiente"}), 400
+        else:
+            return jsonify({"error": "Acción inválida"}), 400
         
-        result = supabase.table("productos").update({"stock": nuevo_stock}).eq("idproducto", id).execute()
-        
-        # Registrar movimiento en historial
+        supabase.table("productos").update({"stock": nuevo_stock}).eq("idproducto", id).execute()
+
         supabase.table("historial").insert({
             "idproducto": id,
-            "tipo_movimiento": data["action"],
-            "cantidad": data["amount"],
-            "fecha": datetime.now().isoformat(),
-            "usuario": session.get("usuario_id")
+            "fecha_cambio": datetime.now().isoformat(),
+            "cambio_de_peso": amount if data.get("action") == "add" else -amount,
+            "realizado_por": session.get("usuario_id"),
+            "id_estante": producto.get("id_estante")
         }).execute()
 
         return jsonify({"message": "Stock actualizado", "nuevo_stock": nuevo_stock})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # --- LOGOUT ---
 @app.route("/logout")
@@ -549,12 +626,25 @@ def agregar_alertas_y_notificaciones():
 
     alertas_completas = alertas_db + alertas_dinamicas
     alertas_criticas = [a for a in alertas_completas if a.get("tipo_color") in ["danger", "rojo"]]
-    notificaciones = alertas_completas[:5]
+    notificaciones = [a for a in alertas_completas if a.get("estado") != "resuelto"][:5]
+
 
     return dict(
         notificaciones=notificaciones,
         alertas_criticas=alertas_criticas
     )
+
+@app.template_filter('datetimeformat_iso')
+def datetimeformat_iso(value):
+    if value is None:
+        return ''
+    if isinstance(value, datetime):
+        return value.isoformat()
+    try:
+        dt = datetime.fromisoformat(value)
+        return dt.isoformat()
+    except Exception:
+        return value
 
 
 # --- MAIN ---
