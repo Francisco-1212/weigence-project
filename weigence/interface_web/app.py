@@ -70,7 +70,6 @@ def login():
 @app.route("/dashboard")
 @requiere_login
 def dashboard():
-    # --- Obtener datos de Supabase ---
     productos = supabase.table("productos").select("*").execute().data
     pesajes = supabase.table("pesajes").select("*").execute().data
     usuarios = supabase.table("usuarios").select("*").execute().data
@@ -78,19 +77,13 @@ def dashboard():
     historial = supabase.table("historial").select("*").execute().data
     alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data
 
-    # --- Obtener ventas y detalle de ventas ---
     ventas_data = supabase.table("ventas").select("*").execute().data
     detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data
 
-    # --- Calcular tarjetas resumen ---
     valor_total_inventario = sum(p["stock"] * p["precio_unitario"] for p in productos)
     articulos_vendidos = sum(dv["cantidad"] for dv in detalle_ventas)
     ventas_totales = sum(dv.get("subtotal", dv["cantidad"]*dv["precio_unitario"]) for dv in detalle_ventas)
 
-
-
-    # Producto más vendido
-    from collections import Counter
     productos_vendidos = Counter()
     for dv in detalle_ventas:
         productos_vendidos[dv["idproducto"]] += dv["cantidad"]
@@ -99,38 +92,149 @@ def dashboard():
         producto_mas_vendido = next((p["nombre"] for p in productos if p["idproducto"] == id_mas_vendido), "Sin datos")
     else:
         producto_mas_vendido = "Sin datos"
-
-    # Productos agotados
     productos_agotados = len([p for p in productos if p["stock"] == 0])
 
-    # --- Generar alertas dinámicas ---
-    alertas_dinamicas = []
-
-    # 1. Bajo stock
+    # ---------- REGISTRAR ALERTAS ÚNICAS EN BASE ----------
     for p in productos:
-        if p["stock"] <= 5:
-            alertas_dinamicas.append({
-                "titulo": "Bajo stock",
-                "descripcion": f"Quedan solo {p['stock']} unidades de {p['nombre']}",
-                "icono": "priority_high",
-                "tipo_color": "danger"
-            })
+        if p["stock"] == 0:
+            # Solo alerta de stock agotado
+            existe = supabase.table("alertas").select("*") \
+                .eq("idproducto", p["idproducto"]) \
+                .eq("titulo", "Stock agotado") \
+                .eq("estado", "pendiente").execute().data
+            if not existe:
+                supabase.table("alertas").insert({
+                    "titulo": "Stock agotado",
+                    "descripcion": f"El producto {p['nombre']} está agotado",
+                    "icono": "❌",
+                    "tipo_color": "rojo",
+                    "fecha_creacion": datetime.now().isoformat(),  
+                    "estado": "pendiente",
+                    "idproducto": p["idproducto"]
+                }).execute()
+        elif p["stock"] <= 5:
+            # Solo bajo stock si NO es 0
+            existe = supabase.table("alertas").select("*") \
+                .eq("idproducto", p["idproducto"]) \
+                .eq("titulo", "Bajo stock") \
+                .eq("estado", "pendiente").execute().data
+            if not existe:
+                supabase.table("alertas").insert({
+                    "titulo": "Bajo stock",
+                    "descripcion": f"Quedan solo {p['stock']} unidades de {p['nombre']}",
+                    "icono": "❌",
+                    "tipo_color": "rojo",
+                    "fecha_creacion": datetime.now().isoformat(),  
+                    "estado": "pendiente",
+                    "idproducto": p["idproducto"]
+                }).execute()
 
-    # 2. Peso crítico
+
+    # Peso crítico y variación brusca
     for pesaje in pesajes:
         producto = next((prod for prod in productos if prod["idproducto"] == pesaje["idproducto"]), None)
         if producto:
             if isinstance(pesaje.get("fecha_pesaje"), str):
                 pesaje["fecha_pesaje"] = datetime.fromisoformat(pesaje["fecha_pesaje"])
-            if pesaje["peso_unitario"] < producto["peso"] * 0.5 or pesaje["peso_unitario"] > producto["peso"] * 1.5:
-                alertas_dinamicas.append({
-                    "titulo": "Peso crítico",
-                    "descripcion": f"El producto {producto['nombre']} tiene un pesaje anómalo: {pesaje['peso_unitario']}kg",
-                    "icono": "error",
-                    "tipo_color": "danger"
-                })
+            peso_val = pesaje["peso_unitario"]
+            # Peso crítico
+            if peso_val < producto["peso"] * 0.5 or peso_val > producto["peso"] * 1.5:
+                existe = supabase.table("alertas").select("*") \
+                    .eq("idproducto", producto["idproducto"]) \
+                    .eq("titulo", "Peso crítico") \
+                    .eq("estado", "pendiente").execute().data
+                if not existe:
+                    supabase.table("alertas").insert({
+                        "titulo": "Peso crítico",
+                        "descripcion": f"El producto {producto['nombre']} tiene pesaje anómalo: {peso_val}kg",
+                        "icono": "❌",
+                        "tipo_color": "rojo",
+                        "fecha_creacion": datetime.now().isoformat(), 
+                        "estado": "pendiente",
+                        "idproducto": producto["idproducto"]
+                    }).execute()
+            # Variación brusca (ajusta según regla real de tu operación)
+            if abs(peso_val - producto["peso"]) > producto["peso"] * 0.5:
+                existe = supabase.table("alertas").select("*") \
+                    .eq("idproducto", producto["idproducto"]) \
+                    .eq("titulo", "Variación brusca de peso") \
+                    .eq("estado", "pendiente").execute().data
+                if not existe:
+                    supabase.table("alertas").insert({
+                        "titulo": "Variación brusca de peso",
+                        "descripcion": f"Cambio brusco en el pesaje del producto {producto['nombre']}.",
+                        "icono": "⚠️",
+                        "tipo_color": "amarillo",
+                        "fecha_creacion": datetime.now().isoformat(), 
+                        "estado": "pendiente",
+                        "idproducto": producto["idproducto"]
+                    }).execute()
+    # Producto sin registrar
+    for pesaje in pesajes:
+        if pesaje["idproducto"] is None or pesaje["idproducto"] not in [p["idproducto"] for p in productos]:
+            existe = supabase.table("alertas").select("*") \
+                .eq("titulo", "Producto sin registrar") \
+                .eq("estado", "pendiente").execute().data
+            if not existe:
+                supabase.table("alertas").insert({
+                    "titulo": "Producto sin registrar",
+                    "descripcion": "Se detectó un pesaje o ingreso de un producto no registrado.",
+                    "icono": "❌",
+                    "tipo_color": "rojo",
+                    "fecha_creacion": datetime.now().isoformat(), 
+                    "estado": "pendiente",
+                    "idproducto": pesaje.get("idproducto")
+                }).execute()
 
-    # 3. Producto inactivo (últimos 7 días sin pesaje)
+    # Verificación manual requerida (ejemplo, personaliza la lógica/flag)
+    # if alguna_condicion_de_verificacion:
+    #     supabase.table("alertas").insert({
+    #         "titulo": "Verificación manual requerida",
+    #         "descripcion": "Se requiere verificación física para este producto/evento.",
+    #         "icono": "⚠️",
+    #         "tipo_color": "amarillo",
+    #         "fecha_creacion": datetime.now().isoformat(),
+    #         "estado": "pendiente",
+    #         "idproducto": idproducto_asociado,
+    #     }).execute()
+
+    # Cuando el producto vuelve a estado normal, resuelve la alerta
+    # if producto_normalizado:
+    #     supabase.table("alertas").update({"estado": "resuelto"}) \
+    #         .eq("idproducto", idproducto) \
+    #         .eq("titulo", "ALERTA A RESOLVER").execute()
+    #     supabase.table("alertas").insert({
+    #         "titulo": "Producto correcto",
+    #         "descripcion": "El producto ha vuelto a valores normales.",
+    #         "icono": "✅",
+    #         "tipo_color": "verde",
+    #         "fecha_creacion": datetime.now().isoformat(),
+    #         "estado": "resuelto",
+    #         "idproducto": idproducto,
+    #     }).execute()
+
+    # Producto vencido (solo si tienes campo "fecha_vencimiento" en tu tabla)
+    # for p in productos:
+    #     if "fecha_vencimiento" in p:
+    #         fecha_venc = datetime.fromisoformat(p["fecha_vencimiento"])
+    #         if fecha_venc < datetime.now():
+    #             existe = supabase.table("alertas").select("*") \
+    #                 .eq("idproducto", p["idproducto"]) \
+    #                 .eq("titulo", "Producto vencido") \
+    #                 .eq("estado", "pendiente").execute().data
+    #             if not existe:
+    #                 supabase.table("alertas").insert({
+    #                     "titulo": "Producto vencido",
+    #                     "descripcion": f"El producto {p['nombre']} ha vencido.",
+    #                     "icono": "❌",
+    #                     "tipo_color": "rojo",
+    #                     "fecha_creacion": fecha_venc.isoformat(),
+    #                     "estado": "pendiente",
+    #                     "idproducto": p["idproducto"]
+    #                 }).execute()
+
+    # --- Solo AVISO dinámico, NO en BD ---
+    productos_inactivos = []
     limite = datetime.now() - timedelta(days=7)
     for p in productos:
         ult_pesaje = [ps for ps in pesajes if ps["idproducto"] == p["idproducto"]]
@@ -138,22 +242,27 @@ def dashboard():
             if isinstance(ps.get("fecha_pesaje"), str):
                 ps["fecha_pesaje"] = datetime.fromisoformat(ps["fecha_pesaje"])
         if not ult_pesaje or max(ps["fecha_pesaje"] for ps in ult_pesaje) < limite:
-            alertas_dinamicas.append({
-                "titulo": "Producto inactivo",
-                "descripcion": f"No se ha pesado {p['nombre']} en la última semana",
-                "icono": "warning",
-                "tipo_color": "warning"
-            })
+            productos_inactivos.append(p["nombre"])
+    alertas_dinamicas = []
+    if productos_inactivos:
+        listado_corto = ", ".join(productos_inactivos[:3])
+        extra = f" y {len(productos_inactivos)-3} más" if len(productos_inactivos) > 3 else ""
+        alertas_dinamicas.append({
+            "titulo": "Productos inactivos (solo aviso)",
+            "descripcion": f"No se ha pesado en la última semana: {listado_corto}{extra}.",
+            "icono": "⚠️",
+            "tipo_color": "amarillo",
+            "fecha_creacion": datetime.now().isoformat(),
+            "solo_ui": True
+        })
 
-    # --- Combinar alertas ---
+    # ------------------- Render tradicional -----------------------
+    alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data
     alertas_completas = alertas_db + alertas_dinamicas
-    alertas_criticas = [a for a in alertas_completas if a.get("tipo_color") in ["danger", "rojo"]][-3:]
-    alertas_criticas = alertas_criticas[-3:]  # Últimas 3 críticas
+    alertas_criticas = [a for a in alertas_completas if a.get("tipo_color") in ["danger", "rojo"] and a.get("estado") == "pendiente"][-3:]
+    notificaciones = [a for a in alertas_db if a.get("estado") == "pendiente"]
+    notificaciones_agrupadas = agrupar_notificaciones_por_fecha(notificaciones)
 
-    # --- Notificaciones recientes (para campana) ---
-    notificaciones = alertas_completas
-
-    # --- Renderizar plantilla ---
     return render_template(
         "pagina/index.html",
         productos=productos,
@@ -162,6 +271,7 @@ def dashboard():
         estantes=estantes,
         historial=historial,
         notificaciones=notificaciones,
+        notificaciones_agrupadas=notificaciones_agrupadas,
         alertas_criticas=alertas_criticas,
         valor_total_inventario=valor_total_inventario,
         articulos_vendidos=articulos_vendidos,
@@ -606,56 +716,79 @@ def alertas():
         alertas_resueltas=alertas_resueltas
     )
 
+
+
+def agrupar_notificaciones_por_fecha(notificaciones):
+    hoy = datetime.now().date()
+    ayer = hoy - timedelta(days=1)
+    grupos = defaultdict(list)
+
+    for notif in notificaciones:
+        # Usar fecha_creacion (alertas DB) o fecha relevante dinámica
+        fecha_raw = notif.get("fecha_creacion") or notif.get("timestamp") or notif.get("fecha_formateada")
+        fecha_notif = None
+        if fecha_raw:
+            try:
+                # Descartar microsegundos si están presentes
+                fecha_str = str(fecha_raw).split('.')[0]
+                fecha = datetime.fromisoformat(fecha_str)
+                fecha_notif = fecha.date()
+            except Exception:
+                fecha_notif = hoy
+            if fecha_notif == hoy:
+                grupos["Hoy"].append(notif)
+            elif fecha_notif == ayer:
+                grupos["Ayer"].append(notif)
+            else:
+                grupos[fecha_notif.strftime("%d/%m/%Y")].append(notif)
+        else:
+            grupos["Sin fecha"].append(notif)
+    return grupos
+
 @app.context_processor
 def agregar_alertas_y_notificaciones():
+    alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data
+    notificaciones = [a for a in alertas_db if a.get("estado") != "resuelto"]
+    notificaciones_agrupadas = agrupar_notificaciones_por_fecha(notificaciones)
+
+    # Calcula avisos dinámicos relativizados (NO insertes en base aquí)
     productos = supabase.table("productos").select("*").execute().data
     pesajes = supabase.table("pesajes").select("*").execute().data
-    alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data
-
-    # --- Generar alertas dinámicas ---
-    alertas_dinamicas = []
-
+    limite = datetime.now() - timedelta(days=7)
+    
+    productos_inactivos = []
     for p in productos:
-        if p["stock"] <= 5:
-            alertas_dinamicas.append({
-                "titulo": "Bajo stock",
-                "descripcion": f"Quedan solo {p['stock']} unidades de {p['nombre']}",
-                "icono": "priority_high",
-                "tipo_color": "danger"
-            })
+        ult_pesaje = [ps for ps in pesajes if ps["idproducto"] == p["idproducto"]]
+        for ps in ult_pesaje:
+            if isinstance(ps.get("fecha_pesaje"), str):
+                ps["fecha_pesaje"] = datetime.fromisoformat(ps["fecha_pesaje"])
+        if not ult_pesaje or max(ps["fecha_pesaje"] for ps in ult_pesaje) < limite:
+            productos_inactivos.append(p["nombre"])
 
-    alertas_completas = alertas_db + alertas_dinamicas
-    alertas_criticas = [a for a in alertas_completas if a.get("tipo_color") in ["danger", "rojo"]]
-    notificaciones = [a for a in alertas_completas if a.get("estado") != "resuelto"][:5]
-
+    alertas_dinamicas = []
+    if productos_inactivos:
+        listado_corto = ", ".join(productos_inactivos[:3])
+        extra = f" y {len(productos_inactivos)-3} más" if len(productos_inactivos) > 3 else ""
+        alertas_dinamicas.append({
+            "titulo": "Productos inactivos (solo aviso)",
+            "descripcion": f"No se ha pesado en la última semana: {listado_corto}{extra}.",
+            "icono": "⚠️",
+            "tipo_color": "amarillo",
+            "fecha_creacion": datetime.now().isoformat(),
+            "solo_ui": True
+        })
 
     return dict(
-        notificaciones=notificaciones,
-        alertas_criticas=alertas_criticas
+        notificaciones=notificaciones + alertas_dinamicas,
+        notificaciones_agrupadas=agrupar_notificaciones_por_fecha(notificaciones + alertas_dinamicas)
     )
 
-@app.template_filter('datetimeformat_iso')
-def datetimeformat_iso(value):
-    if value is None:
-        return ''
-    if isinstance(value, datetime):
-        return value.isoformat()
-    try:
-        dt = datetime.fromisoformat(value)
-        return dt.isoformat()
-    except Exception:
-        return value
 
-
-# --- MAIN ---
+# MAIN
 if __name__ == "__main__":
     server = Server(app.wsgi_app)
-
-    # Observar todos los archivos HTML, CSS, JS y Python
     server.watch("templates/**/*.html")
     server.watch("static/**/*.css")
     server.watch("static/**/*.js")
-    server.watch("**/*.py")  # Observa cambios en todos los .py del proyecto
-
-    # Levantar servidor
+    server.watch("**/*.py")
     server.serve(port=5000, host="127.0.0.1", debug=True)

@@ -353,6 +353,37 @@ button.accion:hover {
   pointer-events: none;
 }
 
+.badge-notif {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+/* scroll en notificaciones */
+
+#notification-panel::-webkit-scrollbar {
+  width: 6px;
+}
+#notification-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+#notification-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+#notification-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0,0,0,0.4);
+}
 /* Panel lateral */
 #side-notifications {
   position: fixed;

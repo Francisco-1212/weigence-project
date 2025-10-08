@@ -56,11 +56,19 @@
     <div class="flex items-center gap-3 px-3 py-2 text-neutral-600 dark:text-neutral-400">
       <span class="material-symbols-outlined text-xl">account_circle</span>
       <div class="hidden lg:block">
-        <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Nombre Usuario</p>
-        <p class="text-xs text-neutral-500 dark:text-neutral-400">Administrador</p>
+        <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          {{ session["usuario_nombre"] }}
+        </p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ session["usuario_rol"] }}
+        </p>
+        <p class="text-xs text-neutral-400 dark:text-neutral-500" style="font-size: 0.78rem;">
+          {{ session["usuario_id"] }}
+        </p>
       </div>
     </div>
-    
+
+   
     <a class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-red-600 hover:text-white transition-colors duration-200 mt-2 text-neutral-700 dark:text-neutral-300" href="{{ url_for('logout') }}">
       <span class="material-symbols-outlined text-xl">logout</span>
       <span class="font-medium hidden lg:block">Cerrar sesión</span>

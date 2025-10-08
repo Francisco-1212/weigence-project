@@ -1,105 +1,62 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Login - Weigence</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+<body style="background: var(--bg-dark); color: var(--text-dark); font-family:'Manrope',sans-serif; margin:0; min-height:100vh; min-width:100vw;">
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md p-10" style="background-color: var(--card-bg-dark); border: 1px solid var(--border-dark); border-radius: 0.85rem; box-shadow: 0 8px 32px rgba(0,0,0,0.92);">
+      <div class="flex justify-center mb-8">
+        <div class="flex items-center gap-2">
+          <svg class="h-9 w-9" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" style="color: var(--primary-color);">
+            <path fill="currentColor" d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"/>
+          </svg>
 
-{% block title %}Login - Weigence{% endblock %}
-
-{% block sidebar %}{% endblock %}
-{% block top %}{% endblock %}
-
-{% block contenido %}
-
-<div class="min-h-screen flex items-center justify-center">
-
-  <!-- Switch Modo Oscuro -->
-  <div class="absolute top-4 right-4 flex items-center gap-2">
-    <span class="material-symbols-outlined text-yellow-500">light_mode</span>
-    <label class="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" id="dark-switch" class="sr-only peer">
-      <div class="w-11 h-6 rounded-full bg-gray-300 peer dark:bg-gray-600
-                  peer-checked:after:translate-x-full peer-checked:after:border-white
-                  after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white 
-                  after:border-gray-400 after:border after:rounded-full after:h-5 after:w-5 
-                  after:transition-all peer-checked:bg-white"></div>
-    </label>
-    <span class="material-symbols-outlined text-gray-500 dark:text-gray-300">dark_mode</span>
-  </div>
-
-  <!-- Card -->
-  <div class="w-full max-w-md rounded-2xl shadow-xl p-8"
-       style="background-color: var(--card-bg-light); border: 1px solid var(--border-light);">
-
-    <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold" style="color: var(--text-light);">Inventario de Medicamentos</h1>
-      <p class="mt-2" style="color: var(--neutral-500);">Accede con tus credenciales</p>
-    </div>
-
-    <!-- Mensajes de error -->
-    {% with messages = get_flashed_messages(category_filter=["error"]) %}
-      {% if messages %}
-        <div class="mb-4 text-red-500">
-          {% for msg in messages %}
-            <p>{{ msg }}</p>
-          {% endfor %}
+          <span class="text-2xl font-bold" style="color: var(--primary-color);">Weigence</span>
         </div>
-      {% endif %}
-    {% endwith %}
-
-    <!-- Formulario -->
-    <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
-      <div>
-        <label for="usuario" class="block text-sm font-medium" style="color: var(--text-light);">Usuario</label>
-        <input type="text" id="usuario" name="usuario" required
-               class="mt-1 w-full px-4 py-2 rounded-lg focus:ring-2 focus:outline-none"
-               style="background-color: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-light);"
-               placeholder="Ingresa tu usuario">
       </div>
-
-      <div>
-        <label for="password" class="block text-sm font-medium" style="color: var(--text-light);">Contraseña</label>
-        <input type="password" id="password" name="password" required
-               class="mt-1 w-full px-4 py-2 rounded-lg focus:ring-2 focus:outline-none"
-               style="background-color: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-light);"
-               placeholder="••••••••">
-      </div>
-
-      <div class="flex items-center justify-between text-sm" style="color: var(--neutral-500);">
-        <label class="flex items-center">
-          <input type="checkbox" class="h-4 w-4 border rounded" style="border-color: var(--border-light);">
-          <span class="ml-2">Recordarme</span>
-        </label>
-        <a href="#" style="color: var(--primary-500);" class="hover:underline">¿Olvidaste tu contraseña?</a>
-      </div>
-
-      <button type="submit"
-        class="w-full py-2.5 rounded-lg font-semibold transition"
-        style="background-color: var(--primary-600); color: white;">
-        Ingresar
-      </button>
-    </form>
-
-    <p class="text-center text-xs mt-6" style="color: var(--neutral-500);">
-      © 2025 Sistema de Inventario. Todos los derechos reservados.
-    </p>
+      <h2 class="text-center text-3xl font-bold mb-1" style="color: var(--text-dark);">Bienvenido de nuevo</h2>
+      <p class="text-center text-sm mb-8" style="color: var(--neutral-500);">Accede con tus credenciales</p>
+      {% with messages = get_flashed_messages(category_filter=["error"]) %}
+        {% if messages %}
+          <div class="mb-6 rounded-md bg-danger-500 bg-opacity-20 text-danger-500 p-3 font-semibold" role="alert" style="border: 1px solid #f43f5e;">
+            {% for msg in messages %}
+              <p>{{ msg }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form action="{{ url_for('login') }}" method="POST" class="space-y-7">
+        <div>
+          <label for="usuario" class="block text-sm font-semibold mb-2" style="color: var(--text-dark);">Usuario</label>
+          <input type="text" id="usuario" name="usuario"
+              style="background-color: var(--darkcard); border: 1px solid var(--border-dark); color: var(--text-dark); width:100%; padding: 0.85rem 1.2rem; border-radius: 0.5rem;"
+              placeholder="Ingresa tu usuario" autocomplete="username">
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-semibold mb-2" style="color: var(--text-dark);">Contraseña</label>
+          <input type="password" id="password" name="password"
+              style="background-color: var(--darkcard); border: 1px solid var(--border-dark); color: var(--text-dark); width:100%; padding: 0.85rem 1.2rem; border-radius: 0.5rem;"
+              placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="flex items-center justify-between text-sm" style="color: var(--neutral-500);">
+          <label class="flex items-center cursor-pointer">
+            <input type="checkbox" class="h-4 w-4 rounded border border-var(--border-dark)" name="remember" />
+            <span class="ml-2">Recordarme</span>
+          </label>
+          <a href="#" class="underline font-medium" style="color: var(--primary-color);">¿Olvidaste tu contraseña?</a>
+        </div>
+        <button type="submit"
+            style="width: 100%; background-color: var(--primary-600); color: white; padding: 0.95rem; border-radius: 0.5rem; font-weight: 600; font-size: 1.08rem; box-shadow: 0 4px 12px rgba(99,102,241,.13);" aria-label="Ingresar">
+          Ingresar
+        </button>
+      </form>
+      <p class="text-center text-xs mt-8" style="color: var(--neutral-500);">© 2025 Sistema de Inventario. Todos los derechos reservados.</p>
+    </div>
   </div>
-</div>
-
-<!-- Script modo oscuro -->
-<script>
-  const darkSwitch = document.getElementById("dark-switch");
-  const html = document.documentElement;
-
-  if(localStorage.getItem("theme") === "dark"){
-    html.classList.add("dark");
-    darkSwitch.checked = true;
-  }
-
-  darkSwitch.addEventListener("change", () => {
-    if(darkSwitch.checked){
-      html.classList.add("dark");
-      localStorage.setItem("theme","dark");
-    } else {
-      html.classList.remove("dark");
-      localStorage.setItem("theme","light");
-    }
-  });
-</script>
-{% endblock %}
+</body>
+</html>
