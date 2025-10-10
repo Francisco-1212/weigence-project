@@ -162,29 +162,25 @@ function actualizarGrafico(data) {
 function generarBarras(productos) {
     const chartContainer = document.getElementById('chartContainer');
     const chartLabels = document.getElementById('chartLabels');
-
     chartContainer.innerHTML = '';
     chartLabels.innerHTML = '';
 
     const maxVentas = Math.max(...productos.map(p => p.ventas));
-    const color = 'bg-blue-500/40';
-
     productos.forEach(p => {
-        // Barra
         const altura = maxVentas > 0 ? (p.ventas / maxVentas) * 100 : 10;
         const barra = document.createElement('div');
-        barra.className = `w-full ${color} rounded-t-lg transition-all duration-500 hover:bg-blue-500 cursor-pointer`;
+        barra.className = `w-full bg-blue-500/40 rounded-t-lg transition-all duration-500 hover:bg-blue-500 cursor-pointer`;
         barra.style.height = `${altura}%`;
         barra.title = `${p.nombre}: $${p.ventas.toFixed(0)}`;
         chartContainer.appendChild(barra);
 
-        // Label debajo de la barra
         const label = document.createElement('div');
         label.textContent = p.nombre;
         label.className = 'text-center text-sm font-medium mt-1 truncate';
         chartLabels.appendChild(label);
     });
 }
+
 
 function mostrarEstado(msg) {
     const chartContainer = document.getElementById('chartContainer');

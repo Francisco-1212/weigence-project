@@ -5,7 +5,6 @@ from livereload import Server
 from functools import wraps
 from sys import path
 import os
-from functools import wraps
 
 # ruta del proyecto para importar conexion_supabase
 path.append(r"e:\Github\weigence-project\weigence")
@@ -279,6 +278,103 @@ def dashboard():
         productos_agotados=productos_agotados,
         ventas_totales=ventas_totales
     )
+    
+@app.route('/api/dashboard_filtrado')
+@requiere_login
+def api_dashboard_filtrado():
+    rango = request.args.get('rango', 'hoy')
+    now = datetime.now()
+    
+    # Filtro preciso por periodo
+    if rango == 'hoy':
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif rango == 'semana':
+        start = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif rango == 'mes':
+        start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    ventas = supabase.table("ventas").select("*")\
+        .gte("fecha_venta", start.isoformat())\
+        .lte("fecha_venta", now.isoformat())\
+        .execute().data or []
+    ids_ventas = [v["idventa"] for v in ventas]
+    detalles = supabase.table("detalle_ventas").select("*")\
+        .in_("idventa", ids_ventas)\
+        .execute().data or []
+
+    productos_info = supabase.table("productos").select("idproducto,nombre").execute().data or []
+    ventas_por_producto = {p["idproducto"]: {"nombre": p["nombre"], "ventas": 0} for p in productos_info}
+    for dv in detalles:
+        idprod = dv["idproducto"]
+        ventas_por_producto[idprod]["ventas"] += dv["cantidad"] * dv["precio_unitario"]
+
+    productos_arr = list(ventas_por_producto.values())
+    productos_arr.sort(key=lambda x: x["ventas"], reverse=True) # Por ventas
+
+    total_ventas = sum(p["ventas"] for p in productos_arr)
+    crecimiento = 0 # Puedes calcularlo según tu modelo
+
+    return jsonify({
+        "productos": productos_arr[:6], # Top 6 productos del periodo
+        "ventas_totales": total_ventas,
+        "crecimiento": crecimiento
+    })
+
+
+def check_sistema_integral():
+    estados = []
+
+    try:
+        res = supabase.table("productos").select("idproducto").limit(1).execute()
+        print("Respuesta de Supabase:", res)# Para debug
+
+        # Cambia aquí:
+        # Si ocurre excepción ya está en except
+        # Para el SDK de supabase más usado en Python, no hay propiedad .error, solo .data y .status_code
+        estados.append("db_ok")
+    except Exception as ex:
+        print("Exception en conexión Supabase:", ex)
+        estados.append("db_fail")
+
+    # Checks opcionales de otros microservicios:
+    # ...
+
+    alertas_pendientes = supabase.table("alertas").select("*").eq("estado", "pendiente").execute().data or []
+    if alertas_pendientes:
+        estados.append("alertas_pendientes")
+    else:
+        estados.append("sin_alertas")
+
+    if "db_fail" in estados:
+        estado_general = "offline"
+    else:
+        estado_general = "online"
+
+    return estado_general, estados
+
+last_manual_update = datetime.now()
+
+
+@app.route('/api/refresh', methods=['POST'])
+@requiere_login
+def api_refresh():
+    global last_manual_update
+    last_manual_update = datetime.now()
+    return jsonify({"success": True})
+
+@app.route('/api/status')
+@requiere_login
+def api_status():
+    estado, estados_detalles = check_sistema_integral()
+    global last_manual_update
+    return jsonify({
+        'connection_state': estado,
+        'status_details': estados_detalles,
+        'last_update': last_manual_update.isoformat(),
+        'important_events': 0
+    })
 
 # --- RUTA INVENTARIO ---
 @app.route("/inventario")
@@ -747,15 +843,14 @@ def agrupar_notificaciones_por_fecha(notificaciones):
 
 @app.context_processor
 def agregar_alertas_y_notificaciones():
-    alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data
+    alertas_db = supabase.table("alertas").select("*").order('fecha_creacion', desc=True).execute().data or []
     notificaciones = [a for a in alertas_db if a.get("estado") != "resuelto"]
     notificaciones_agrupadas = agrupar_notificaciones_por_fecha(notificaciones)
 
-    # Calcula avisos dinámicos relativizados (NO insertes en base aquí)
-    productos = supabase.table("productos").select("*").execute().data
-    pesajes = supabase.table("pesajes").select("*").execute().data
+    productos = supabase.table("productos").select("*").execute().data or []
+    pesajes = supabase.table("pesajes").select("*").execute().data or []
     limite = datetime.now() - timedelta(days=7)
-    
+
     productos_inactivos = []
     for p in productos:
         ult_pesaje = [ps for ps in pesajes if ps["idproducto"] == p["idproducto"]]
@@ -782,6 +877,7 @@ def agregar_alertas_y_notificaciones():
         notificaciones=notificaciones + alertas_dinamicas,
         notificaciones_agrupadas=agrupar_notificaciones_por_fecha(notificaciones + alertas_dinamicas)
     )
+
 
 
 # MAIN

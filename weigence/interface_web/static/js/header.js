@@ -2,32 +2,38 @@ const notificationButton = document.getElementById('notification-button');
 const notificationPanel = document.getElementById('notification-panel');
 const closeNotificationPanel = document.getElementById('close-notification-panel');
 const notificationBackdrop = document.getElementById('notification-backdrop');
-const mainContent = document.querySelector('.flex-col.h-screen');
 
-function openPanel() {
+notificationButton.addEventListener('click', () => {
   notificationPanel.classList.remove('translate-x-full');
-  notificationBackdrop.classList.remove('opacity-0', 'pointer-events-none');
-  mainContent.classList.add('[filter:blur(8px)]');
-  notificationPanel.focus();
-}
+  notificationBackdrop.classList.remove('opacity-0','pointer-events-none');
+});
 
-function closePanel() {
+closeNotificationPanel.addEventListener('click', () => {
   notificationPanel.classList.add('translate-x-full');
-  notificationBackdrop.classList.add('opacity-0', 'pointer-events-none');
-  mainContent.classList.remove('[filter:blur(8px)]');
-  notificationButton.focus();
-}
-
-notificationButton.addEventListener('click', e => {
-  e.stopPropagation();
-  openPanel();
+  notificationBackdrop.classList.add('opacity-0','pointer-events-none');
 });
 
-closeNotificationPanel.addEventListener('click', closePanel);
-notificationBackdrop.addEventListener('click', closePanel);
+notificationBackdrop.addEventListener('click', () => {
+  notificationPanel.classList.add('translate-x-full');
+  notificationBackdrop.classList.add('opacity-0','pointer-events-none');
+});
 
-document.addEventListener('keydown', e => {
-  if(e.key === "Escape" && !notificationPanel.classList.contains('translate-x-full')) {
-     closePanel();
+// Delegación de eventos para toggle de detalle y botón descartar
+notificationPanel.addEventListener('click', e => {
+  // Evento descartar: si se hizo clic en el botón descartar
+  if (e.target.classList.contains('notif-discard')) {
+    e.stopPropagation();
+    const item = e.target.closest('.notif-item');
+    if (item) item.remove();
+    return;
   }
+
+  // Evento toggle detalle: si hizo clic en alguna notificación
+  const item = e.target.closest('.notif-item');
+  if (!item) return;
+
+  const detalle = item.querySelector('.notif-detalle');
+  if (detalle) detalle.classList.toggle('hidden');
 });
+
+
