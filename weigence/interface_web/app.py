@@ -29,23 +29,23 @@ def requiere_login(f):
 # --- LOGIN ---
 @app.route("/", methods=["GET", "POST"])
 def login():
-    # Limpiar sesión al entrar por primera vez
     session.clear()
-
     if request.method == "POST":
         usuario_input = request.form.get("usuario")
         password_input = request.form.get("password")
+        remember = request.form.get("remember")  # Opcional para "recordarme"
 
         if not usuario_input or not password_input:
             flash("Por favor completa todos los campos", "error")
             return render_template("login.html")
 
+        # Aquí va la lógica de supabase o tu base de datos:
         usuarios = supabase.table("usuarios").select("*").execute().data
 
         usuario_encontrado = next(
             (u for u in usuarios if u.get("nombre") == usuario_input 
-             or u.get("correo") == usuario_input 
-             or u.get("rut_usuario") == usuario_input),
+            or u.get("correo") == usuario_input 
+            or u.get("rut_usuario") == usuario_input),
             None
         )
 
@@ -55,6 +55,8 @@ def login():
                 session["usuario_nombre"] = usuario_encontrado.get("nombre")
                 session["usuario_rol"] = usuario_encontrado.get("rol")
                 session["usuario_id"] = usuario_encontrado.get("rut_usuario")
+                session["usuario_correo"] = usuario_encontrado.get("correo")
+                # Aquí puedes manejar el "remember" para sesiones más largas
                 return redirect(url_for("dashboard"))
             else:
                 flash("Contraseña incorrecta", "error")

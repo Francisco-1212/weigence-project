@@ -70,19 +70,21 @@ function inicializarAplicacion() {
         });
     }
     
-    // Toggle del tema
     const themeToggle = document.getElementById('theme-toggle');
-    
+
     if (themeToggle) {
         // Comprobar preferencia del usuario
         const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
             document.documentElement.classList.add('dark');
-            themeToggle.checked = true;
+            themeToggle.checked = true;  // ¡Sincroniza switch!
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeToggle.checked = false;
         }
-        
+
         themeToggle.addEventListener('change', function() {
             if (this.checked) {
                 document.documentElement.classList.add('dark');
@@ -93,6 +95,7 @@ function inicializarAplicacion() {
             }
         });
     }
+
     
     // Navegación del sidebar
     const sidebarLinks = document.querySelectorAll('.sidebar-link');
@@ -113,7 +116,25 @@ function inicializarAplicacion() {
             }
         });
     });
+
+    const nav = document.getElementById('sidebar-nav');
+    const profilePanel = document.getElementById('sidebar-profile');
+    const trigger = document.getElementById('profile-trigger');
+    const backBtn = document.getElementById('profile-back');
+
+    trigger.addEventListener('click', () => {
+    nav.classList.add('hidden');
+    profilePanel.classList.remove('hidden');
+    trigger.classList.add('hidden');
+    });
+
+    backBtn.addEventListener('click', () => {
+    profilePanel.classList.add('hidden');
+    nav.classList.remove('hidden');
+    trigger.classList.remove('hidden');
+    });
     
+
     // Selectores de período para gráficos
     const periodSelectors = document.querySelectorAll('input[name="periodo-graficos"]');
     

@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* ===== VARIABLES CSS ===== */
 :root {
   /* Colores primarios */
@@ -41,9 +42,9 @@
   --sbar: #b4b9c1ff;
 
   /* Variables para modo claro */
-  --bg-light: var(--neutral-50);
+  --bg-light: #E6E9EC ;
   --text-light: var(--neutral-900);
-  --card-bg-light: #F5F5F5;
+  --card-bg-light: #d6dbe0ad;
   --border-light: var(--neutral-200);
   --grid-light: rgba(0, 0, 0, 0.05);
   /* Modo oscuro */
@@ -63,18 +64,33 @@
   --grid-light: var(--grid-dark);
 }
 
-/* Filtro hoy semana mes*/
+/* Filtro hoy semana mes */
 .filtro-fecha-btn {
   background: none;
-  color: #a3a3a3;
-  font-weight: 500;
+  color: #181C21;
+  font-weight: 800;
   transition: all .2s;
+  box-shadow: none;
 }
+
 .filtro-fecha-btn.filtro-activo {
-  background: #262626;
+  background: #dfdbdbd4;
+  color: #181C21;
+  font-weight: bold;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.50);
+}
+.dark .filtro-fecha-btn {
+  color: white; /* texto blanco modo oscuro */
+}
+
+/* Modo oscuro */
+.dark .filtro-fecha-btn.filtro-activo {
+  background: #373737;
   color: #fff;
   font-weight: bold;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.70); /* Sombra más densa */
 }
+
 
 
 /* ===== RESET Y ESTILOS BASE ===== */
