@@ -10,11 +10,8 @@
 {% endblock %}
 
 {% block contenido %}
-<body class="bg-neutral-900 text-neutral-100" style="font-family: Inter, 'Noto Sans', sans-serif;">
-  <main class="flex-1">
     <div class="p-6">
       <h2 class="text-3xl font-bold mb-6 text-left">Panel de Control</h2>
-
       <!-- Tarjetas resumen -->
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
@@ -81,21 +78,21 @@
             </div>
           </a>
 
-          <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-border-light dark:border-border-dark transition-colors">
+          <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow">
           <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Acciones rápidas</h3>
           <div class="mt-4 space-y-3">
             <button
-              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
               type="button"
             >
               <span class="material-symbols-outlined">file_download</span>
               Exportar reporte (PDF/Excel)
             </button>
             <button
-              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-border-light dark:border-border-dark text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
               type="button"
             >
-              <span class="material-symbols-outlined">analytics</span>
+              <span class="material-symbols-outlined ">analytics</span>
               Ir a detalle (Inventario/Ventas)
             </button>
           </div>

@@ -1,137 +1,163 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const lastUpdateTimestampEl = document.getElementById('last-update-timestamp');
-  const statusIconEl = document.getElementById('status-icon');
-  const statusTextEl = document.getElementById('status-text');
-  const systemStatusEl = document.getElementById('system-status');
-  const activityIndicatorEl = document.getElementById('activity-indicator');
-  const notificationsIndicatorEl = document.getElementById('notifications-indicator');
-  const notificationsCountEl = document.getElementById('notifications-count');
-  const btnRefresh = document.getElementById('btn-refresh');
-  const btnShowHistory = document.getElementById('btn-show-history');
-  const historyModal = document.getElementById('history-modal');
-  const historyList = document.getElementById('history-list');
-  const closeHistoryBtn = document.getElementById('close-history');
+  // Elementos DOM principales
+  const lastUpdateTimestampEl = document.getElementById('last-update-timestamp');
+  const statusIconEl = document.getElementById('status-icon');
+  const statusTextEl = document.getElementById('status-text');
+  const systemStatusEl = document.getElementById('system-status');
+  const activityIndicatorEl = document.getElementById('activity-indicator');
+  const btnRefresh = document.getElementById('btn-refresh');
+  const btnShowHistory = document.getElementById('btn-show-history');
+  const historyModal = document.getElementById('history-modal');
+  const historyList = document.getElementById('history-list');
+  const closeHistoryBtn = document.getElementById('close-history');
 
-  const states = {
-    online: { icon: 'check_circle', colorClass: 'text-green-500', text: 'Sistema en línea' },
-    warning: { icon: 'warning', colorClass: 'text-yellow-500', text: 'Problemas de conexión' },
-    offline: { icon: 'error', colorClass: 'text-red-500', text: 'Sistema desconectado' },
-    syncing: { icon: 'sync', colorClass: 'text-primary-600 animate-spin', text: 'Sincronizando...' },
-  };
+  // Estados del sistema
+  const states = {
+    online: {
+      icon: 'check_circle', colorClass: 'text-green-500',
+      text: 'Sistema en línea', aria: 'El sistema está en línea y operativo.'
+    },
+    warning: {
+      icon: 'warning', colorClass: 'text-yellow-500',
+      text: 'Problemas de conexión', aria: 'El sistema presenta problemas de conexión.'
+    },
+    offline: {
+      icon: 'error', colorClass: 'text-red-500',
+      text: 'Sistema desconectado', aria: 'El sistema está desconectado.'
+    },
+    syncing: {
+      icon: 'sync', colorClass: 'text-primary-600 animate-spin',
+      text: 'Sincronizando...', aria: 'Sincronizando datos; espere por favor.'
+    },
+  };
 
-  let lastUpdate = null;
+  let lastUpdate = null;
 
-  function updateStatus(stateKey) {
-    const state = states[stateKey];
-    if (!state) return;
+  // Actualiza la barra de estado visual y accesible
+  function updateStatus(stateKey) {
+    const state = states[stateKey];
+    if (!state) return;
+    statusIconEl.textContent = state.icon;
+    statusIconEl.className = `material-symbols-outlined ${state.colorClass}`;
+    statusTextEl.textContent = state.text;
+    statusTextEl.className = state.colorClass;
+    statusTextEl.setAttribute('aria-live', 'polite');
+    statusTextEl.setAttribute('title', state.aria);
 
-    if (!statusIconEl || !statusTextEl || !systemStatusEl || !activityIndicatorEl) return;
+    // Actualiza ARIA del área de estado
+    systemStatusEl.setAttribute('aria-label', state.aria);
 
-    statusIconEl.textContent = state.icon;
-    statusIconEl.className = `material-symbols-outlined ${state.colorClass}`;
-    statusTextEl.textContent = state.text;
-    statusTextEl.className = state.colorClass;
+    systemStatusEl.classList.remove('hidden');
+    activityIndicatorEl.classList.toggle('hidden', stateKey !== 'syncing');
+  }
 
-    systemStatusEl.classList.remove('hidden');
-    activityIndicatorEl.classList.toggle('hidden', stateKey !== 'syncing');
-  }
+  // Guarda timestamp y actualiza el texto de última actualización
+  function setLastUpdate(timestamp) {
+    lastUpdate = new Date(timestamp);
+    updateTimestampText();
+  }
 
-  function setLastUpdate(timestamp) {
-    lastUpdate = new Date(timestamp);
-    updateTimestampText();
-  }
-
-  function updateTimestampText() {
-    if (!lastUpdate) {
-      if (lastUpdateTimestampEl) lastUpdateTimestampEl.textContent = '--:--';
-      return;
-    }
-    const now = new Date();
-    const diffSec = Math.floor((now - lastUpdate) / 1000);
-    if (diffSec < 60) lastUpdateTimestampEl.textContent = 'justo ahora';
-    else if (diffSec < 3600) lastUpdateTimestampEl.textContent = `${Math.floor(diffSec / 60)} min(s) atrás`;
-    else if (diffSec < 86400) lastUpdateTimestampEl.textContent = `${Math.floor(diffSec / 3600)} hora(s) atrás`;
-    else lastUpdateTimestampEl.textContent = lastUpdate.toLocaleString();
-  }
-
-  function setNotificationsCount(count) {
-    if (!notificationsIndicatorEl || !notificationsCountEl) return;
-    if (count > 0) {
-      notificationsCountEl.textContent = count;
-      notificationsIndicatorEl.classList.remove('hidden');
-    } else {
-      notificationsIndicatorEl.classList.add('hidden');
-    }
-  }
-
-async function fetchSystemStatus() {
-  try {
-    const res = await fetch('/api/status');
-    if (!res.ok) throw new Error('Error fetch status');
-    const data = await res.json();
-
-    // Forzar estado a online si el usuario está operativo
-    const estado = (data.connection_state === 'online') ? 'online' : data.connection_state;
-
-    setLastUpdate(data.last_update);
-    updateStatus(estado);
-    setNotificationsCount(data.important_events);
-  } catch (error) {
-    updateStatus('offline');
-    setNotificationsCount(0);
-    console.error(error);
-  }
-}
-
-
-  async function fetchHistory() {
-    try {
-      const res = await fetch('/api/history');
-      if (!res.ok) throw new Error('Error fetch history');
-      const data = await res.json();
-      if (historyList) {
-        historyList.innerHTML = data.map(evt => `<li><strong>${new Date(evt.timestamp).toLocaleString()}:</strong> ${evt.message}</li>`).join('');
-      }
-    } catch (error) {
-      if (historyList) {
-        historyList.innerHTML = `<li class="text-red-500">Error cargando historial</li>`;
-      }
-      console.error(error);
-    }
-  }
-  function updateTimestampText() {
+  // Formatea el timestamp a formato amigable y local
+function updateTimestampText() {
   if (!lastUpdate) {
     lastUpdateTimestampEl.textContent = '--:--';
+    lastUpdateTimestampEl.setAttribute('title', 'Sin datos de actualización');
     return;
   }
-  lastUpdateTimestampEl.textContent = lastUpdate.toLocaleString(undefined, {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
+
+  // Usa formato local del sistema y muestra fecha + hora completa
+  const formatted = lastUpdate.toLocaleString('es-ES', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
+
+  lastUpdateTimestampEl.textContent = formatted;
+  lastUpdateTimestampEl.setAttribute('title', `Actualizado el ${formatted}`);
 }
 
 
-  async function manualRefresh() {
-    updateStatus('syncing');
-    try {
-      const res = await fetch('/api/refresh', { method: 'POST' });
-      if (!res.ok) throw new Error('Error refrescando');
-      await fetchSystemStatus();
-    } catch (err) {
-      updateStatus('offline');
-    }
-  }
 
-  if (btnRefresh) btnRefresh.addEventListener('click', manualRefresh);
-  if (btnShowHistory) btnShowHistory.addEventListener('click', async () => {
-    if (historyModal) historyModal.classList.remove('hidden');
-    await fetchHistory();
-  });
-  if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => {
-    if (historyModal) historyModal.classList.add('hidden');
-  });
+  // Obtiene y actualiza el estado del sistema desde API
+  async function fetchSystemStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (!res.ok) throw new Error('Error obteniendo estado');
+      const data = await res.json();
+      // Prioriza 'online' si está operativo
+      const estado = (data.connection_state === 'online') ? 'online' : data.connection_state;
+      setLastUpdate(data.last_update);
+      updateStatus(estado);
+    } catch (error) {
+      updateStatus('offline');
+      console.error(error);
+    }
+  }
 
-  fetchSystemStatus();
-  setInterval(fetchSystemStatus, 30000);
-  setInterval(updateTimestampText, 10000);
+  // Renderiza historial de eventos en el modal
+  async function fetchHistory() {
+    historyList.innerHTML = '<li class="text-gray-500 animate-pulse">Cargando...</li>';
+    try {
+      const res = await fetch('/api/history');
+      if (!res.ok) throw new Error('Error obteniendo historial');
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        historyList.innerHTML = data.map(evt =>
+          `<li><strong>${new Date(evt.timestamp).toLocaleString(undefined, {
+            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+          })}:</strong> ${evt.message}</li>`
+        ).join('');
+      } else {
+        historyList.innerHTML = '<li class="text-gray-500">Sin eventos recientes.</li>';
+      }
+    } catch (error) {
+      historyList.innerHTML = `<li class="text-red-500">Error cargando historial</li>`;
+      console.error(error);
+    }
+  }
+
+  // Realiza actualización manual de datos
+  async function manualRefresh() {
+    updateStatus('syncing');
+    try {
+      const res = await fetch('/api/refresh', { method: 'POST' });
+      if (!res.ok) throw new Error('Error refrescando');
+      await fetchSystemStatus();
+    } catch (err) {
+      updateStatus('offline');
+      console.error(err);
+    }
+  }
+
+  // Animación de apertura/cierre del modal historial
+  function showHistoryModal() {
+    if (!historyModal) return;
+    historyModal.classList.remove('hidden');
+    historyModal.style.opacity = 0;
+    setTimeout(() => {
+      historyModal.style.transition = 'opacity 0.3s';
+      historyModal.style.opacity = 1;
+    }, 10);
+    fetchHistory();
+  }
+  function closeHistoryModal() {
+    if (!historyModal) return;
+    historyModal.style.opacity = 0;
+    setTimeout(() => {
+      historyModal.classList.add('hidden');
+    }, 300);
+  }
+
+  // Asociación de eventos
+  if (btnRefresh) btnRefresh.addEventListener('click', manualRefresh);
+  if (btnShowHistory) btnShowHistory.addEventListener('click', showHistoryModal);
+  if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal);
+
+  // Inicialización automática
+  fetchSystemStatus();
+  setInterval(fetchSystemStatus, 30000);   // Actualiza estado cada 30s
+  setInterval(updateTimestampText, 10000); // Actualiza etiqueta cada 10s
 });

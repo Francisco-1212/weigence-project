@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ===== VARIABLES CSS ===== */
 :root {
   /* Colores primarios */
@@ -14,6 +18,7 @@
   --primary-950: #0f0d2d;
 
   /* Colores neutrales */
+  --neutral-50: #f9fafb;
   --neutral-100: #f1f5f9;
   --neutral-200: #e2e8f0;
   --neutral-300: #cbd5e1;
@@ -44,7 +49,7 @@
   /* Modo oscuro */
   --bg-dark: var(--neutral-950);
   --text-dark: var(--neutral-100);
-  --card-bg-dark: var(--darkcard);
+  --card-bg-dark: #181C21;
   --border-dark: var(--neutral-700);
   --grid-dark: rgba(255, 255, 255, 0.05);
 }
@@ -309,6 +314,17 @@ button.accion:hover {
   color: var(--success-500);
   font-weight: 600;
 }
+#last-update-text {
+  font-weight: 600; /* semibold para dar énfasis ligero */
+  color: #444444;   /* más oscuro suave que el texto normal */
+}
+
+#last-update-timestamp {
+  font-weight: 400; /* peso normal para la fecha */
+  color: #666666;   /* un tono un poco más claro que #444 */
+  margin-left: 4px; /* pequeño espacio a la izquierda para separar */
+}
+
 
 /* Iconos */
 .material-symbols-outlined {
@@ -647,6 +663,22 @@ button.accion:hover {
 .dark .notification-count {
   border-color: var(--darkcard);
 }
+
+
+/* Tabla */
+
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+
 
 /* Animación pulso */
 @keyframes pulse {

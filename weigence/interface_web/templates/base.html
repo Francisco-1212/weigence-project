@@ -8,44 +8,42 @@
   <title>{% block title %}Weigence{% endblock %}</title>
   <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Weigence - Sistema de Gestión de Inventario y Ventas"/>
+  <meta name="author" content="Weigence Team"/>
 </head>
-<body class="bg-[var(--bg-light)] text-[var(--text-light)]">
-<div class="flex h-screen ">
-  <!-- Sidebar -->
-  {% block sidebar %}{% endblock %}
+<body class="bg-[var(--bg-light)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    {% block sidebar %}{% endblock %}
 
-  <!-- Contenedor derecho -->
-  <div class="flex flex-col flex-1">
-    <!-- Header -->
-    <header class="sticky top-0 z-50 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
-      {% block top %}{% endblock %}
-    </header>
+    <!-- Contenedor derecho -->
+    <div class="flex flex-col flex-1 min-w-0">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
+        {% block top %}{% endblock %}
+      </header>
 
-
-    <!-- Contenido -->
-    <main class="flex-1 px-6 py-8 overflow-y-auto">
-      {% block contenido %}{% endblock %}
-    </main>
+      <!-- Contenido -->
+      <main class="flex-1 px-4 py-8 overflow-y-auto overflow-x-hidden">
+        {% block contenido %}{% endblock %}
+      </main>
+    </div>
   </div>
-</div>
-
-<div id="toast" class="toast"></div>
-
-
-  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/header.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/inventario.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/estado.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/filtro.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/charts.js') }}"> </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-  <script>
-
-  </script>
+  
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/header.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inventario.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/estado.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/filtro.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 </body>
 </html>
