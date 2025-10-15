@@ -5,6 +5,8 @@ from livereload import Server
 from functools import wraps
 from sys import path
 import os
+import json
+from pathlib import Path
 
 # ruta del proyecto para importar conexion_supabase
 path.append(r"e:\Github\weigence-project\weigence")
@@ -280,49 +282,98 @@ def dashboard():
         productos_agotados=productos_agotados,
         ventas_totales=ventas_totales
     )
-    
+
 @app.route('/api/dashboard_filtrado')
 @requiere_login
 def api_dashboard_filtrado():
     rango = request.args.get('rango', 'hoy')
+    mes = request.args.get('mes', type=int)
+    year = request.args.get('year', type=int)
     now = datetime.now()
-    
-    # Filtro preciso por periodo
+
     if rango == 'hoy':
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif rango == 'semana':
         start = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
-    elif rango == 'mes':
-        start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif rango == 'mes' and mes and year:
+        start = datetime(year, mes, 1)
+        if mes == 12:
+            end = datetime(year + 1, 1, 1)
+        else:
+            end = datetime(year, mes + 1, 1)
+        now = end - timedelta(seconds=1)
     else:
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    ventas = supabase.table("ventas").select("*")\
-        .gte("fecha_venta", start.isoformat())\
-        .lte("fecha_venta", now.isoformat())\
+    # Obtener ventas en rango seleccionado
+    ventas = supabase.table("ventas").select("*") \
+        .gte("fecha_venta", start.isoformat()) \
+        .lte("fecha_venta", now.isoformat()) \
         .execute().data or []
+
     ids_ventas = [v["idventa"] for v in ventas]
-    detalles = supabase.table("detalle_ventas").select("*")\
-        .in_("idventa", ids_ventas)\
+    detalles = supabase.table("detalle_ventas").select("*") \
+        .in_("idventa", ids_ventas) \
         .execute().data or []
 
     productos_info = supabase.table("productos").select("idproducto,nombre").execute().data or []
-    ventas_por_producto = {p["idproducto"]: {"nombre": p["nombre"], "ventas": 0} for p in productos_info}
+
+    # Inicializar estructura con todos los productos (incluso sin ventas)
+    ventas_por_producto = {
+        p["idproducto"]: {"nombre": p["nombre"], "ventas": 0.0, "cantidad": 0}
+        for p in productos_info
+    }
+
+    articulos_vendidos = 0
     for dv in detalles:
         idprod = dv["idproducto"]
-        ventas_por_producto[idprod]["ventas"] += dv["cantidad"] * dv["precio_unitario"]
+        if idprod in ventas_por_producto:
+            cantidad = dv.get("cantidad", 0) or 0
+            precio = dv.get("precio_unitario", 0) or 0
+            ventas_por_producto[idprod]["ventas"] += cantidad * precio
+            ventas_por_producto[idprod]["cantidad"] += cantidad
+            articulos_vendidos += cantidad
 
+    # Convertir a lista y ordenar por ventas para el gráfico, y por cantidad para top/low
     productos_arr = list(ventas_por_producto.values())
-    productos_arr.sort(key=lambda x: x["ventas"], reverse=True) # Por ventas
+    # Para el gráfico, ordenamos por ventas
+    productos_por_ventas = sorted(productos_arr, key=lambda x: x["ventas"], reverse=True)
 
-    total_ventas = sum(p["ventas"] for p in productos_arr)
-    crecimiento = 0 # Puedes calcularlo según tu modelo
+    # Para top/low utilizamos la métrica cantidad (artículos vendidos)
+    productos_por_cantidad_desc = sorted(productos_arr, key=lambda x: x["cantidad"], reverse=True)
+    productos_por_cantidad_asc = sorted(productos_arr, key=lambda x: x["cantidad"])  # incluye ceros
+
+    producto_mas_vendido = productos_por_cantidad_desc[0]["nombre"] if productos_por_cantidad_desc else "Sin datos"
+    ventas_totales = sum(p["ventas"] for p in productos_arr)
+
+    grafico = {
+        "productos": productos_por_ventas[:6],
+        "labels": [p["nombre"] for p in productos_por_ventas[:6]],
+        "data": [p["ventas"] for p in productos_por_ventas[:6]],
+    }
+
+    # Preparar top 5 y low 5
+    productos_top = [
+        {"nombre": p["nombre"], "cantidad": int(p.get("cantidad", 0)), "ventas": round(float(p.get("ventas", 0)), 0)}
+        for p in productos_por_cantidad_desc[:5]
+    ]
+    productos_low = [
+        {"nombre": p["nombre"], "cantidad": int(p.get("cantidad", 0)), "ventas": round(float(p.get("ventas", 0)), 0)}
+        for p in productos_por_cantidad_asc[:5]
+    ]
+
+    crecimiento = 0  # Placeholder para cálculo de % cambio si lo deseas
 
     return jsonify({
-        "productos": productos_arr[:6], # Top 6 productos del periodo
-        "ventas_totales": total_ventas,
-        "crecimiento": crecimiento
+        "grafico": grafico,
+        "ventas_totales": int(ventas_totales),
+        "ventas_cambio": crecimiento,
+        "articulos_vendidos": articulos_vendidos,
+        "producto_mas_vendido": producto_mas_vendido,
+        "productos_top": productos_top,
+        "productos_low": productos_low
     })
+
 
 
 def check_sistema_integral():
@@ -330,7 +381,6 @@ def check_sistema_integral():
 
     try:
         res = supabase.table("productos").select("idproducto").limit(1).execute()
-        print("Respuesta de Supabase:", res)# Para debug
 
         # Cambia aquí:
         # Si ocurre excepción ya está en except
@@ -344,17 +394,54 @@ def check_sistema_integral():
     # ...
 
     alertas_pendientes = supabase.table("alertas").select("*").eq("estado", "pendiente").execute().data or []
-    if alertas_pendientes:
-        estados.append("alertas_pendientes")
-    else:
-        estados.append("sin_alertas")
+    # NOTA: alertas de productos NO cuentan como "fallas del sistema".
+    # En su lugar, detectamos errores de sistema registrados en el log de errores.
 
+    # archivo para registrar errores del sistema (ligero, en filesystem)
+    data_dir = Path(__file__).parent / 'data'
+    data_dir.mkdir(parents=True, exist_ok=True)
+    errors_file = data_dir / 'errors_log.json'
+
+    def read_error_log():
+        try:
+            if not errors_file.exists():
+                return []
+            with open(errors_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print('Error leyendo error log:', e)
+            return []
+
+    # Obtener errores recientes del log (si existen)
+    errores = read_error_log()
+
+    # Determina estado general:
+    # - Si falla la DB -> offline
+    # - Si hay errores de sistema recientes -> warning
+    # - Si todo ok -> online
     if "db_fail" in estados:
         estado_general = "offline"
+    elif errores:
+        estado_general = "warning"
     else:
         estado_general = "online"
 
-    return estado_general, estados
+    # Construir lista de detalles legibles para el frontend
+    detalles = []
+    if "db_fail" in estados:
+        detalles.append("No se pudo conectar a la base de datos")
+
+    # Añadir errores (máximo 10) al detalle
+    try:
+        for e in errores[:10]:
+            # cada entrada del log debe tener 'timestamp' y 'message'
+            ts = e.get('timestamp') or e.get('time') or ''
+            msg = e.get('message') or e.get('msg') or e.get('detail') or str(e)
+            detalles.append(f"{ts} - {msg}")
+    except Exception:
+        pass
+
+    return estado_general, detalles
 
 last_manual_update = datetime.now()
 
@@ -365,6 +452,72 @@ def api_refresh():
     global last_manual_update
     last_manual_update = datetime.now()
     return jsonify({"success": True})
+
+
+# Endpoint: movimientos / historial (movements)
+@app.route('/api/history')
+@requiere_login
+def api_history():
+    try:
+        # Obtener historial desde la tabla 'historial' en supabase
+        hist = supabase.table('historial').select('*').order('fecha_cambio', desc=True).limit(200).execute().data or []
+        # Normalizar formato simple
+        out = []
+        for h in hist:
+            out.append({
+                'timestamp': h.get('fecha_cambio') or h.get('timestamp') or datetime.now().isoformat(),
+                'message': h.get('descripcion') or h.get('accion') or f"Movimiento: {h.get('idproducto') or ''}"
+            })
+        return jsonify(out)
+    except Exception as e:
+        print('Error en api_history:', e)
+        return jsonify([])
+
+
+# Endpoint: GET errores del sistema (desde file log)
+@app.route('/api/history_errors')
+@requiere_login
+def api_history_errors():
+    data_dir = Path(__file__).parent / 'data'
+    errors_file = data_dir / 'errors_log.json'
+    try:
+        if not errors_file.exists():
+            return jsonify([])
+        with open(errors_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return jsonify(data)
+    except Exception as e:
+        print('Error leyendo errores:', e)
+        return jsonify([])
+
+
+@app.route('/api/log_error', methods=['POST'])
+@requiere_login
+def api_log_error():
+    # Body: { message: 'texto', level: 'error' }
+    payload = request.get_json() or {}
+    message = payload.get('message') or payload.get('msg') or 'Error sin mensaje'
+    detail = payload.get('detail') or payload.get('info') or ''
+    level = payload.get('level') or 'error'
+    timestamp = datetime.now().isoformat()
+    data_dir = Path(__file__).parent / 'data'
+    data_dir.mkdir(parents=True, exist_ok=True)
+    errors_file = data_dir / 'errors_log.json'
+    try:
+        existing = []
+        if errors_file.exists():
+            with open(errors_file, 'r', encoding='utf-8') as f:
+                existing = json.load(f)
+        # append
+        existing.insert(0, { 'timestamp': timestamp, 'message': message, 'detail': detail, 'level': level })
+        # keep reasonable size
+        existing = existing[:200]
+        with open(errors_file, 'w', encoding='utf-8') as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+        return jsonify({'success': True})
+    except Exception as e:
+        print('Error escribiendo error log:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/status')
 @requiere_login

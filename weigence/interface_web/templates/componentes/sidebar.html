@@ -11,19 +11,19 @@
 
     <!-- NAV principal -->
     <nav id="sidebar-nav" class="flex flex-col px-3 py-4 space-y-1 text-neutral-700 dark:text-neutral-300">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 {% if request.endpoint == 'dashboard' %}bg-primary-600 text-white{% endif %}">
+  <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
         <span class="material-symbols-outlined text-xl">dashboard</span>
         <span class="font-medium hidden lg:block">Dashboard</span>
       </a>
-      <a href="{{ url_for('inventario') }}" class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 {% if request.endpoint == 'inventario' %}bg-primary-600 text-white{% endif %}">
+  <a href="{{ url_for('inventario') }}" {% if request.endpoint == 'inventario' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
         <span class="material-symbols-outlined text-xl">inventory_2</span>
         <span class="font-medium hidden lg:block">Inventario</span>
       </a>
-      <a href="{{ url_for('ventas') }}" class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 {% if request.endpoint == 'ventas' %}bg-primary-600 text-white{% endif %}">
+  <a href="{{ url_for('ventas') }}" {% if request.endpoint == 'ventas' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
         <span class="material-symbols-outlined text-xl">receipt_long</span>
         <span class="font-medium hidden lg:block">Ventas</span>
       </a>
-      <a href="{{ url_for('alertas') }}" class="flex items-center gap-3 px-3 py-3 rounded-lg sidebar-link hover:bg-neutral-200 dark:hover:bg-neutral-700 {% if request.endpoint == 'alertas' %}bg-primary-600 text-white{% endif %}">
+  <a href="{{ url_for('alertas') }}" {% if request.endpoint == 'alertas' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
         <span class="material-symbols-outlined text-xl">notifications_active</span>
         <span class="font-medium hidden lg:block">Alertas</span>
         {% if alertas_criticas|length > 0 %}
@@ -32,7 +32,7 @@
       </a>
     </nav>
 
-    <!-- PANEL PERFIL (premium) -->
+    <!-- PANEL PERFIL -->
     <div id="sidebar-profile" class="hidden flex flex-col flex-1 px-3 mt-4">
 
       <!-- Contenido principal del perfil arriba -->
@@ -50,15 +50,21 @@
           <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
           <span class="text-xs text-neutral-500 dark:text-neutral-400">Disponible</span>
         </div>
-        <!-- Botón Editar perfil como opción tipo nav dentro del perfil -->
-        <div class="flex flex-col gap-2 mt-4 w-full">
-          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200 justify-center">
-            <span class="material-symbols-outlined text-xl">edit</span> Editar perfil
-          </a>
-        </div>
+      </div>
+      <!-- Botón -->
+      <div class="flex flex-col gap-2 mt-4 w-full ">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200 ">
+          <span class="material-symbols-outlined text-xl">settings</span> !!
+        </a>
+      </div>
+      <!-- Botón -->
+      <div class="flex flex-col gap-2 mt-4 w-full ">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200 ">
+          <span class="material-symbols-outlined text-xl">edit</span> !!
+        </a>
       </div>
 
-      <!-- Botón Volver al final del panel -->
+      <!-- Botón Volver -->
       <div class="mt-auto mb-0">
         <button id="profile-back" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-sm text-neutral-900 dark:text-neutral-100 transition-colors duration-200 w-full">
           <span class="material-symbols-outlined text-lg">arrow_back</span>
@@ -66,12 +72,9 @@
         </button>
       </div>
     </div>
-    <!-- (trigger moved) -->
-
-    <!-- (logout moved) -->
   </div>
 
-  <!-- Trigger Perfil pegado abajo, fuera del contenedor scrollable para que quede más abajo -->
+  <!-- Boton Perfil -->
   <div class="px-3 py-3">
     <div id="profile-trigger" class="flex items-center gap-3 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3 py-2 rounded-lg transition-colors duration-200 w-full" tabindex="0">
       <span class="material-symbols-outlined text-xl text-neutral-600 dark:text-neutral-400">account_circle</span>
@@ -81,8 +84,7 @@
       </div>
     </div>
   </div>
-  <!-- (profile back restored inside sidebar-profile) -->
-  <!-- Botón Cerrar sesión siempre al final del sidebar (último elemento) -->
+  <!-- Botón Cerrar sesión -->
   <div class="px-3 py-3 border-t border-neutral-200 dark:border-neutral-700">
     <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl
       text-red-600 hover:text-red-700 hover:bg-red-100

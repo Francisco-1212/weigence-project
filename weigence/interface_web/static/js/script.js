@@ -181,22 +181,39 @@ function actualizarGrafico(data) {
 }
 
 function generarBarras(productos) {
+    // Prefer the unified renderer from filtro.js if present
+    if (typeof window.renderBarsFromGrafico === 'function') {
+        try {
+            const grafico = { productos: productos.map(p => ({ nombre: p.nombre || p.name || '', ventas: p.ventas || p.sales || 0 })) };
+            window.renderBarsFromGrafico(grafico);
+            return;
+        } catch (e) {
+            console.warn('generarBarras: renderBarsFromGrafico delegation failed, falling back', e);
+        }
+    }
+
     const chartContainer = document.getElementById('chartContainer');
     const chartLabels = document.getElementById('chartLabels');
+    if (!chartContainer || !chartLabels) {
+        console.debug('generarBarras: chart containers not found, skipping');
+        return;
+    }
     chartContainer.innerHTML = '';
     chartLabels.innerHTML = '';
 
-    const maxVentas = Math.max(...productos.map(p => p.ventas));
+    const maxVentas = Math.max(...productos.map(p => (p.ventas || p.sales || 0)));
     productos.forEach(p => {
-        const altura = maxVentas > 0 ? (p.ventas / maxVentas) * 100 : 10;
+        const value = p.ventas || p.sales || 0;
+        let altura = maxVentas > 0 ? (value / maxVentas) * 100 : 0;
+        if (!isFinite(altura) || altura <= 0) altura = 10;
         const barra = document.createElement('div');
-        barra.className = `w-full bg-blue-500/40 rounded-t-lg transition-all duration-500 hover:bg-blue-500 cursor-pointer`;
+        barra.className = `w-full bg-blue-600 rounded-t-lg transition-all duration-500 hover:bg-blue-700 cursor-pointer`;
         barra.style.height = `${altura}%`;
-        barra.title = `${p.nombre}: $${p.ventas.toFixed(0)}`;
+        barra.title = `${p.nombre || p.name}: $${(value).toFixed ? value.toFixed(0) : value}`;
         chartContainer.appendChild(barra);
 
         const label = document.createElement('div');
-        label.textContent = p.nombre;
+        label.textContent = p.nombre || p.name;
         label.className = 'text-center text-sm font-medium mt-1 truncate';
         chartLabels.appendChild(label);
     });
@@ -227,29 +244,48 @@ const topSales = [
       { name: "Producto V", sales: 30, rotation: "Muy Baja", tagClass: "tag-yellow" }
     ];
 
-    function renderProducts(containerId, products) {
-      const container = document.getElementById(containerId);
-      const template = document.getElementById("product-card-template");
-      container.innerHTML = "";
-      products.forEach(({ name, sales, rotation, tagClass }) => {
-        const clone = template.content.cloneNode(true);
-        clone.querySelector("div:nth-child(1)").textContent = name;
-        clone.querySelector("div:nth-child(2)").textContent = sales;
-        const span = clone.querySelector("span");
-        span.textContent = rotation;
-        span.className = tagClass;
-        container.appendChild(clone);
-      });
-    }
+        function renderProducts(containerId, products) {
+            const container = document.getElementById(containerId);
+            const template = document.getElementById("product-card-template");
+            if (!container) {
+                console.debug(`renderProducts: container "${containerId}" not found, skipping`);
+                return;
+            }
+            if (!template) {
+                console.debug('renderProducts: product-card-template not found, skipping');
+                return;
+            }
+            container.innerHTML = "";
+            products.forEach(({ name, sales, rotation, tagClass }) => {
+                const clone = template.content.cloneNode(true);
+                const firstDiv = clone.querySelector("div:nth-child(1)");
+                const secondDiv = clone.querySelector("div:nth-child(2)");
+                if (firstDiv) firstDiv.textContent = name;
+                if (secondDiv) secondDiv.textContent = sales;
+                const span = clone.querySelector("span");
+                if (span) {
+                    span.textContent = rotation;
+                    span.className = tagClass;
+                }
+                container.appendChild(clone);
+            });
+        }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderProducts('top-sales-container', topSales);
-      renderProducts('low-sales-container', lowSales);
-    });
+        document.addEventListener('DOMContentLoaded', () => {
+            // Only render sample top/low lists if the corresponding containers exist.
+            if (document.getElementById('top-sales-container')) {
+                renderProducts('top-sales-container', topSales);
+            }
+            if (document.getElementById('low-sales-container')) {
+                renderProducts('low-sales-container', lowSales);
+            }
+        });
 
 
-// Cargar grafico al cargar la página
-document.addEventListener('DOMContentLoaded', cargarVentasPorProducto);
+// Note: automatic loading of ventas por producto is disabled so the filter
+// controls in filtro.js own the dashboard chart rendering. If you need to
+// debug raw ventas_por_producto data, call cargarVentasPorProducto() manually.
+// document.addEventListener('DOMContentLoaded', cargarVentasPorProducto);
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarAplicacion);

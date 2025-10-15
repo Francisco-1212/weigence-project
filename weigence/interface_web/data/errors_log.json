@@ -1,0 +1,980 @@
+[
+  {
+    "timestamp": "2025-10-15T19:24:23.132176",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:24:23.118691",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:23:53.132368",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:23:53.120276",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:23:45.824648",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:23:45.818269",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T19:11:27.506221",
+    "message": "Error al obtener datos filtrados",
+    "detail": "Error: Error consultando datos",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:13:06.268944",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:13:06.265763",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:46.573096",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:46.562276",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:46.213986",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderChartJs is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:45.928065",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderChartJs is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:42.374308",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderChartJs is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:42.362895",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderChartJs is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:39.901254",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:12:39.889112",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: renderBarrasHoy is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:07:22.607748",
+    "message": "Error al obtener datos filtrados",
+    "detail": "Error: Error consultando datos",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:06:17.624000",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:05:39.888364",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:05:38.866855",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:56.605951",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:37.690336",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:35.008964",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:33.211568",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:15.127538",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:13.438058",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:04:09.991343",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:03:58.514341",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:03:48.587555",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:03:48.073024",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:03:46.177628",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:02:06.597400",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T18:02:01.734434",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:52:52.434508",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:52:51.631873",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:55.180282",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:55.169125",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:55.155335",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:07.955044",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:07.935753",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:07.476025",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:06.043156",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:51:04.776128",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:50:17.229752",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:50:12.652428",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:49:21.737994",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:49:20.727322",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:49:20.192735",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:49:12.926839",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:37.947531",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:25.083331",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:25.062716",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:21.972783",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:20.656965",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:17.884257",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:48:13.253558",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:45:55.854454",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:45:54.975479",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:45:44.730983",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:45:22.166571",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:58.956324",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:57.789669",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:56.952702",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:56.057570",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:53.013006",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:52.356112",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:23.080664",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:44:13.009630",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:42:22.882195",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'style')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:42:22.339076",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'style')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:42:19.531318",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'style')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:42:17.270845",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'style')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:42:15.914249",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'style')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:49.032974",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:48.305522",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:47.495911",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:37.966785",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:35.510026",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:34.830901",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:33.855659",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:25.929981",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:25.499842",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:22.759480",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:22.091504",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:21.105065",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:11.430471",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:11.071965",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:09.277210",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:08.678011",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:08.369494",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:05.871989",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:05.261732",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:04.380271",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:40:01.254134",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:39:59.498511",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:38:56.633812",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:38:56.330120",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:38:55.978478",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:38:53.607958",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:38:51.115444",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:36:54.091471",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:36:53.272287",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:36:51.849928",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:36:47.005187",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:36:41.748384",
+    "message": "Error al obtener datos filtrados",
+    "detail": "ReferenceError: actualizarGrafico is not defined",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:34:28.423772",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:34:28.410506",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:34:23.997012",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:33:45.858088",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:32:54.938759",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:32:51.124026",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:32:47.638288",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:31:46.647468",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:31:44.362233",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:31:15.916073",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:31:12.831115",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:30:14.235167",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:30:10.621113",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:28:44.217246",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:28:41.995364",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:28:40.448260",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:28:35.222356",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of null (reading 'getContext')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:57.044067",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:55.693805",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:54.175469",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:53.397871",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:52.340255",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:52.330354",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:51.148945",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:48.734714",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:48.012551",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:27:45.372141",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'labels')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:03:02.486752",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:03:01.916465",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:03:00.057221",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T17:02:56.099369",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:40:57.685770",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:39:09.348862",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:38:57.907748",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:38:51.730470",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:36:41.265906",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:36:24.494793",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:35:59.258794",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot read properties of undefined (reading 'slice')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:32:31.929727",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:32:17.246521",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:31:40.408517",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:30:05.008065",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:29:22.508981",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:29:03.972331",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:28:52.696619",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:27:47.056159",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:27:44.961949",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:27:42.194423",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:26:05.978194",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:26:00.136305",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:25:58.447424",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:49.961939",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:49.112103",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:46.144387",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:44.408276",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:44.101640",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  },
+  {
+    "timestamp": "2025-10-15T16:24:20.164764",
+    "message": "Error al obtener datos filtrados",
+    "detail": "TypeError: Cannot set properties of null (setting 'textContent')",
+    "level": "error"
+  }
+]
