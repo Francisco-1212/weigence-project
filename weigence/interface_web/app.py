@@ -266,22 +266,37 @@ def dashboard():
     notificaciones = [a for a in alertas_db if a.get("estado") == "pendiente"]
     notificaciones_agrupadas = agrupar_notificaciones_por_fecha(notificaciones)
 
+    from jinja2 import Undefined
+
+    def limpiar_json(obj):
+        if isinstance(obj, list):
+            return [limpiar_json(x) for x in obj]
+        elif isinstance(obj, dict):
+            return {k: limpiar_json(v) for k, v in obj.items() if v is not None}
+        elif isinstance(obj, Undefined):
+            return None
+        return obj
+
+
     return render_template(
         "pagina/index.html",
-        productos=productos,
-        pesajes=pesajes,
-        usuarios=usuarios,
-        estantes=estantes,
-        historial=historial,
-        notificaciones=notificaciones,
-        notificaciones_agrupadas=notificaciones_agrupadas,
-        alertas_criticas=alertas_criticas,
+        productos=limpiar_json(productos),
+        pesajes=limpiar_json(pesajes),
+        usuarios=limpiar_json(usuarios),
+        estantes=limpiar_json(estantes),
+        historial=limpiar_json(historial),
+        notificaciones=limpiar_json(notificaciones),
+        notificaciones_agrupadas=limpiar_json(notificaciones_agrupadas),
+        alertas_criticas=limpiar_json(alertas_criticas),
         valor_total_inventario=valor_total_inventario,
         articulos_vendidos=articulos_vendidos,
         producto_mas_vendido=producto_mas_vendido,
         productos_agotados=productos_agotados,
-        ventas_totales=ventas_totales
+        ventas_totales=ventas_totales,
+        movimientos=[]  # ← agrega esta línea
     )
+
+
 
 @app.route('/api/dashboard_filtrado')
 @requiere_login

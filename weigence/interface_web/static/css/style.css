@@ -2,11 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* ===== VARIABLES CSS ===== */
+/* ============================================================
+   VARIABLES GLOBALES DEL SISTEMA WEIGENCE
+   ============================================================ */
 :root {
-  /* Colores primarios */
-  --primary-50: #eef2ff;
+  /* ===== Colores primarios ===== */
+  --primary-50:  #eef2ff;
   --primary-100: #e0e7ff;
   --primary-200: #c7d2fe;
   --primary-300: #a5b4fc;
@@ -18,8 +19,8 @@
   --primary-900: #312e81;
   --primary-950: #0f0d2d;
 
-  /* Colores neutrales */
-  --neutral-50: #f9fafb;
+  /* ===== Escala neutral ===== */
+  --neutral-50:  #f9fafb;
   --neutral-100: #f1f5f9;
   --neutral-200: #e2e8f0;
   --neutral-300: #cbd5e1;
@@ -31,38 +32,50 @@
   --neutral-900: #0f172a;
   --neutral-950: #0d0d0ef7;
 
-  /* Colores semánticos */
+  /* ===== Colores semánticos ===== */
   --success-500: #22c55e;
   --warning-500: #f59e0b;
-  --danger-500: #f43f5e;
+  --danger-500:  #f43f5e;
 
-  /* Colores específicos de la aplicación */
-  --darkcard: #181C21;
+  /* ===== Colores personalizados ===== */
   --primary-color: #9ba9bb;
+  --darkcard: #181C21;
   --sbar: #b4b9c1ff;
 
-  /* Variables para modo claro */
-  --bg-light: #E6E9EC ;
+  /* ============================================================
+     PALETA DE MODO CLARO
+     ============================================================ */
+  --bg-light: #E6E9EC;
   --text-light: var(--neutral-900);
   --card-bg-light: #d6dbe0ad;
   --border-light: var(--neutral-200);
   --grid-light: rgba(0, 0, 0, 0.05);
-  /* Modo oscuro */
-  --bg-dark: var(--neutral-950);
-  --text-dark: var(--neutral-100);
-  --card-bg-dark: #181C21;
-  --border-dark: var(--neutral-700);
+
+  /* Paleta modo oscuro */
+  --bg-dark: #15171a;                /* Fondo absoluto */
+  --card-bg-dark: #1b1b1b;           /* Card principal */
+  --card-sub-bg-dark: #242424;       /* Subcard gris más visible */
+  --border-dark: #3a3a3a;            /* Borde neutro */
+  --border-dark-hover: #4a4a4a;      /* Borde hover */
+  --text-dark: #e6e6e6;              /* Texto blanco sucio */
+  --text-dark-secondary: #a0a0a0;    /* Texto secundario */      
   --grid-dark: rgba(255, 255, 255, 0.05);
+
+  /* Variable global sincronizada (para header + body oscuro) */
+  --theme-bg-dark: var(--bg-dark);
 }
 
-/* Modo oscuro - SISTEMA ORIGINAL */
+/* ============================================================
+   MODO OSCURO - ASIGNACIÓN AUTOMÁTICA
+   ============================================================ */
 .dark {
-  --bg-light: var(--bg-dark);
+  --bg-light: var(--theme-bg-dark);
   --text-light: var(--text-dark);
   --card-bg-light: var(--card-bg-dark);
   --border-light: var(--border-dark);
   --grid-light: var(--grid-dark);
 }
+
 
 /* Filtro hoy semana mes */
 .filtro-fecha-btn {
@@ -713,3 +726,19 @@ td {
   border-radius: 0.5rem;
   box-shadow: 0 0 0 2px #38bdf8;
 }
+.panel {
+  background: var(--card-bg-light);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-slideIn { animation: slideIn 0.35s ease-out; }

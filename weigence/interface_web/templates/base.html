@@ -17,7 +17,7 @@
   <meta name="description" content="Weigence - Sistema de Gestión de Inventario y Ventas"/>
   <meta name="author" content="Weigence Team"/>
 </head>
-<body class="!bg-[var(--bg-light)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
+<body class="!bg-[var(--bg-light)] dark:!bg-[var(--theme-bg-dark)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
   <div class="flex min-h-screen w-full overflow-hidden">
     <!-- Sidebar -->
     {% block sidebar %}{% endblock %}
@@ -25,7 +25,7 @@
   <!-- Contenedor derecho -->
   <div class="flex flex-col flex-1 min-w-0 pl-64">
       <!-- Header -->
-      <header class="sticky top-0 z-50 !bg-[var(--card-bg-light)] dark:!bg-[var(--card-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
+      <header class="sticky top-0 z-50 bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
         {% block top %}{% endblock %}
       </header>
 
@@ -37,6 +37,14 @@
   </div>
 
   <!-- Scripts -->
+    <script>
+      {% if movimientos is defined %}
+        window.MOVIMIENTOS = {{ movimientos|tojson }};
+      {% else %}
+        window.MOVIMIENTOS = [];
+      {% endif %}
+    </script>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="{{ url_for('static', filename='js/header.js') }}"></script>
     <script src="{{ url_for('static', filename='js/inventario.js') }}"></script>

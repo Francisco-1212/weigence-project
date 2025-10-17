@@ -1,50 +1,98 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const movimientos = window.MOVIMIENTOS || [];
-  const items = document.querySelectorAll('.timeline-item');
-  const detalle = document.getElementById('detalle-contextual');
 
-  items.forEach((item, idx) => {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', idx);
-      detalle.classList.add('ring-4', 'ring-primary-400', 'dark:ring-primary-600', 'scale-[1.02]');
-    });
-    item.addEventListener('dragend', () => {
-      detalle.classList.remove('ring-4', 'ring-primary-400', 'dark:ring-primary-600', 'scale-[1.02]');
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  const detalle = document.getElementById("detalle-contextual");
+  const items = document.querySelectorAll(".timeline-item");
+  const movimientos = window.MOVIMIENTOS || [];
+
+  items.forEach((item, i) => {
+    item.addEventListener("dragstart", e => e.dataTransfer.setData("text/plain", i));
+    item.addEventListener("click", () => renderDetalle(i));
+  });
+  detalle.addEventListener("dragover", e => e.preventDefault());
+  detalle.addEventListener("drop", e => {
+    e.preventDefault();
+    renderDetalle(Number(e.dataTransfer.getData("text/plain")));
   });
 
-  // Muestra detalles de un movimiento en el panel derecho
-  window.mostrarDetalleMovimiento = function (event) {
-    event.preventDefault();
-    const idx = event.dataTransfer.getData('text/plain');
-    const mov = movimientos[idx];
-    detalle.classList.remove('ring-4', 'ring-primary-400', 'dark:ring-primary-600', 'scale-[1.02]');
+function renderDetalle(i) {
+  const m = movimientos[i];
+  if (!m) return empty("No se pudo cargar el detalle.");
 
-    if (!mov) {
-      detalle.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-10 text-neutral-400">
-          <span class="material-symbols-outlined text-6xl mb-3">error_outline</span>
-          <p class="text-sm font-medium">No se pudo cargar el detalle del movimiento.</p>
-        </div>`;
-      return;
-    }
+  const tipo = {
+    "Añadir": { icon:"south", color:"text-green-400 bg-green-900/40" },
+    "Retirar": { icon:"north", color:"text-red-400 bg-red-900/40" },
+    "Mover": { icon:"sync_alt", color:"text-blue-400 bg-blue-900/40" }
+  }[m.tipo_evento] || { icon:"sync_alt", color:"text-blue-400 bg-blue-900/40" };
 
-    detalle.innerHTML = `
-      <div class="p-6 text-left animate-fadeIn">
-        <h3 class="text-lg font-bold mb-3 flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
-          <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">list_alt</span>
-          Detalle del Movimiento
-        </h3>
-        <div class="space-y-1 text-sm">
-          <p><b>Producto:</b> ${mov.producto}</p>
-          <p><b>Estantería:</b> ${mov.ubicacion}</p>
-          <p><b>Usuario:</b> ${mov.rut_usuario || 'Desconocido'} / ${mov.usuario_nombre || 'Sin nombre'}</p>
-          <p><b>Tipo:</b> ${mov.tipo_evento}</p>
-          <p><b>Cantidad:</b> ${mov.cantidad} kg</p>
-          <p><b>Fecha y hora:</b> ${mov.timestamp}</p>
-          <p><b>Observación:</b> ${mov.observacion || 'Sin observación'}</p>
+  const relacionados = movimientos.filter(x => x.producto === m.producto).slice(0, 4);
+
+  detalle.innerHTML = `
+    <div class="p-4 space-y-4 text-neutral-300 text-sm leading-snug">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 flex items-center justify-center rounded-md ${tipo.color}">
+            <span class="material-symbols-outlined text-[18px]">${tipo.icon}</span>
+          </div>
+          <div>
+            <h3 class="text-base font-semibold text-white">${m.producto}</h3>
+            <p class="text-[11px] text-[var(--text-muted-dark)]">${m.timestamp}</p>
+          </div>
         </div>
+        <span class="px-2 py-[1px] text-[11px] font-medium rounded bg-[var(--card-sub-bg-dark)] text-primary-400 border border-[var(--border-dark)]">${m.tipo_evento}</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        ${info("Cantidad", m.cantidad + " kg")}
+        ${info("Ubicación", m.ubicacion)}
+        ${info("Usuario", m.usuario_nombre)}
+        ${info("RUT", m.rut_usuario)}
+      </div>
+
+      <div class="bg-[var(--card-sub-bg-dark)] border border-[var(--border-dark)] rounded-md p-3">
+        <p class="text-[11px] text-[var(--text-muted-dark)] mb-1">Observación</p>
+        <p class="text-neutral-200 text-[13px]">${m.observacion || "Sin observaciones."}</p>
+      </div>
+
+      <div>
+        <p class="text-[13px] font-medium text-white mb-1">Historial del producto</p>
+        <ul class="space-y-1">
+          ${relacionados.map(r => {
+            const t = {
+              "Añadir": "text-green-400", 
+              "Retirar": "text-red-400", 
+              "Mover": "text-blue-400"
+            }[r.tipo_evento] || "text-blue-400";
+            return `
+              <li class="flex justify-between items-center text-[12px] bg-[var(--card-sub-bg-dark)] border border-[var(--border-dark)] rounded-md px-2 py-1">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px] ${t}">${r.tipo_evento=="Añadir"?"south":r.tipo_evento=="Retirar"?"north":"sync_alt"}</span>
+                  ${r.tipo_evento} • ${r.cantidad}kg
+                </span>
+                <span class="text-[var(--text-muted-dark)]">${r.timestamp.slice(11,16)}</span>
+              </li>`;
+          }).join("")}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+
+  function info(label, value) {
+    return `
+      <div class="bg-[var(--card-sub-bg-dark)] border border-[var(--border-dark)] rounded-lg p-3">
+        <p class="text-xs text-[var(--text-muted-dark)]">${label}</p>
+        <p class="text-sm font-semibold text-white mt-1">${value || "—"}</p>
+      </div>
+    `;
+  }
+
+  function empty(msg) {
+    detalle.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full text-[var(--text-muted-dark)]">
+        <span class="material-symbols-outlined text-5xl mb-2">error_outline</span>
+        <p class="text-sm">${msg}</p>
       </div>`;
-  };
+  }
 });
+
