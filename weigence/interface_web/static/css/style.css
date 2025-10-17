@@ -694,8 +694,6 @@ td {
 }
 
 
-
-
 /* Animación pulso */
 @keyframes pulse {
   0%, 100% {
@@ -706,4 +704,12 @@ td {
     transform: scale(1.15);
     opacity: 0.85;
   }
+}
+
+
+/* movimiento */
+.movimiento-item.selected {
+  background: #e0f2fe;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0 2px #38bdf8;
 }

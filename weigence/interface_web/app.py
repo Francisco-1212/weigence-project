@@ -749,6 +749,36 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+# --- Página de movimientos ---
+
+@app.route("/movimientos")
+def movimientos():
+    # Obtener todos los movimientos
+    movimientos = supabase.table("movimientos_inventario").select("*").execute().data
+
+    # Obtener productos y estantes (solo id y nombre/categoria)
+    productos = supabase.table("productos").select("idproducto, nombre").execute().data
+    estantes = supabase.table("estantes").select("id_estante, categoria").execute().data
+
+    # Crear diccionarios de referencia para IDs
+    productos_dict = {p['idproducto']: p['nombre'] for p in productos}
+    estantes_dict = {e['id_estante']: e['categoria'] for e in estantes}
+
+    usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data
+    usuarios_dict = {u['rut_usuario']: u['nombre'] for u in usuarios}
+
+
+    # Enriquecer cada movimiento con nombres descriptivos
+    for m in movimientos:
+        m["producto"] = productos_dict.get(m.get("idproducto"), "Desconocido")
+        m["ubicacion"] = estantes_dict.get(m.get("id_estante"), "Desconocido")
+        m["usuario_nombre"] = usuarios_dict.get(m.get("rut_usuario"), "Desconocido")
+
+    return render_template("pagina/movimientos_inventario.html", movimientos=movimientos)
+
+
+
+
 # --- Página de ventas ---
 
 @app.route("/ventas")

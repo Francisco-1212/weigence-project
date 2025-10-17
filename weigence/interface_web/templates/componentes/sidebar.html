@@ -19,6 +19,10 @@
         <span class="material-symbols-outlined text-xl">inventory_2</span>
         <span class="font-medium hidden lg:block">Inventario</span>
       </a>
+  <a href="{{ url_for('movimientos') }}" {% if request.endpoint == 'movimientos' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
+        <span class="material-symbols-outlined text-xl">conveyor_belt</span>
+        <span class="font-medium hidden lg:block">Movimientos</span>
+      </a>
   <a href="{{ url_for('ventas') }}" {% if request.endpoint == 'ventas' %}aria-current="page" class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"{% else %}class="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"{% endif %}>
         <span class="material-symbols-outlined text-xl">receipt_long</span>
         <span class="font-medium hidden lg:block">Ventas</span>
