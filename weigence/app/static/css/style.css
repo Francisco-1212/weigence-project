@@ -42,6 +42,9 @@
   --darkcard: #181C21;
   --sbar: #b4b9c1ff;
 
+  --text-muted-light: #4b5563; /* gris 600 aprox, buen contraste */
+  --text-subtle-light: #6b7280; /* opcional, para descripciones más suaves */
+
   /* ============================================================
      PALETA DE MODO CLARO
      ============================================================ */
@@ -63,6 +66,8 @@
 
   /* Variable global sincronizada (para header + body oscuro) */
   --theme-bg-dark: var(--bg-dark);
+  --text-muted-dark: #9ca3af;  /* gris 400 aprox */
+  --text-subtle-dark: #6b7280;
 }
 
 /* ============================================================
@@ -788,4 +793,26 @@ td {
 .insights-card:hover {
   border-color: var(--primary-500);
   box-shadow: 0 0 10px rgba(59,130,246,0.15);
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;   
+}
+/* Evita fondo blanco al seleccionar en modo oscuro */
+.timeline-item:focus,
+.timeline-item:active,
+.timeline-item.dragging {
+  outline: none;
+  background-color: var(--card-bg-light);
+  color: inherit;
+}
+
+html.dark .timeline-item:focus,
+html.dark .timeline-item:active,
+html.dark .timeline-item.dragging {
+  background-color: var(--card-bg-dark);
+  box-shadow: 0 0 0 2px var(--primary-600);
 }
