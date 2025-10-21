@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Auditoría Inteligente - Weigence{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="w-full flex flex-col gap-10 pb-10 px-4 xl:px-6 2xl:px-8">
+
+  <!-- CABECERA -->
+  <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
+    <div>
+      <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl">monitoring</span>
+        Consola de Auditoría Inteligente
+      </h1>
+    </div>
+    <button id="btn-refresh-auditoria" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 text-white px-4 py-2 text-sm font-medium hover:bg-primary-500 transition">
+      <span class="material-symbols-outlined text-[18px]">refresh</span> Actualizar
+    </button>
+  </section>
+
+  <!-- ESTADO DEL SISTEMA -->
+  <section>
+    <h2 class="text-lg font-semibold mb-3 text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">health_and_safety</span>
+      Estado general del sistema
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% set estados = [
+        ('Sensores activos','120/120','sensors','text-green-500'),
+        ('Advertencias (24h)','3','warning','text-yellow-500'),
+        ('Errores críticos','1','error','text-red-500'),
+        ('Sincronización','OK','sync','text-primary-500')
+      ] %}
+      {% for label, value, icon, color in estados %}
+      <div class="p-4 rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] flex items-center justify-between hover:border-primary-400/40 transition-all">
+        <div>
+          <p class="text-[12px] text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+          <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{{ value }}</p>
+        </div>
+        <span class="material-symbols-outlined {{ color }} text-[28px]">{{ icon }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- INCIDENCIAS Y RECOMENDACIONES -->
+  <section class="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6">
+
+    <!-- Incidencias recientes -->
+    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5 shadow-sm">
+      <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-yellow-500">bug_report</span>
+        Incidencias recientes
+      </h3>
+      <div class="space-y-2">
+        {% set incidencias = [
+          ('dangerous','red-500','Acceso no autorizado en Zona B','12:10 • Alta severidad'),
+          ('warning','yellow-500','Discrepancia de peso en Item #X456','10:45 • Media severidad'),
+          ('build','blue-500','Sensor #12 sin lectura por 10s','14:25 • Baja severidad')
+        ] %}
+        {% for icono, color, texto, detalle in incidencias %}
+        <div class="flex items-start gap-3 bg-neutral-100/70 dark:bg-[var(--card-sub-bg-dark)] rounded-md p-3 border border-transparent hover:border-[var(--border-dark)]/80 transition">
+          <span class="material-symbols-outlined text-{{ color }} text-base mt-0.5">{{ icono }}</span>
+          <div class="flex-1 text-xs">
+            <p class="text-neutral-800 dark:text-neutral-200 font-medium">{{ texto }}</p>
+            <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">{{ detalle }}</p>
+          </div>
+          <button class="text-[11px] px-2 py-1 rounded border border-neutral-300 dark:border-[var(--border-dark)] hover:bg-neutral-200/50 dark:hover:bg-[var(--card-sub-bg-dark)]">Ver</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recomendaciones AI -->
+    <div class="ia-panel rounded-xl p-5 shadow-md">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">auto_awesome</span>
+        <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Recomendaciones AI</h4>
+      </div>
+      <ul class="list-disc ml-6 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+        <li>Refuerza la autenticación en <strong>Zona B</strong> por intentos de acceso no autorizados.</li>
+        <li>Recalibra <strong>Sensor #12</strong> en las próximas 12h.</li>
+        <li>Implementa control automático de peso en <strong>#X456</strong>.</li>
+      </ul>
+      <div class="text-right mt-4">
+        <button class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Ver plan de acción</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- SYSTEM INSIGHTS -->
+  <section>
+    <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">insights</span>
+      System Insights
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <!-- Chart 1 -->
+      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
+        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Distribución de tipos de evento</p>
+        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
+
+      </div>
+
+      <!-- Chart 2 -->
+      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
+        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Incidencias (últimos 7 días)</p>
+        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
+      </div>
+
+      <!-- Chart 3 -->
+      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
+        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Mapa de actividad (24h)</p>
+        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
+
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

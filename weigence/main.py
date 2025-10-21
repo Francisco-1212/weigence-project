@@ -1,6 +1,6 @@
 from lectura_sensores.lector_peso import leer_peso
 from procesamiento.procesador_datos import analizar_peso
-from conexion_bd.conexion_supabase import guardar_dato   # <- ahora usa Supabase
+from conexion_bd.conexion_supabase import guardar_dato   # usa Supabase
 
 import time
 

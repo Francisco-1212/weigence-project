@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Movimientos - Weigence{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="w-full flex flex-col gap-10 pb-10 px-4 xl:px-6 2xl:px-8">
+
+  <!-- RESUMEN GENERAL -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+    {% set resumen = [
+      ('Movimientos del día', movimientos|length, 'inventory_2', 'text-primary-600'),
+      ('Peso agregado', '+' ~ (movimientos|map(attribute='cantidad')|sum) ~ 'kg', 'south', 'text-green-500'),
+      ('Peso retirado', '-5kg', 'north', 'text-red-500')
+    ] %}
+    {% for label, valor, icon, color in resumen %}
+    <div class="flex justify-between items-center p-5 rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+      <div>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</p>
+        <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-100 {{ color }}">{{ valor }}</p>
+      </div>
+      <span class="material-symbols-outlined text-2xl {{ color }}">{{ icon }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- MOVIMIENTOS EN TIEMPO REAL -->
+  <section class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between border-b border-neutral-300 dark:border-[var(--border-dark)] px-6 py-4">
+      <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-xl">sync_alt</span>
+        Movimientos en Tiempo Real
+      </h2>
+      <button id="btn-refresh-mov" class="inline-flex items-center gap-2 px-3 py-1 text-xs rounded-md bg-primary-600 text-white hover:bg-primary-500 transition">
+        <span class="material-symbols-outlined text-[16px]">refresh</span>Actualizar
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-neutral-300 dark:divide-[var(--border-dark)]">
+      
+      <!-- Timeline -->
+      <div id="timeline-container" class="relative p-5 overflow-auto max-h-[70vh]">
+        <div class="absolute left-[1.05rem] top-0 bottom-0 w-[2px] bg-neutral-300/60 dark:bg-[var(--border-dark)] rounded-full"></div>
+
+        {% set ultimos_movimientos = movimientos[-8:] if movimientos|length > 8 else movimientos %}
+        {% for movimiento in ultimos_movimientos %}
+        <div class="timeline-item relative pl-8 mb-3 cursor-pointer transition-transform duration-100 hover:-translate-y-0.5" draggable="true" data-index="{{ loop.index0 }}">
+          <div class="absolute left-0 top-2 flex items-center justify-center w-5 h-5 rounded-full border border-neutral-300 dark:border-[var(--border-dark)]
+            {% if movimiento.tipo_evento == 'Añadir' %} bg-green-900/40 text-green-400
+            {% elif movimiento.tipo_evento == 'Retirar' %} bg-red-900/40 text-red-400
+            {% else %} bg-blue-900/40 text-blue-400 {% endif %}">
+            <span class="material-symbols-outlined text-[13px] leading-none">
+              {% if movimiento.tipo_evento == 'Añadir' %}south{% elif movimiento.tipo_evento == 'Retirar' %}north{% else %}sync_alt{% endif %}
+            </span>
+          </div>
+
+          <div class="border-l-4 {% if movimiento.tipo_evento == 'Añadir' %}border-green-500{% elif movimiento.tipo_evento == 'Retirar' %}border-red-500{% else %}border-blue-500{% endif %}
+                      bg-neutral-100/50 dark:bg-[var(--card-bg-dark)] rounded-md px-3 py-2 hover:border-primary-400/40 transition-all">
+            <p class="text-[13px] font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+              {{ movimiento.tipo_evento }}:
+              <span class="text-primary-600 dark:text-primary-400 font-bold">{{ movimiento.cantidad }}kg</span>
+              de {{ movimiento.producto }}
+            </p>
+            <p class="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
+              {{ movimiento.timestamp.split('T')[1] if 'T' in movimiento.timestamp else movimiento.timestamp }}
+              • {{ movimiento.ubicacion }} •
+              <span class="text-primary-500 dark:text-primary-400">{{ movimiento.usuario_nombre or 'Desconocido' }}</span>
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if movimientos|length > 8 %}
+        <div class="flex justify-center mt-4">
+          <a href="#" class="text-xs text-primary-500 hover:text-primary-400 transition underline underline-offset-2">
+            Ver historial completo ({{ movimientos|length }} registros)
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Detalle contextual -->
+      <div class="p-6 flex flex-col bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] relative">
+        <button id="cerrar-detalle" class="absolute top-3 right-3 text-neutral-500 dark:text-neutral-400 hover:text-red-500 transition hidden">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+        <h3 class="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">info</span>
+          Detalles del Movimiento
+        </h3>
+        <div id="detalle-contextual" class="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-400/40 dark:border-[var(--border-dark)] rounded-lg text-center px-6 py-8">
+          <span class="material-symbols-outlined text-5xl text-neutral-400 dark:text-neutral-600">touch_app</span>
+          <p class="mt-2 text-sm text-neutral-400">Selecciona o arrastra un movimiento para ver detalles</p>
+          <p class="text-xs text-neutral-500">Historial, usuarios y observaciones aparecerán aquí</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN DE ESTADÍSTICAS -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-4">
+      <p class="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">Movimientos por tipo</p>
+      <div class="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+        <span>Añadidos</span><span class="text-green-500 font-semibold">25%</span>
+      </div>
+      <div class="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+        <span>Retirados</span><span class="text-red-500 font-semibold">35%</span>
+      </div>
+      <div class="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+        <span>Movidos</span><span class="text-blue-500 font-semibold">40%</span>
+      </div>
+    </div>
+    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-4">
+      <p class="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">Usuarios activos hoy</p>
+      <div class="text-3xl font-bold text-primary-500">4</div>
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">Francisco, Nelson, Paulo, Otros</p>
+    </div>
+    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-4">
+      <p class="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">Última sincronización</p>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="material-symbols-outlined text-green-500 text-base">sync</span>
+        <span class="text-neutral-700 dark:text-neutral-300">Hace 2 min</span>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

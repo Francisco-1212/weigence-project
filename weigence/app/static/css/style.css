@@ -1,0 +1,791 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   VARIABLES GLOBALES DEL SISTEMA WEIGENCE
+   ============================================================ */
+:root {
+  /* ===== Colores primarios ===== */
+  --primary-50:  #eef2ff;
+  --primary-100: #e0e7ff;
+  --primary-200: #c7d2fe;
+  --primary-300: #a5b4fc;
+  --primary-400: #818cf8;
+  --primary-500: #6366f1;
+  --primary-600: #4f46e5;
+  --primary-700: #4338ca;
+  --primary-800: #3730a3;
+  --primary-900: #312e81;
+  --primary-950: #0f0d2d;
+
+  /* ===== Escala neutral ===== */
+  --neutral-50:  #f9fafb;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  --neutral-950: #0d0d0ef7;
+
+  /* ===== Colores semánticos ===== */
+  --success-500: #22c55e;
+  --warning-500: #f59e0b;
+  --danger-500:  #f43f5e;
+
+  /* ===== Colores personalizados ===== */
+  --primary-color: #9ba9bb;
+  --darkcard: #181C21;
+  --sbar: #b4b9c1ff;
+
+  /* ============================================================
+     PALETA DE MODO CLARO
+     ============================================================ */
+  --bg-light: #E6E9EC;
+  --text-light: var(--neutral-900);
+  --card-bg-light: #d6dbe0ad;
+  --border-light: var(--neutral-200);
+  --grid-light: rgba(0, 0, 0, 0.05);
+
+  /* Paleta modo oscuro */
+  --bg-dark: #15171a;                /* Fondo absoluto */
+  --card-bg-dark: #1b1b1b;           /* Card principal */
+  --card-sub-bg-dark: #242424;       /* Subcard gris más visible */
+  --border-dark: #3a3a3a;            /* Borde neutro */
+  --border-dark-hover: #4a4a4a;      /* Borde hover */
+  --text-dark: #e6e6e6;              /* Texto blanco sucio */
+  --text-dark-secondary: #a0a0a0;    /* Texto secundario */      
+  --grid-dark: rgba(255, 255, 255, 0.05);
+
+  /* Variable global sincronizada (para header + body oscuro) */
+  --theme-bg-dark: var(--bg-dark);
+}
+
+/* ============================================================
+   MODO OSCURO - ASIGNACIÓN AUTOMÁTICA
+   ============================================================ */
+.dark {
+  --bg-light: var(--theme-bg-dark);
+  --text-light: var(--text-dark);
+  --card-bg-light: var(--card-bg-dark);
+  --border-light: var(--border-dark);
+  --grid-light: var(--grid-dark);
+}
+
+
+/* Filtro hoy semana mes */
+.filtro-fecha-btn {
+  background: none;
+  color: #181C21;
+  font-weight: 800;
+  transition: all .2s;
+  box-shadow: none;
+}
+
+.filtro-fecha-btn.filtro-activo {
+  background: #dfdbdbd4;
+  color: #181C21;
+  font-weight: bold;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.50);
+}
+.dark .filtro-fecha-btn {
+  color: white; /* texto blanco modo oscuro */
+}
+
+/* Modo oscuro */
+.dark .filtro-fecha-btn.filtro-activo {
+  background: #373737;
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.70); /* Sombra más densa */
+}
+
+
+
+/* ===== RESET Y ESTILOS BASE ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  position: relative;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  font-family: 'Inter', 'Noto Sans', sans-serif;
+  line-height: 1.6;
+  transition: background-color 0.3s, color 0.3s;
+  overflow-x: visible;
+}
+
+/* ===== GRAFICO ===== */
+#chartContainer div:hover {
+  transform: translateY(-5%);
+}
+
+#chartLabels div {
+  line-height: 1rem;
+  margin-top: -2px; /* Ajusta labels cerca del gráfico */
+}
+
+/* ===== COMPONENTES REUTILIZABLES ===== */
+/* Tarjetas */
+.card {
+  background-color: var(--card-bg-light);
+  border: 1px solid var(--border-light);
+  color: var(--text-light);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 0.5rem;
+}
+
+.btn:focus {
+  outline: 2px solid var(--primary-300);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background-color: var(--primary-600);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-700);
+}
+
+.btn-secondary {
+  background-color: var(--neutral-200);
+  color: var(--neutral-800);
+}
+
+.btn-secondary:hover {
+  background-color: var(--neutral-300);
+}
+
+.btn-danger {
+  background-color: var(--danger-500);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #e63558;
+}
+
+/* Filtros */
+.filtros-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.filtros-container input[type="text"],
+.filtros-container input[type="date"],
+.filtros-container select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background-color: var(--card-bg-light);
+  color: var(--text-light);
+  min-width: 150px;
+}
+
+/* Botones de filtro específicos */
+button.filtrar {
+  background-color: var(--primary-600);
+  color: white;
+  font-weight: 600;
+}
+
+button.limpiar {
+  background-color: var(--neutral-500);
+  color: white;
+}
+
+/* Selector de revisadas */
+select#filtro-revisadas {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-light);
+  background-color: var(--card-bg-light);
+  color: var(--text-light);
+}
+
+/* Botones de acción */
+button.accion {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.125rem;
+  color: var(--neutral-600);
+  padding: 0.375rem 0.625rem;
+  transition: color 0.3s ease;
+  border-radius: 6px;
+}
+
+button.accion:hover {
+  color: var(--primary-500);
+  background-color: var(--primary-50);
+}
+
+.dark button.accion:hover {
+  background-color: var(--neutral-800);
+}
+
+/* Selector de gráficos */
+.chart-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.chart-toggle .btn {
+  background-color: var(--primary-800);
+  color: white;
+}
+
+.chart-toggle .btn:hover,
+.chart-toggle .btn.active {
+  background-color: var(--primary-700);
+  transform: translateY(-2px);
+}
+
+/* Contenedor de gráficos */
+.chart-container {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background-color: var(--card-bg-light);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: none;
+}
+
+.chart-container.active {
+  display: block;
+}
+
+/* Indicadores de tipo y gravedad */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tipo-bajo_stock {
+  background-color: rgba(254, 243, 199, 0.6);
+  color: #92400e;
+}
+
+.tipo-sobrepeso {
+  background-color: rgba(254, 202, 202, 0.6);
+  color: #991b1b;
+}
+
+.tipo-peso_anormal {
+  background-color: rgba(224, 231, 255, 0.6);
+  color: #3730a3;
+}
+
+.gravedad-alta {
+  background-color: rgba(254, 202, 202, 0.6);
+  color: #991b1b;
+}
+
+.gravedad-media {
+  background-color: rgba(254, 243, 199, 0.6);
+  color: #92400e;
+}
+
+.gravedad-baja {
+  background-color: rgba(209, 250, 229, 0.6);
+  color: #065f46;
+}
+
+/* Estados */
+.estado-activa {
+  color: var(--danger-500);
+  font-weight: 600;
+}
+
+.estado-revisada {
+  color: var(--success-500);
+  font-weight: 600;
+}
+#last-update-text {
+  font-weight: 600; /* semibold para dar énfasis ligero */
+  color: #444444;   /* más oscuro suave que el texto normal */
+}
+
+#last-update-timestamp {
+  font-weight: 400; /* peso normal para la fecha */
+  color: #666666;   /* un tono un poco más claro que #444 */
+  margin-left: 4px; /* pequeño espacio a la izquierda para separar */
+}
+
+
+/* Iconos */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  color: var(--text-light);
+}
+
+/* Barras de gráficos */
+.bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 220px;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 40px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+/* Toast notifications (sin cambios) */
+.toast {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  background-color: var(--neutral-800);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 30px;
+}
+/* Overlay fondo con difuminado */
+#overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+#overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.badge-notif {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+/* scroll en notificaciones */
+
+#notification-panel::-webkit-scrollbar {
+  width: 6px;
+}
+#notification-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+#notification-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+#notification-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0,0,0,0.4);
+}
+/* Panel lateral */
+#side-notifications {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background-color: var(--card-bg-light);
+  color: var(--text-light);
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.16);
+  padding: 1.5rem 1.25rem 2rem;
+  z-index: 1010;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  outline: none;
+}
+
+#side-notifications.hidden {
+  transform: translateX(100%);
+}
+
+#side-notifications:not(.hidden) {
+  transform: translateX(0);
+}
+
+/* Modo oscuro */
+.dark #side-notificaciones {
+  background-color: var(--card-bg-dark);
+  color: var(--text-dark);
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Botón cerrar */
+#close-notifications {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+#close-notifications:hover,
+#close-notifications:focus {
+  opacity: 1;
+  outline: none;
+}
+
+/* Título */
+#notifications-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: inherit;
+}
+
+/* Acciones arriba */
+.notifications-actions button {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  background-color: var(--card-bg-light);
+  border: 1px solid var(--border-light);
+  color: var(--text-light);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.notifications-actions button:hover,
+.notifications-actions button:focus {
+  background-color: var(--primary-50);
+  border-color: var(--primary-300);
+  outline: none;
+}
+
+.dark .notifications-actions button {
+  background-color: var(--card-bg-dark);
+  border-color: var(--border-dark);
+  color: var(--text-dark);
+}
+
+.dark .notifications-actions button:hover,
+.dark .notifications-actions button:focus {
+  background-color: var(--primary-900);
+  border-color: var(--primary-700);
+}
+
+/* Notificaciones */
+.notification-item {
+  user-select: none;
+  outline-offset: 2px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.notification-item:hover,
+.notification-item:focus {
+  background-color: var(--primary-50);
+}
+
+.dark .notification-item:hover,
+.dark .notification-item:focus {
+  background-color: var(--primary-900);
+}
+#notification-panel {
+  background-color: var(--card-bg-light); /* tu variable clara */
+  color: var(--text-light);
+  box-shadow: -3px 0 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark #notification-panel {
+  background-color: var(--card-bg-dark); /* tu variable oscura */
+  color: var(--text-dark);
+  box-shadow: -3px 0 15px rgba(0,0,0,0.5);
+}
+
+/* El overlay sigue con transparencia y blur */
+#notification-backdrop {
+  backdrop-filter: blur(8px);
+  background-color: rgba(0,0,0,0.4);
+}
+
+/* Icono */
+.notification-icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-100);
+  color: var(--primary-600);
+  transition: background-color 0.3s ease;
+}
+
+.dark .notification-icon {
+  background-color: var(--primary-800);
+  color: var(--primary-400);
+}
+
+/* Texto truncado */
+.notification-text h4,
+.notification-text p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Botones acción rápida */
+.notification-actions button {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+.notification-actions button:hover,
+.notification-actions button:focus {
+  outline: none;
+}
+
+.notification-actions button[aria-label*="✓"] {
+  color: var(--success-500);
+}
+
+.notification-actions button[aria-label*="×"] {
+  color: var(--danger-500);
+}
+
+.notification-actions button[aria-label*="✓"]:hover,
+.notification-actions button[aria-label*="✓"]:focus {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.notification-actions button[aria-label*="×"]:hover,
+.notification-actions button[aria-label*="×"]:focus {
+  background-color: rgba(244, 63, 94, 0.15);
+}
+
+/* Botón del Icono Notificaciones */
+#btn-notificaciones {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  color: var(--text-light);
+  transition: color 0.3s ease;
+}
+
+#btn-notificaciones:hover,
+#btn-notificaciones:focus {
+  color: var(--primary-600);
+  outline: none;
+}
+
+#btn-notificaciones svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  transition: stroke 0.3s ease;
+}
+
+/* Contador de notificaciones */
+.notification-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: var(--danger-500);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 2px solid var(--card-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.8);
+  animation: pulse 2s infinite;
+  user-select: none;
+}
+
+.dark .notification-count {
+  border-color: var(--darkcard);
+}
+
+
+/* Tabla */
+
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* Animación pulso */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+
+/* movimiento */
+.movimiento-item.selected {
+  background: #e0f2fe;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0 2px #38bdf8;
+}
+.panel {
+  background: var(--card-bg-light);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-slideIn { animation: slideIn 0.35s ease-out; }
+
+/* === ESTILO FUTURISTA IA === */
+.ia-panel {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  background-color: var(--card-bg-dark);
+  overflow: hidden;
+}
+
+.ia-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    #00f5ff 0%,
+    #7c3aed 50%,
+    #00f5ff 100%);
+  mask: linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+  animation: iaPulse 5s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+@keyframes iaPulse {
+  0%,100% {opacity: 0.4;}
+  50% {opacity: 0.9;}
+}
+
+/* Ajustes visuales de System Insights */
+.insights-card {
+  background: var(--card-bg-dark);
+  border: 1px solid var(--border-dark);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.insights-card:hover {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 10px rgba(59,130,246,0.15);
+}

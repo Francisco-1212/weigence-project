@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% block title %}Alertas - Weigence{% endblock %}
+
+{% block sidebar %}
+{% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+{% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="p-8">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">Alertas del Sistema</h1>
+      <p class="text-slate-500 dark:text-slate-400 text-sm">Administra y monitorea todas las alertas del sistema en
+        tiempo real.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        class="flex items-center gap-2 px-4 py-2 rounded-md text-slate-500 dark:text-slate-400 bg-[var(--primary-color)] dark:bg-[var(--primary-950)] text-sm font-medium">
+        <span class="material-symbols-outlined text-base">download</span>
+        Exportar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tarjetas de resumen -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div
+      class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+      <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Alertas</p>
+      <p class="text-3xl font-bold">{{ total_alertas }}</p>
+    </div>
+    <div
+      class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+      <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Pendientes</p>
+      <p class="text-3xl font-bold">{{ alertas_pendientes }}</p>
+    </div>
+    <div
+      class="flex flex-col gap-2 rounded-md p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700">
+      <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Resueltas</p>
+      <p class="text-3xl font-bold">{{ alertas_resueltas }}</p>
+    </div>
+  </div>
+  <!-- Tabla de alertas -->
+  <div
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-sm">
+    <div class="p-6">
+      <table
+        class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 w-full max-w-full mx-auto rounded-2xl">
+        <thead class="border-b border-slate-200 dark:border-gray-700">
+          <tr
+            class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl">
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider rounded-tl-2xl">
+              Alerta</th>
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Usuario</th>
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Fecha</th>
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Tipo</th>
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Estado</th>
+            <th scope="col"
+              class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider rounded-tr-2xl">
+              Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+          {% for alerta in alertas %}
+          <tr class="hover:bg-slate-100 dark:hover:bg-gray-700 rounded-2xl">
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ alerta.titulo }}</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400">{{ alerta.descripcion }}</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Producto: {{ alerta.nombre_producto }}</div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">{{ alerta.nombre_usuario }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">{{ alerta.fecha_formateada }}
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if alerta.tipo_color == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400
+                            {% elif alerta.tipo_color == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
+                            {% elif alerta.tipo_color == 'info' %} bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400
+                            {% else %} bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400
+                            {% endif %}">
+                {{ alerta.tipo_color|default('info')|title }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if alerta.estado == 'pendiente' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
+                            {% elif alerta.estado == 'resuelto' %} bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400
+                            {% else %} bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400
+                            {% endif %}">
+                {{ alerta.estado|default('pendiente')|title }}
+              </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+              <a href="#"
+                class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300">Gestionar</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-4 py-3 text-center text-slate-500 dark:text-slate-400">No hay alertas registradas
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% endblock %}

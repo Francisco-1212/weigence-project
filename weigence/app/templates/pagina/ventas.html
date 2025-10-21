@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Ventas - Weigence{% endblock %}
+
+{% block top %}
+{% include "componentes/header.html" %}
+{% endblock %}
+
+{% block sidebar %}
+{% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block contenido %}
+
+<h2 class="text-3xl font-bold mb-8 text-left">Ventas</h2>
+
+<!-- Tarjetas de resumen -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-400">
+      <span class="material-symbols-outlined">shopping_cart</span>
+    </div>
+    <div>
+      <p class="text-slate-500 dark:text-slate-400 text-sm">Ventas Totales</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        ${{ total_ventas_str }}
+      </p>
+    </div>
+  </div>
+  <div
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
+      <span class="material-symbols-outlined">attach_money</span>
+    </div>
+    <div>
+      <p class="text-slate-500 dark:text-slate-400 text-sm">Valor Promedio por Venta</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        ${{ promedio_ventas_str }}
+      </p>
+    </div>
+  </div>
+  <div
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500 dark:text-yellow-400">
+      <span class="material-symbols-outlined">receipt_long</span>
+    </div>
+    <div>
+      <p class="text-slate-500 dark:text-slate-400 text-sm">Número de Transacciones</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ num_transacciones }}</p>
+    </div>
+  </div>
+  <div
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500 dark:text-purple-400">
+      <span class="material-symbols-outlined">star</span>
+    </div>
+    <div>
+      <p class="text-slate-500 dark:text-slate-400 text-sm">Producto Más Vendido</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        {{ top_producto_str }}
+      </p>
+    </div>
+  </div>
+</div>
+<!-- Tabla de ventas recientes -->
+
+<div
+  class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-2xl shadow-sm mb-6">
+  <h3 class="text-lg font-bold mb-4 text-slate-900 dark:text-slate-100">Ventas recientes</h3>
+  <div class="overflow-x-auto colored-scrollbar flex justify-center">
+    <table
+      class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 w-full max-w-full mx-auto rounded-2xl">
+      <thead class="border-b border-slate-200 dark:border-gray-700">
+        <tr
+          class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl">
+          <th
+            class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider rounded-tl-2xl">
+            ID Venta</th>
+          <th
+            class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Fecha</th>
+          <th
+            class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Vendedor</th>
+          <th
+            class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Total</th>
+          <th
+            class="px-4 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider rounded-tr-2xl">
+            Detalles</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+        {% for venta in ventas %}
+        <tr class="hover:bg-slate-100 dark:hover:bg-gray-700 rounded-2xl">
+          <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900 dark:text-slate-100 text-center">#{{
+            venta.idventa }}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300 text-center">{{ venta.fecha_venta }}
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400 text-center">{{ venta.rut_usuario }}
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400 text-center">${{ venta.total }}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-center align-top">
+            <details class="rounded-lg w-full">
+              <summary
+                class="cursor-pointer text-primary-400 py-1 px-2 rounded-lg bg-neutral-200 dark:bg-neutral-800 inline-block w-full">
+                Ver detalles</summary>
+              <div class="mt-2 w-full p-0 m-0">
+                <table class="w-full max-w-full mx-auto rounded-2xl bg-transparent border-0 dark:bg-transparent"
+                  style="border:none;">
+                  <thead>
+                    <tr class="transition-colors duration-150 rounded-2xl hover:bg-slate-100 dark:hover:bg-gray-700">
+                      <th class="px-2 py-1 text-left rounded-tl-2xl">ID Venta</th>
+                      <th class="px-2 py-1 text-left">ID Producto</th>
+                      <th class="px-2 py-1 text-left">Nombre Producto</th>
+                      <th class="px-2 py-1 text-left">Cantidad</th>
+                      <th class="px-2 py-1 text-left">Precio Unitario</th>
+                      <th class="px-2 py-1 text-left rounded-tr-2xl">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% set detalles = detalle_ventas | selectattr('idventa', 'equalto', venta.idventa) | list %}
+                    {% if detalles %}
+                    {% for det in detalles %}
+                    <tr class="transition-colors duration-150 rounded-2xl hover:bg-slate-100 dark:hover:bg-gray-700">
+                      <td class="px-2 py-1">{{ det.idventa }}</td>
+                      <td class="px-2 py-1">{{ det.idproducto }}</td>
+                      <td class="px-2 py-1">
+                        {{ productos_dict[det.idproducto] if det.idproducto in productos_dict else 'Desconocido' }}
+                      </td>
+                      <td class="px-2 py-1">{{ det.cantidad }}</td>
+                      <td class="px-2 py-1">${{ det.precio_unitario }}</td>
+                      <td class="px-2 py-1">${{ det.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                      <td colspan="6" class="px-2 py-1 text-center text-neutral-400">Sin detalles</td>
+                    </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="px-4 py-3 text-center text-sm text-slate-500 dark:text-slate-400">No hay ventas
+            registradas</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="flex flex-wrap gap-4 mt-6">
+  <button
+    class="flex items-center gap-2 rounded-md bg-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500/90">
+    <span class="material-symbols-outlined">add_circle</span>
+    Crear nueva venta
+  </button>
+  <button
+    class="flex items-center gap-2 rounded-md bg-neutral-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-neutral-600">
+    <span class="material-symbols-outlined">receipt_long</span>
+    Ver todas las ventas
+  </button>
+  <button
+    class="flex items-center gap-2 rounded-md bg-neutral-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-neutral-600">
+    <span class="material-symbols-outlined">download</span>
+    Generar reporte de ventas
+  </button>
+</div>
+
+{% endblock %}
