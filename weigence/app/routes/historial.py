@@ -2,10 +2,9 @@ from flask import render_template
 from . import bp
 from api.conexion_supabase import supabase
 
-@bp.route("/movimientos")
-def movimientos():
+@bp.route("/historial")
+def historial():
     try:
-        # Consultar con relaciones completas para evitar múltiples queries
         q = (
             supabase.table("movimientos_inventario")
             .select("""
@@ -22,7 +21,7 @@ def movimientos():
                 observacion
             """)
             .order("timestamp", desc=True)
-            .limit(50)
+            .limit(30)
             .execute()
         )
 
@@ -33,19 +32,36 @@ def movimientos():
             usuario = m.get("usuarios", {}).get("nombre") if isinstance(m.get("usuarios"), dict) else None
 
             movimientos.append({
-                "producto": producto or f"Producto {m.get('idproducto', '-')}",
+                "producto": producto or f"Producto {m.get('idproducto','-')}",
                 "tipo_evento": m.get("tipo_evento", "—"),
                 "cantidad": m.get("cantidad", 0),
                 "ubicacion": f"Estante {estante}" if estante else "—",
                 "usuario_nombre": usuario or "Desconocido",
-                "rut_usuario": m.get("rut_usuario", "—"),
-                "observacion": m.get("observacion", ""),
                 "timestamp": (m.get("timestamp") or "")[:16].replace("T", " "),
+                "observacion": m.get("observacion", ""),
             })
 
-    except Exception as e:
-        print("Error al cargar movimientos:", e)
-        movimientos = []
+        movimientos = movimientos[:5]
 
-    # render_template con MOVIMIENTOS disponibles en JS
-    return render_template("pagina/movimientos.html", movimientos=movimientos)
+        eq = (
+            supabase.table("alertas")
+            .select("titulo, descripcion, tipo_color, fecha_creacion, estado")
+            .order("fecha_creacion", desc=True)
+            .limit(30)
+            .execute()
+        )
+        errores = [
+            {
+                "tipo": (e.get("titulo") or e.get("tipo_color") or "Info"),
+                "descripcion": e.get("descripcion", "Sin descripción"),
+                "fecha_creacion": (e.get("fecha_creacion") or "")[:16].replace("T", " "),
+                "estado": e.get("estado", "pendiente"),
+            }
+            for e in (eq.data or [])
+        ]
+
+    except Exception as e:
+        print("Error al cargar historial:", e)
+        movimientos, errores = [], []
+
+    return render_template("pagina/historial.html", movimientos=movimientos, errores=errores)

@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const cerrarBtn = document.getElementById("cerrar-detalle");
   const movimientos = Array.isArray(window.MOVIMIENTOS) ? window.MOVIMIENTOS : [];
 
-  // Filtros
   const fTipo = document.getElementById("filter-type");
   const fUser = document.getElementById("filter-user");
   const fLoc  = document.getElementById("filter-location");
@@ -12,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!detalle || !contenedor) return;
 
-  // Delegación: click
+  // --- Click y Drag & Drop ---
   contenedor.addEventListener("click", (e) => {
     const item = e.target.closest(".timeline-item");
     if (!item) return;
@@ -20,17 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDetalle(Number(item.dataset.index));
   });
 
-  // --- Drag & Drop mejorado ---
   contenedor.addEventListener("dragstart", (e) => {
     const item = e.target.closest(".timeline-item");
     if (!item) return;
-
-    // Evita el fondo blanco del drag en modo oscuro
     const img = new Image();
     img.src =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEklEQVR42mP8/5+hHgAHggJ/P6pHUgAAAABJRU5ErkJggg==";
     e.dataTransfer.setDragImage(img, 0, 0);
-
     e.dataTransfer.setData("text/plain", item.dataset.index);
     item.classList.add("dragging");
   });
@@ -56,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDetalle(i);
   });
 
-  // Cerrar detalle
   if (cerrarBtn) cerrarBtn.addEventListener("click", resetDetalle);
 
   // --- Filtros dinámicos ---
@@ -70,13 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
     contenedor.querySelectorAll(".timeline-item").forEach((it) => {
       const okTipo = !t || it.dataset.tipo === t;
       const okUser = !u || it.dataset.user.includes(u);
-      const okLoc = !l || it.dataset.ubicacion.includes(l);
+      const okLoc  = !l || it.dataset.ubicacion.includes(l);
       const okDate = !d || it.dataset.fecha === d;
       it.classList.toggle("hidden", !(okTipo && okUser && okLoc && okDate));
     });
   }
 
-  // --- Selección visual profesional ---
+  // --- Selección visual ---
   function selectItem(item) {
     contenedor.querySelectorAll(".timeline-item").forEach((el) => {
       el.classList.remove(
@@ -87,8 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "selected"
       );
     });
-
-    // Diferente color según modo
     if (document.documentElement.classList.contains("dark")) {
       item.classList.add("ring-2", "ring-primary-500/60", "dark:bg-[var(--card-bg-dark)]", "selected");
     } else {
@@ -96,18 +88,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Estado inicial: sin detalle cargado
-  applyFilters();
-
-  // Render
+  // --- Render de detalle ---
   function renderDetalle(i) {
     const m = movimientos[i];
     if (!m) return;
 
     const tipo = {
       "Añadir": { icon: "south", color: "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/40" },
-      "Retirar":{ icon: "north", color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40" },
-      "Mover":  { icon: "sync_alt",color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" },
+      "Retirar": { icon: "north", color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40" },
+      "Mover": { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" },
     }[m.tipo_evento] || { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" };
 
     const relacionados = movimientos.filter(x => x.producto === m.producto).slice(0, 8);
@@ -132,9 +121,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="grid grid-cols-2 gap-3">
         ${info("Cantidad", `${m.cantidad} kg`)}
-        ${info("Ubicación", m.ubicacion)}
-        ${info("Usuario", m.usuario_nombre)}
-        ${info("RUT", m.rut_usuario)}
+        ${info("Ubicación", m.ubicacion || "—")}
+        ${info("Usuario", m.usuario_nombre || "Desconocido")}
+        ${info("RUT", m.rut_usuario || "—")}
       </div>
 
       <div class="bg-neutral-100 dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg p-4">
@@ -151,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="material-symbols-outlined text-[14px] ${
                   r.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-400" :
                   r.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
-                }">${r.tipo_evento==="Añadir"?"south":r.tipo_evento==="Retirar"?"north":"sync_alt"}</span>
+                }">${r.tipo_evento === "Añadir" ? "south" : r.tipo_evento === "Retirar" ? "north" : "sync_alt"}</span>
                 ${r.tipo_evento} • ${r.cantidad}kg
               </span>
               <span class="text-[11px] text-neutral-600 dark:text-[var(--text-muted-dark)]">${String(r.timestamp).slice(11,16)}</span>
@@ -181,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Estado inicial ---
-  resetDetalle();   // ← inicia vacío
-  applyFilters();   // ← mantiene filtro activo
+  resetDetalle();
+  applyFilters();
 });
-

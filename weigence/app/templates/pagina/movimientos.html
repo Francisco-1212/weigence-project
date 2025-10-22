@@ -84,9 +84,11 @@
 
         {% if movimientos|length > 5 %}
         <div class="flex justify-center mt-4">
-          <a href="" class="text-sm text-primary-500 dark:text-primary-400 hover:underline underline-offset-2">
+          <button class="btn-show-history 
+                        text-sm text-primary-500 dark:text-primary-400 
+                        hover:underline underline-offset-2 focus:outline-none">
             Ver historial completo ({{ movimientos|length }} registros)
-          </a>
+          </button>
         </div>
         {% endif %}
       </div>
