@@ -59,7 +59,7 @@
           <h3 class="font-semibold mb-4">Alertas Críticas</h3>
           <div class="space-y-4">
             {% for alerta in alertas_criticas %}
-            <div class="flex items-start gap-4">
+            <div class="flex items-start gap-4 p-3 rounded-lg alert-item">
               <div class="rounded-full p-2" style="background-color: {% if alerta.tipo_color == 'rojo' %}rgba(239,68,68,0.2){% elif alerta.tipo_color == 'amarilla' %}rgba(234,179,8,0.2){% else %}rgba(59,130,246,0.2){% endif %}; color: var(--{{ alerta.tipo_color }}-500);">
                 <span class="material-symbols-outlined text-base">{{ alerta.icono }}</span>
               </div>
@@ -73,24 +73,22 @@
         </div>
       </a>
       <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow">
-      <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Acciones rápidas</h3>
-      <div class="mt-4 space-y-3">
-        <button
-          class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-          type="button"
-        >
-          <span class="material-symbols-outlined">file_download</span>
-          Exportar reporte (PDF/Excel)
-        </button>
-        <button
-          class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow text-neutral-900 dark:text-neutral-100 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-          type="button"
-        >
-          <span class="material-symbols-outlined ">analytics</span>
-          Ir a detalle (Inventario/Ventas)
-        </button>
+        <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Acciones rápidas</h3>
+        <div class="mt-4 space-y-3">
+          <button id="btn-exportar"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-all text-neutral-900 dark:text-neutral-100 hover:bg-primary-100/30 dark:hover:bg-primary-400/20 hover:shadow-md hover-light-shadow focus:ring-2 focus:ring-primary-400"
+            type="button">
+            <span class="material-symbols-outlined">file_download</span>
+            Exportar reporte (PDF/Excel)
+          </button>
+          <button id="btn-exportar"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-all text-neutral-900 dark:text-neutral-100 hover:bg-primary-100/30 dark:hover:bg-primary-400/20 hover:shadow-md hover-light-shadow focus:ring-2 focus:ring-primary-400"
+            type="button">
+            <span class="material-symbols-outlined">analytics</span>
+            Ir a detalle (Inventario/Ventas)
+          </button>
+        </div>
       </div>
-    </div>
     </div>
   </div>
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">

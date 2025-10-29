@@ -43,37 +43,57 @@
       </div>
 
       <!-- Timeline -->
-      <div id="timeline-container" class="relative pl-6 max-h-[70vh] overflow-y-auto pr-2">
-        <div class="absolute left-[1.2rem] top-0 bottom-0 w-[2px] bg-neutral-300/60 dark:bg-[var(--border-dark)] rounded-full"></div>
+      <div id="timeline-container" 
+          class="relative pl-6 max-h-[70vh] overflow-y-auto pr-2 bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] transition-colors duration-300">
+        
+        <!-- Línea vertical -->
+        <div class="absolute left-[1.2rem] top-0 bottom-0 w-[2px] bg-[var(--border-light)] dark:bg-[var(--border-dark)] rounded-full"></div>
 
         {% set lista = movimientos[-5:] if movimientos|length > 5 else movimientos %}
         {% for m in lista %}
         {% set color = 'green' if m.tipo_evento == 'Añadir' else 'red' if m.tipo_evento == 'Retirar' else 'blue' %}
+        
+        <!-- Item -->
         <div class="timeline-item relative pl-8 mb-4 cursor-pointer group" draggable="true"
-             data-index="{{ loop.index0 }}"
-             data-tipo="{{ m.tipo_evento }}"
-             data-user="{{ (m.usuario_nombre or '')|lower }}"
-             data-ubicacion="{{ (m.ubicacion or '')|lower }}"
-             data-fecha="{{ (m.timestamp.split('T')[0] if 'T' in m.timestamp else m.timestamp[:10]) }}">
-          <div class="absolute left-0 top-4 w-4 h-4 rounded-full bg-{{ color }}-500 ring-4 ring-[var(--card-bg-light)] dark:ring-[var(--card-bg-dark)]"></div>
-          <div class="ml-4 p-4 rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-sm hover:border-primary-400 transition">
+            data-index="{{ loop.index0 }}"
+            data-tipo="{{ m.tipo_evento }}"
+            data-user="{{ (m.usuario_nombre or '')|lower }}"
+            data-ubicacion="{{ (m.ubicacion or '')|lower }}"
+            data-fecha="{{ (m.timestamp.split('T')[0] if 'T' in m.timestamp else m.timestamp[:10]) }}">
+          
+          <!-- Punto del timeline -->
+          <div class="absolute left-0 top-4 w-4 h-4 rounded-full bg-{{ color }}-500 
+                      ring-4 ring-[var(--card-bg-light)] dark:ring-[var(--card-bg-dark)] 
+                      transition-colors duration-300"></div>
+          
+          <!-- Tarjeta -->
+          <div class="ml-4 p-4 rounded-xl border border-[var(--border-light)] dark:border-[var(--border-dark)] 
+                      bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
+                      shadow-sm hover:border-primary-500/70 transition-colors duration-300">
             <div class="flex items-start justify-between">
               <div>
-                <p class="text-sm font-bold text-[var(--text-light)] dark:text-[var(--text-dark)]">
-                  {% if m.tipo_evento == 'Añadir' %}<span class="text-green-600">➕</span>
-                  {% elif m.tipo_evento == 'Retirar' %}<span class="text-red-600">➖</span>
-                  {% else %}<span class="text-blue-600">⟳</span>{% endif %}
+                <p class="text-sm font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] flex items-center gap-1">
+                  {% if m.tipo_evento == 'Añadir' %}
+                    <span class="material-symbols-outlined text-success-500 text-base">arrow_upward</span>
+                  {% elif m.tipo_evento == 'Retirar' %}
+                    <span class="material-symbols-outlined text-danger-500 text-base">arrow_downward</span>
+                  {% else %}
+                    <span class="material-symbols-outlined text-primary-500 text-base">sync</span>
+                  {% endif %}
                   {{ m.producto }}
                 </p>
-                <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                <p class="text-xs text-[var(--text-muted-light)] dark:text-[var(--text-muted-dark)] mt-1">
                   {{ m.ubicacion }} • {{ m.usuario_nombre or 'Desconocido' }}
                 </p>
               </div>
               <div class="text-right">
-                <p class="text-sm font-bold {% if m.tipo_evento == 'Añadir' %}text-green-600{% elif m.tipo_evento == 'Retirar' %}text-red-500{% else %}text-blue-500{% endif %}">
+                <p class="text-sm font-bold 
+                          {% if m.tipo_evento == 'Añadir' %}text-success-500
+                          {% elif m.tipo_evento == 'Retirar' %}text-danger-500
+                          {% else %}text-primary-500{% endif %}">
                   {{ "+" if m.tipo_evento=="Añadir" else "-" if m.tipo_evento=="Retirar" else "" }}{{ m.cantidad }}kg
                 </p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                <p class="text-xs text-[var(--text-subtle-light)] dark:text-[var(--text-subtle-dark)] mt-0.5">
                   {{ m.timestamp.split('T')[1][:5] if 'T' in m.timestamp else '' }}
                 </p>
               </div>
@@ -81,6 +101,8 @@
           </div>
         </div>
         {% endfor %}
+
+
 
         {% if movimientos|length > 5 %}
         <div class="flex justify-center mt-4">

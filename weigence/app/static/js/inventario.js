@@ -466,5 +466,314 @@ const Inventario = {
   }
 };
 
+
+// endpoints inventario
+const WeigenceMonitor = {
+  async init() {
+    await this.actualizarTodo();
+    setInterval(() => this.actualizarTodo(), 60000); // refresco cada 60 s
+  },
+
+  async actualizarTodo() {
+    this.actualizarEstantes();
+    this.actualizarAlertas();
+    this.actualizarProyeccion();
+  },
+
+  // -------------------- 1. Monitoreo de estantes --------------------
+  async actualizarEstantes() {
+    try {
+      const res = await fetch("/api/estantes_estado");
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+
+      const contenedor = document.querySelector("#monitoreo-estantes");
+      if (!contenedor) return;
+      contenedor.innerHTML = "";
+
+      data.forEach(e => {
+        const color =
+          e.estado === "critico"
+            ? "red"
+            : e.estado === "advertencia"
+            ? "orange"
+            : e.estado === "estable"
+            ? "green"
+            : "gray";
+
+        contenedor.insertAdjacentHTML(
+          "beforeend",
+          `
+          <div class="border border-${color}-400/50 bg-${color}-400/10 rounded-md p-3 animate-fadeIn">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-bold">Estante ${e.id_estante}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado}</span>
+            </div>
+            <p class="text-sm mb-1">Ocupación: ${e.ocupacion_pct || 0}%</p>
+            <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
+              <div class="bg-${color}-500 h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
+            </div>
+            <p class="text-sm">Peso: ${e.peso_actual} kg / ${e.peso_maximo} kg</p>
+          </div>`
+        );
+      });
+    } catch (err) {
+      console.error("Error monitoreo estantes:", err);
+    }
+  },
+
+  // -------------------- 2. Alertas y acciones sugeridas --------------------
+  async actualizarAlertas() {
+    try {
+      const res = await fetch("/api/alertas_activas");
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+
+      const cont = document.querySelector("#alertas-sugeridas");
+      if (!cont) return;
+      cont.innerHTML = "";
+
+      data.slice(0, 3).forEach(a => {
+        const color =
+          a.tipo_color === "rojo"
+            ? "red"
+            : a.tipo_color === "amarilla"
+            ? "yellow"
+            : "blue";
+        cont.insertAdjacentHTML(
+          "beforeend",
+          `
+          <div class="flex items-start gap-3 p-3 rounded-md bg-${color}-400/10 border border-${color}-400/30 animate-fadeIn">
+            <span class="material-symbols-outlined text-${color}-500 mt-0.5">${a.icono || "warning"}</span>
+            <div>
+              <p class="font-medium text-sm">${a.titulo || "Alerta"}</p>
+              <p class="text-xs mb-1 text-neutral-600 dark:text-neutral-400">${a.descripcion}</p>
+              <button data-id="${a.id}" class="resolver-alerta text-xs font-bold text-[var(--primary-color)] hover:underline">Marcar resuelta</button>
+            </div>
+          </div>`
+        );
+      });
+
+      cont.querySelectorAll(".resolver-alerta").forEach(b =>
+        b.addEventListener("click", () => this.resolverAlerta(b.dataset.id))
+      );
+    } catch (err) {
+      console.error("Error alertas:", err);
+    }
+  },
+
+  async resolverAlerta(id) {
+    try {
+      await fetch(`/api/alertas/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: "resuelto" }),
+      });
+      this.actualizarAlertas();
+    } catch (e) {
+      console.error("Error resolviendo alerta:", e);
+    }
+  },
+
+  // -------------------- 3. Proyección de consumo --------------------
+  async actualizarProyeccion() {
+    try {
+      const res = await fetch("/api/proyeccion_consumo");
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) {
+        console.warn("Sin datos de consumo.");
+        return;
+      }
+
+      const svg = document.querySelector("#grafico-proyeccion");
+      if (!svg) return;
+
+      const max = Math.max(...data.map(d => Number(d.consumo) || 0)) || 1; // evita división por 0
+      const puntos = data
+        .map((d, i) => {
+          const x = 30 + i * 25;
+          const y = 170 - (Number(d.consumo) / max) * 120;
+          return `${x},${y}`;
+        })
+        .join(" L ");
+
+      svg.querySelector("path#linea")?.setAttribute("d", `M ${puntos}`);
+    } catch (err) {
+      console.error("Error proyección:", err);
+    }
+  }
+};
+WeigenceMonitor.actualizarSVG = async function () {
+  try {
+    const res = await fetch("/api/estantes_estado");
+    const data = await res.json();
+    const svg = document.getElementById("svg-almacen");
+    if (!svg || !Array.isArray(data)) return;
+
+    svg.innerHTML = "";
+
+    const scaleX = 1; // ajusta el espaciado horizontal
+    const scaleY = 1; // ajusta el espaciado vertical
+
+    data.forEach(e => {
+      const color =
+        e.estado === "critico"
+          ? "#ef4444"
+          : e.estado === "advertencia"
+          ? "#f59e0b"
+          : "#22c55e";
+
+      const posX = (Number(e.coord_x) || 0) * scaleX;
+      const posY = (Number(e.coord_y) || 0) * scaleY;
+
+      // rectángulo
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", posX);
+      rect.setAttribute("y", posY);
+      rect.setAttribute("width", "50");
+      rect.setAttribute("height", "25");
+      rect.setAttribute("rx", "5");
+      rect.setAttribute("ry", "5");
+      rect.setAttribute("fill", color);
+      rect.style.transition = "all 0.3s ease";
+      rect.dataset.id = e.id_estante;
+      rect.dataset.estado = e.estado;
+      rect.dataset.ocupacion = e.ocupacion_pct;
+      svg.appendChild(rect);
+
+      // texto
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", posX + 25);
+      text.setAttribute("y", posY + 17);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-size", "8");
+      text.setAttribute("fill", "#fff");
+      text.textContent = `E${e.id_estante}`;
+      svg.appendChild(text);
+    });
+
+    // tooltip
+    let tooltip = document.getElementById("tooltip-estante");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "tooltip-estante";
+      tooltip.className =
+        "hidden absolute text-xs bg-neutral-800 text-white rounded-md px-2 py-1 shadow-md pointer-events-none";
+      svg.parentElement.appendChild(tooltip);
+    }
+
+    svg.querySelectorAll("rect").forEach(rect => {
+      rect.addEventListener("mousemove", evt => {
+        tooltip.classList.remove("hidden");
+        tooltip.style.left = evt.offsetX + 20 + "px";
+        tooltip.style.top = evt.offsetY - 10 + "px";
+        tooltip.innerHTML = `
+          <b>Estante ${rect.dataset.id}</b><br>
+          Estado: ${rect.dataset.estado}<br>
+          Ocupación: ${rect.dataset.ocupacion}%`;
+      });
+      rect.addEventListener("mouseleave", () => tooltip.classList.add("hidden"));
+    });
+  } catch (err) {
+    console.error("Error SVG almacén:", err);
+  }
+};
+
+
+// detalle en modal
+WeigenceMonitor.mostrarDetalleEstante = function (estante) {
+  const html = `
+    <div class="p-5">
+      <h2 class="text-xl font-semibold mb-3">Estante ${estante.id_estante}</h2>
+      <p><b>Ocupación:</b> ${estante.ocupacion_pct}%</p>
+      <p><b>Peso actual:</b> ${estante.peso_actual} kg</p>
+      <p><b>Peso máximo:</b> ${estante.peso_maximo} kg</p>
+      <p><b>Estado:</b> ${estante.estado}</p>
+      <div class="mt-4 text-sm text-neutral-600 dark:text-neutral-400">Haz clic fuera para cerrar.</div>
+    </div>
+  `;
+  const modal = document.createElement("div");
+  modal.className =
+    "fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999]";
+  modal.innerHTML = `<div class='bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-gray-300 dark:border-neutral-700 shadow-lg w-80'>${html}</div>`;
+  modal.addEventListener("click", e => {
+    if (e.target === modal) modal.remove();
+  });
+  document.body.appendChild(modal);
+};
+async function cargarAlertas() {
+  try {
+    await fetch("/api/generar_alertas_basicas");
+    const res = await fetch("/api/alertas_activas");
+    const alertas = await res.json();
+    const cont = document.getElementById("alertas-sugeridas");
+    if (!cont) return;
+
+    cont.innerHTML = "";
+
+    const maxAlertas = 3;
+    alertas.slice(0, maxAlertas).forEach(a => {
+      const color =
+        a.tipo_color === "rojo"
+          ? "border-l-4 border-red-500 bg-red-500/10"
+          : a.tipo_color === "amarilla"
+          ? "border-l-4 border-yellow-500 bg-yellow-500/10"
+          : "border-l-4 border-blue-500 bg-blue-500/10";
+
+      const iconoColor =
+        a.tipo_color === "rojo"
+          ? "text-red-500"
+          : a.tipo_color === "amarilla"
+          ? "text-yellow-500"
+          : "text-blue-500";
+
+      const card = document.createElement("div");
+      card.className = `flex items-start gap-3 p-3 rounded-md ${color} shadow-sm hover:shadow-md transition-all`;
+      card.innerHTML = `
+        <span class="material-symbols-outlined ${iconoColor} mt-0.5">${a.icono}</span>
+        <div class="flex flex-col">
+          <p class="font-semibold text-sm text-neutral-900 dark:text-neutral-100">${a.titulo}</p>
+          <p class="text-xs text-neutral-600 dark:text-neutral-400 mb-1">${a.descripcion}</p>
+          <button data-id="${a.id}" class="text-xs font-bold text-[var(--primary-color)] hover:underline">
+            Marcar como revisada
+          </button>
+        </div>
+      `;
+      cont.appendChild(card);
+    });
+
+    // Eliminar scroll y ajustar altura
+    cont.style.maxHeight = "none";
+    cont.style.overflowY = "visible";
+
+    // Eventos "Marcar como revisada"
+    cont.querySelectorAll("button[data-id]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        await fetch(`/api/alertas/marcar_revisada/${id}`, { method: "POST" });
+        cargarAlertas();
+      });
+    });
+  } catch (err) {
+    console.error("Error cargando alertas:", err);
+  }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener("DOMContentLoaded", cargarAlertas);
+// Refrescar cada 20 segundos
+setInterval(cargarAlertas, 20000);
+
+
+// integrar con el resto
+const oldUpdate = WeigenceMonitor.actualizarTodo.bind(WeigenceMonitor);
+WeigenceMonitor.actualizarTodo = async function () {
+  await oldUpdate();
+  this.actualizarSVG();
+};
+
+// Activar al cargar
+document.addEventListener("DOMContentLoaded", () => WeigenceMonitor.init());
+
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', ()=>Inventario.init());

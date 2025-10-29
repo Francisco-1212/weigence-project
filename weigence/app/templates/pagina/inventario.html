@@ -11,174 +11,130 @@
 {% block contenido %}
 <div class="p-0 bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] min-h-screen">
 
-    <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-      <h2 class="text-3xl font-bold mb-6 text-left">Inventario</h2>
+    <!-- Título -->
+    <h2 class="text-3xl font-bold text-left text-neutral-900 dark:text-neutral-100">
+      Inventario
+    </h2>
 
-      <!-- Tarjetas métricas -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
-          <div class="flex items-center justify-between">
-            <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Total de Productos</p>
-            <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">inventory_2</span>
-          </div>
-          <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ productos|length }}</p>
+    <!-- Tarjetas métricas -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+        <div class="flex items-center justify-between">
+          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Total de Productos</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">inventory_2</span>
         </div>
-        <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
-          <div class="flex items-center justify-between">
-            <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Stock Disponible</p>
-            <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">widgets</span>
-          </div>
-          <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas['total_stock'] }}</p>
-        </div>
-        <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
-          <div class="flex items-center justify-between">
-            <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Valor Total</p>
-            <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">attach_money</span>
-          </div>
-          <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">${{ "{:,.0f}".format(estadisticas['total_valor']).replace(',', '.') }}</p>
-        </div>
-        <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
-          <div class="flex items-center justify-between">
-            <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Bajo Stock</p>
-            <span class="material-symbols-outlined text-[var(--warning-500)]">warning</span>
-          </div>
-          <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas.get('bajo_stock', 0) }}</p>
-        </div>
-      </section>
+        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ productos|length }}</p>
+      </div>
 
-      <!-- Paneles principales -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+        <div class="flex items-center justify-between">
+          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Stock Disponible</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">widgets</span>
+        </div>
+        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas['total_stock'] }}</p>
+      </div>
+
+      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+        <div class="flex items-center justify-between">
+          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Valor Total</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">attach_money</span>
+        </div>
+        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">
+          ${{ "{:,.0f}".format(estadisticas['total_valor']).replace(',', '.') }}
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+        <div class="flex items-center justify-between">
+          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Bajo Stock</p>
+          <span class="material-symbols-outlined text-[var(--warning-500)]">warning</span>
+        </div>
+        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas.get('bajo_stock', 0) }}</p>
+      </div>
+    </section>
+
+    <!-- Paneles principales -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Columna izquierda: Monitoreo -->
+      <div class="lg:col-span-2 flex flex-col gap-6">
+
         <!-- Monitoreo de estantes -->
-        <div class="lg:col-span-2 flex flex-col gap-6">
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">Monitoreo de Estantes en Tiempo Real</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="border border-gray-300 dark:border-neutral-700 rounded-md p-3">
-                <div class="flex justify-between items-center mb-2">
-                  <span class="font-bold text-neutral-900 dark:text-neutral-100">Estante A-01</span>
-                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">Estable</span>
-                </div>
-                <p class="text-sm mb-1 text-neutral-600 dark:text-neutral-400">Ocupación: 85%</p>
-                <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-                  <div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div>
-                </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">Peso: 42.5 Kg / 50 Kg</p>
-              </div>
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
+          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+            Monitoreo de Estantes en Tiempo Real
+          </h3>
+          <div id="monitoreo-estantes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
 
-              <div class="border border-orange-400/50 bg-orange-400/10 rounded-md p-3">
-                <div class="flex justify-between items-center mb-2">
-                  <span class="font-bold text-neutral-900 dark:text-neutral-100">Estante B-07</span>
-                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-200 text-orange-800">Desequilibrio</span>
-                </div>
-                <p class="text-sm mb-1 text-neutral-600 dark:text-neutral-400">Ocupación: 60%</p>
-                <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-                  <div class="bg-orange-500 h-2.5 rounded-full" style="width: 60%"></div>
-                </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">Peso: 30.0 Kg / 50 Kg</p>
-              </div>
+        <!-- Visión general -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
+          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+            Visión General del Almacén
+          </h3>
+          <div class="relative w-full aspect-[2/1] bg-gray-100 dark:bg-neutral-800 rounded-md p-4 overflow-hidden">
+            <svg id="svg-almacen" class="w-full h-full" viewBox="0 0 400 200">
+              <!-- Se rellena dinámicamente desde JS -->
+            </svg>
 
-              <div class="border border-red-400/50 bg-red-400/10 rounded-md p-3">
-                <div class="flex justify-between items-center mb-2">
-                  <span class="font-bold text-neutral-900 dark:text-neutral-100">Estante C-03</span>
-                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-red-200 text-red-800">Fluctuación</span>
-                </div>
-                <p class="text-sm mb-1 text-neutral-600 dark:text-neutral-400">Ocupación: 95%</p>
-                <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-                  <div class="bg-red-500 h-2.5 rounded-full" style="width: 95%"></div>
-                </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">Peso: 47.5 Kg / 50 Kg</p>
-              </div>
+            <!-- Tooltip flotante -->
+            <div id="tooltip-estante"
+                class="hidden absolute bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-sm text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 shadow-lg pointer-events-none transition-opacity duration-200">
             </div>
-          </div>
 
-          <!-- SVG Almacén -->
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">Visión General del Almacén</h3>
-            <div class="relative w-full aspect-[2/1] bg-gray-100 dark:bg-neutral-800 rounded-md p-4">
-              <svg class="w-full h-full" viewBox="0 0 400 200">
-                <rect fill="transparent" height="200" width="400"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="20" y="20"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="120" y="20"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="220" y="20"></rect>
-                <rect fill="#4B5563" height="40" width="60" x="320" y="20"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="20" y="140"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="120" y="140"></rect>
-                <rect fill="#4B5563" height="40" width="80" x="220" y="140"></rect>
-                <rect fill="#4B5563" height="40" width="60" x="320" y="140"></rect>
-                <circle cx="60" cy="40" fill="var(--success-500)" r="5"></circle>
-                <circle cx="160" cy="40" fill="var(--warning-500)" r="5"></circle>
-                <circle cx="260" cy="40" fill="var(--danger-500)" r="5"></circle>
-              </svg>
-              <div class="absolute bottom-2 right-2 flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
-                <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[var(--success-500)]"></span>Estable</div>
-                <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[var(--warning-500)]"></span>Alerta</div>
-                <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[var(--danger-500)]"></span>Crítico</div>
-              </div>
+            <!-- Leyenda -->
+            <div class="absolute bottom-2 right-2 flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
+              <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-green-500"></span>Estable</div>
+              <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-yellow-500"></span>Advertencia</div>
+              <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span>Crítico</div>
             </div>
           </div>
         </div>
-        <!-- Alertas y Proyección -->
-        <div class="lg:col-span-1 flex flex-col gap-6">
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">Alertas y Acciones Sugeridas</h3>
-            <div class="flex flex-col gap-4">
-              <div class="flex items-start gap-3 p-3 rounded-md bg-yellow-400/10 border border-yellow-400/30">
-                <span class="material-symbols-outlined text-yellow-500 mt-0.5">warning</span>
-                <div>
-                  <p class="font-medium text-sm text-neutral-900 dark:text-neutral-100">Bajo Stock: </p>
-                  <p class="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Quedan 8/10. Consumo alto.</p>
-                  <button class="text-xs font-bold text-[var(--primary-color)] hover:underline">Sugerencia: Reponer 20 unidades</button>
-                </div>
-              </div>
 
-              <div class="flex items-start gap-3 p-3 rounded-md bg-orange-400/10 border border-orange-400/30">
-                <span class="material-symbols-outlined text-orange-500 mt-0.5">weight</span>
-                <div>
-                  <p class="font-medium text-sm text-neutral-900 dark:text-neutral-100">Desequilibrio en Estante B-07</p>
-                  <p class="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Sensor frontal registra 10Kg más que el trasero.</p>
-                  <button class="text-xs font-bold text-[var(--primary-color)] hover:underline">Verificar y redistribuir</button>
-                </div>
-              </div>
+      </div>
 
-              <div class="flex items-start gap-3 p-3 rounded-md bg-red-400/10 border border-red-400/30">
-                <span class="material-symbols-outlined text-red-500 mt-0.5">device_unknown</span>
-                <div>
-                  <p class="font-medium text-sm text-neutral-900 dark:text-neutral-100">Fluctuación Sensor C-03-S1</p>
-                  <p class="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Lecturas inestables en 2 horas.</p>
-                  <button class="text-xs font-bold text-[var(--primary-color)] hover:underline">Calibrar o reemplazar</button>
-                </div>
-              </div>
-            </div>
-          </div>
+      <!-- Columna derecha: Alertas y proyección -->
+      <div class="flex flex-col gap-6">
 
-          <!-- Proyección -->
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">Proyección de Consumo</h3>
-            <div class="w-full h-48">
-              <svg class="text-sm" height="100%" width="100%">
-                <defs>
-                  <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.4"></stop>
-                    <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0"></stop>
-                  </linearGradient>
-                </defs>
-                <g stroke="var(--border-dark)" stroke-dasharray="2,2">
-                  <line x1="30" x2="30" y1="5" y2="170"></line>
-                  <line x1="30" x2="100%" y1="170" y2="170"></line>
-                </g>
-                <g fill="var(--text-dark-secondary)" font-size="10px">
-                  <text x="0" y="15">100</text>
-                  <text x="0" y="90">50</text>
-                  <text x="0" y="170">0</text>
-                </g>
-                <path d="M 30 50 L 100 80 L 180 120 L 260 160" fill="none" stroke="var(--primary-color)" stroke-width="2"></path>
-                <path d="M 30 50 L 100 80 L 180 120 L 260 160 L 260 170 L 30 170 Z" fill="url(#gradient)"></path>
-              </svg>
-            </div>
+        <!-- Alertas -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
+          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+            Alertas y Acciones Sugeridas
+          </h3>
+          <div id="alertas-sugeridas" class="flex flex-col gap-3"></div>
+        </div>
+
+        <!-- Proyección -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
+          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+            Proyección de Consumo
+          </h3>
+          <div class="w-full h-48">
+            <svg id="grafico-proyeccion" class="text-sm" height="100%" width="100%">
+              <defs>
+                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <g stroke="var(--border-dark)" stroke-dasharray="2,2">
+                <line x1="30" x2="30" y1="5" y2="170"></line>
+                <line x1="30" x2="100%" y1="170" y2="170"></line>
+              </g>
+              <g fill="var(--text-dark-secondary)" font-size="10px">
+                <text x="0" y="15">100</text>
+                <text x="0" y="90">50</text>
+                <text x="0" y="170">0</text>
+              </g>
+              <path id="linea" d="" fill="none" stroke="var(--primary-color)" stroke-width="2"></path>
+              <path id="relleno" d="" fill="url(#gradient)"></path>
+            </svg>
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Filtros y acciones -->
       <div class="flex flex-wrap justify-between items-center gap-4">

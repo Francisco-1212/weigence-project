@@ -816,3 +816,75 @@ html.dark .timeline-item.dragging {
   background-color: var(--card-bg-dark);
   box-shadow: 0 0 0 2px var(--primary-600);
 }
+.item-activo {
+  background-color: var(--sbar) !important;
+  border: 1px solid var(--primary-500) !important;
+}
+.dark .item-activo {
+  background-color: var(--card-bg-dark) !important;
+  border: 1px solid var(--primary-400) !important;
+}
+
+/* alertas dashboards */
+
+.alert-item {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.alert-item:hover {
+  transform: translateY(-3px);
+  background-color: rgba(255,255,255,0.05);
+}
+.dark .alert-item:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Botones acciones rapidas dashboard */
+.btn-quick {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-quick:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.dark .hover-light-shadow:hover {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+}
+/* animaciones estantes */
+
+@keyframes pulse-estante {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
+  }
+}
+
+.estante-rect {
+  transition: fill 0.5s ease, transform 0.3s ease, opacity 0.3s ease;
+}
+
+.estante-critico {
+  animation: pulse-estante 1.5s infinite;
+}
+
+.estante-advertencia {
+  animation: pulse-estante 2.5s infinite;
+}
+
+.estante-estable {
+  animation: none;
+}
+/* Scrollbar suave */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}

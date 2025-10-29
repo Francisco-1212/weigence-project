@@ -281,11 +281,27 @@ const topSales = [
             }
         });
 
+// acciones rapidas dashboard  
+document.addEventListener("DOMContentLoaded", () => {
+  const exportBtn = document.getElementById("btn-exportar");
+  const detalleBtn = document.getElementById("btn-detalle");
 
-// Note: automatic loading of ventas por producto is disabled so the filter
-// controls in filtro.js own the dashboard chart rendering. If you need to
-// debug raw ventas_por_producto data, call cargarVentasPorProducto() manually.
-// document.addEventListener('DOMContentLoaded', cargarVentasPorProducto);
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      mostrarToast("Generando reporte PDF/Excel...");
+      // Aquí puedes llamar a tu endpoint Flask para descargar archivos
+      window.location.href = "/exportar_reporte"; // endpoint real si existe
+    });
+  }
+
+  if (detalleBtn) {
+    detalleBtn.addEventListener("click", () => {
+      mostrarToast("Abriendo vista de inventario/ventas...");
+      window.location.href = "/inventario"; // ajusta ruta real
+    });
+  }
+});
+
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarAplicacion);

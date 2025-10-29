@@ -73,20 +73,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Selección visual ---
   function selectItem(item) {
     contenedor.querySelectorAll(".timeline-item").forEach((el) => {
-      el.classList.remove(
-        "ring-2",
-        "ring-primary-400/50",
-        "bg-neutral-50",
-        "dark:bg-[var(--card-bg-dark)]",
-        "selected"
-      );
+      el.classList.remove("item-activo", "ring-2", "ring-primary-400/50", "ring-primary-500/60", "selected");
     });
-    if (document.documentElement.classList.contains("dark")) {
-      item.classList.add("ring-2", "ring-primary-500/60", "dark:bg-[var(--card-bg-dark)]", "selected");
-    } else {
-      item.classList.add("ring-2", "ring-primary-400/50", "bg-neutral-100", "selected");
-    }
+
+    item.classList.add(
+      "item-activo",
+      "ring-2",
+      document.documentElement.classList.contains("dark")
+        ? "ring-gray-500/60"
+        : "ring-gray-500/60",
+      "selected"
+    );
   }
+
 
   // --- Render de detalle ---
   function renderDetalle(i) {

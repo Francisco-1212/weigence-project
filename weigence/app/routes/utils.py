@@ -4,6 +4,9 @@ from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
+import requests
+
+
 
 def requiere_login(f):
     @wraps(f)
@@ -54,7 +57,15 @@ def agrupar_notificaciones_por_fecha(notificaciones):
 
 def obtener_notificaciones(usuario_id=None):
     try:
-        # 1) Alertas existentes en BD (tabla 'alertas')
+        # Generar alertas nuevas antes de leer
+        # Intentar regenerar alertas automáticamente (vía HTTP interno)
+        try:
+            requests.get("http://127.0.0.1:5000/api/generar_alertas_basicas", timeout=3)
+        except Exception as err:
+            print(f"Advertencia: no se pudieron regenerar alertas automáticamente ({err})")
+
+
+        # Luego leer alertas
         query = supabase.table("alertas").select("*").order("fecha_creacion", desc=True)
         data = query.limit(30).execute()
         alertas = data.data or []
