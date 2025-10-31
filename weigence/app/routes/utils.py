@@ -8,6 +8,8 @@ import requests
 
 
 
+
+
 def requiere_login(f):
     @wraps(f)
     def decorador(*args, **kwargs):
@@ -57,62 +59,71 @@ def agrupar_notificaciones_por_fecha(notificaciones):
 
 def obtener_notificaciones(usuario_id=None):
     try:
-        # Generar alertas nuevas antes de leer
-        # Intentar regenerar alertas automáticamente (vía HTTP interno)
+        # Generar alertas nuevas antes de leer (sin llamada HTTP)
         try:
-            requests.get("http://127.0.0.1:5000/api/generar_alertas_basicas", timeout=3)
+            from .alertas import generar_alertas_basicas
+            generar_alertas_basicas()
         except Exception as err:
             print(f"Advertencia: no se pudieron regenerar alertas automáticamente ({err})")
 
-
-        # Luego leer alertas
-        query = supabase.table("alertas").select("*").order("fecha_creacion", desc=True)
+        # === 2) Leer alertas desde Supabase ===
+        query = supabase.table("alertas").select("*").neq("estado","descartada").order("fecha_creacion", desc=True)
         data = query.limit(30).execute()
         alertas = data.data or []
 
-        # 2) ---- Alerta dinámica: productos sin pesaje en 7 días ----
+        # === 3) Alerta dinámica: productos sin pesaje en 7 días ===
         hoy = datetime.now()
         hace_7d = (hoy - timedelta(days=7)).isoformat()
 
-        # ids con pesaje en últimos 7 días
-        pesajes_7d = supabase.table("pesajes").select("idproducto,fecha_pesaje") \
-                           .gte("fecha_pesaje", hace_7d).execute().data or []
+        pesajes_7d = (
+            supabase.table("pesajes")
+            .select("idproducto,fecha_pesaje")
+            .gte("fecha_pesaje", hace_7d)
+            .execute()
+            .data or []
+        )
         ids_con_pesaje = {p["idproducto"] for p in pesajes_7d if p.get("idproducto")}
 
-        # todos los productos
         prods = supabase.table("productos").select("idproducto,nombre").execute().data or []
         sin_pesaje = [p for p in prods if p["idproducto"] not in ids_con_pesaje]
 
         if sin_pesaje:
-            # notif sintética
             alerta_sint = {
-                "id": "__no_pesaje_7d__",          # id sintético
-                "tipo_color": "amarillo",          # mapea a estilos del header
+                "id": "__no_pesaje_7d__",
+                "tipo_color": "amarillo",
                 "icono": "warning",
                 "titulo": "Productos sin pesaje reciente",
                 "descripcion": f"No se han pesado {len(sin_pesaje)} producto(s) en los últimos 7 días.",
                 "detalle": "Sugerencia: planificar control de estantes y calibración si aplica.",
-                "enlace": "/movimientos",          # ajusta si quieres
-                "fecha_creacion": hoy.isoformat()
+                "enlace": "/movimientos",
+                "fecha_creacion": hoy.isoformat(),
             }
-            # evita duplicar si ya existe algo igual
-            ya_esta = any(a.get("id") == alerta_sint["id"] for a in alertas)
-            if not ya_esta:
+            # Evita duplicar si ya existe
+            if not any(a.get("id") == alerta_sint["id"] for a in alertas):
                 alertas.insert(0, alerta_sint)
 
-        # 3) Agrupar por fecha para el header
+        # === 4) Agrupar por fecha para el header ===
         hoy_d = datetime.now().date()
         ayer_d = hoy_d - timedelta(days=1)
         grupos = defaultdict(list)
+
         for a in alertas:
             f_raw = a.get("fecha_creacion") or a.get("timestamp")
             try:
-                f = datetime.fromisoformat(str(f_raw).split('.')[0]).date() if f_raw else hoy_d
+                f = (
+                    datetime.fromisoformat(str(f_raw).split(".")[0]).date()
+                    if f_raw
+                    else hoy_d
+                )
             except Exception:
                 f = hoy_d
-            if f == hoy_d: grupos["Hoy"].append(a)
-            elif f == ayer_d: grupos["Ayer"].append(a)
-            else: grupos[f.strftime("%d/%m/%Y")].append(a)
+
+            if f == hoy_d:
+                grupos["Hoy"].append(a)
+            elif f == ayer_d:
+                grupos["Ayer"].append(a)
+            else:
+                grupos[f.strftime("%d/%m/%Y")].append(a)
 
         return alertas, grupos
 

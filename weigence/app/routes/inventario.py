@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 from .utils import requiere_login, safe_int, safe_float
 
 
-
 @bp.route("/inventario")
 @requiere_login
 def inventario():
     try:
+        # === 1. Cargar productos ===
         productos = supabase.table("productos").select("*").execute().data or []
 
-        # --- Cálculo de estadísticas ---
+        # === 2. Calcular estadísticas ===
         total_stock = sum(p.get("stock", 0) for p in productos)
         total_valor = sum(p.get("stock", 0) * p.get("precio_unitario", 0) for p in productos)
         productos_baja_rotacion = len([p for p in productos if p.get("stock", 0) <= 5])
@@ -24,13 +24,12 @@ def inventario():
             "productos_baja_rotacion": productos_baja_rotacion,
         }
 
-        # --- Clasificación de estado por stock ---
+        # === 3. Clasificación visual de productos ===
         for producto in productos:
             stock = producto.get("stock", 0)
             precio = producto.get("precio_unitario", 0)
             nombre = producto.get("nombre", "Producto sin nombre")
 
-            # Determinar estado visual
             if stock == 0:
                 producto["status"] = "Agotado"
                 producto["status_class"] = "text-red-500 bg-red-100 dark:bg-red-900"
@@ -41,11 +40,9 @@ def inventario():
                 producto["status"] = "Normal"
                 producto["status_class"] = "text-green-500 bg-green-100 dark:bg-green-900"
 
-            # Formatos numéricos
             producto["precio_formato"] = f"${precio:,.0f}".replace(",", ".")
             producto["valor_total"] = f"${(stock * precio):,.0f}".replace(",", ".")
 
-            # Formato de fecha
             if producto.get("fecha_modificacion"):
                 try:
                     fecha = datetime.fromisoformat(str(producto["fecha_modificacion"]).replace("Z", "+00:00"))
@@ -55,7 +52,7 @@ def inventario():
             else:
                 producto["fecha_formato"] = "-"
 
-        # --- Crear alertas automáticas por stock bajo/agotado ---
+        # === 4. Crear alertas automáticas en BD (solo stock) ===
         alertas_nuevas = []
         existentes = supabase.table("alertas").select("titulo").eq("estado", "pendiente").execute().data or []
         titulos_existentes = {a["titulo"].lower() for a in existentes}
@@ -73,7 +70,6 @@ def inventario():
                         "icono": "cancel",
                         "tipo_color": "rojo"
                     })
-
             elif stock <= 5:
                 titulo = f"Bajo stock: {nombre}"
                 if titulo.lower() not in titulos_existentes:
@@ -87,18 +83,72 @@ def inventario():
         if alertas_nuevas:
             supabase.table("alertas").insert(alertas_nuevas).execute()
 
-        # --- Renderizado final ---
+        # === 5. Crear alertas personalizadas para el panel de Inventario ===
+        alertas_sugeridas = []
+        try:
+            # --- Alerta 1: Stock ---
+            bajos = [p for p in productos if p["stock"] <= 5]
+            if bajos:
+                producto = bajos[0]
+                color = "rojo" if producto["stock"] == 0 else "amarilla"
+                alertas_sugeridas.append({
+                    "titulo": "Stock Crítico" if producto["stock"] == 0 else "Stock Bajo",
+                    "descripcion": f"{producto['nombre']} tiene {producto['stock']} unidades restantes.",
+                    "icono": "inventory_2",
+                    "color": color
+                })
+            else:
+                alertas_sugeridas.append({
+                    "titulo": "Stock Estable",
+                    "descripcion": "Todos los productos tienen stock suficiente.",
+                    "icono": "check_circle",
+                    "color": "verde"
+                })
+
+            # --- Alerta 2: Estantes ---
+            estantes = supabase.table("v_estantes_estado").select("*").execute().data or []
+            estado_riesgo = next((e for e in estantes if e["estado"] in ("advertencia", "critico")), None)
+            if estado_riesgo:
+                alertas_sugeridas.append({
+                    "titulo": f"Estante {estado_riesgo['id_estante']} en {estado_riesgo['estado'].capitalize()}",
+                    "descripcion": f"Ocupación {round(estado_riesgo['ocupacion_pct'], 1)}%",
+                    "icono": "warehouse",
+                    "color": "rojo" if estado_riesgo["estado"] == "critico" else "amarilla"
+                })
+            else:
+                alertas_sugeridas.append({
+                    "titulo": "Estantes Estables",
+                    "descripcion": "Todos los estantes se encuentran en estado óptimo.",
+                    "icono": "done_all",
+                    "color": "verde"
+                })
+
+            # --- Alerta 3: Positiva general ---
+            alertas_sugeridas.append({
+                "titulo": "Operación sin incidentes",
+                "descripcion": "No se detectaron anomalías recientes en el sistema.",
+                "icono": "verified",
+                "color": "verde"
+            })
+
+        except Exception as err:
+            print(f"Error al generar alertas sugeridas en inventario: {err}")
+            alertas_sugeridas = []
+
+        # === 6. Render final ===
         return render_template(
             "pagina/inventario.html",
             productos=productos,
             estadisticas=estadisticas,
-            categorias=sorted(set(p.get("categoria") for p in productos if p.get("categoria")))
+            categorias=sorted(set(p.get("categoria") for p in productos if p.get("categoria"))),
+            alertas_sugeridas=alertas_sugeridas
         )
 
     except Exception as e:
         print(f"Error en ruta inventario: {e}")
         flash("Error al cargar el inventario", "error")
         return redirect(url_for("main.dashboard"))
+
 
 
 
@@ -219,8 +269,14 @@ def actualizar_stock(id):
         else:
             return jsonify({"error": "Acción inválida"}), 400
 
-        supabase.table("productos").update({"stock": nuevo_stock}).eq("idproducto", id).execute()
+        # --- Actualizar stock en Supabase ---
+        supabase.table("productos").update({
+            "stock": nuevo_stock,
+            "fecha_modificacion": datetime.now().isoformat(),
+            "modificado_por": session.get("usuario_id")
+        }).eq("idproducto", id).execute()
 
+        # --- Registrar en historial ---
         supabase.table("historial").insert({
             "idproducto": id,
             "fecha_cambio": datetime.now().isoformat(),
@@ -229,9 +285,22 @@ def actualizar_stock(id):
             "id_estante": producto.get("id_estante")
         }).execute()
 
-        return jsonify({"message": "Stock actualizado", "nuevo_stock": nuevo_stock})
+        # --- Generar alertas automáticamente ---
+        try:
+            from .inventario import generar_alertas_basicas
+            generar_alertas_basicas()
+        except Exception as e:
+            print(f"Error generando alertas tras actualizar stock: {e}")
+
+        return jsonify({
+            "message": "Stock actualizado",
+            "nuevo_stock": nuevo_stock
+        })
+
     except Exception as e:
+        print(f"Error en actualizar_stock: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 # api inventario
 
@@ -317,81 +386,5 @@ def proyeccion_consumo():
     except Exception as e:
         print("Error en /api/proyeccion_consumo:", e)
         return jsonify({"error": str(e)}), 500
-
-
-# ------------------------------------------------------------
-# 5) Generador automático de alertas básicas (opcional)
-# ------------------------------------------------------------
-@bp.route("/api/generar_alertas_basicas")
-@requiere_login
-def generar_alertas_basicas():
-    """
-    Genera máximo 3 alertas únicas (una por tipo).
-    """
-    try:
-        nuevas = []
-        existentes = supabase.table("alertas").select("titulo, descripcion, tipo_color").eq("estado", "pendiente").execute().data
-        existentes_titulos = {a["titulo"].lower() for a in existentes}
-
-        # --- 1. Bajo Stock ---
-        productos = supabase.table("productos").select("*").order("fecha_modificacion", desc=True).execute().data
-        bajos = [p for p in productos if p["stock"] <= 10]
-        if bajos:
-            ultimo = bajos[0]
-            titulo = f"Bajo stock: {ultimo['nombre']}"
-            if not any("stock" in t for t in existentes_titulos):
-                nuevas.append({
-                    "titulo": titulo,
-                    "descripcion": f"Quedan {ultimo['stock']} unidades disponibles.",
-                    "icono": "inventory_2",
-                    "tipo_color": "amarilla"
-                })
-
-        # --- 2. Estante crítico o advertencia ---
-        estantes = supabase.table("v_estantes_estado").select("*").execute().data
-        estados_validos = [e for e in estantes if e["estado"] in ("critico", "advertencia")]
-        if estados_validos:
-            e = sorted(estados_validos, key=lambda x: x["ocupacion_pct"], reverse=True)[0]
-            titulo = f"Estante {e['id_estante']} {e['estado']}"
-            if not any("estante" in t for t in existentes_titulos):
-                nuevas.append({
-                    "titulo": titulo,
-                    "descripcion": f"Ocupación {round(e['ocupacion_pct'], 1)}%.",
-                    "icono": "warehouse",
-                    "tipo_color": "rojo" if e["estado"] == "critico" else "amarilla"
-                })
-
-        # --- 3. Fluctuación de peso ---
-        pesajes = supabase.table("pesajes").select("*").order("fecha_pesaje", desc=True).limit(6).execute().data
-        if len(pesajes) >= 2:
-            p1, p2 = pesajes[0], pesajes[1]
-            dif = abs(float(p1["peso_unitario"]) - float(p2["peso_unitario"]))
-            if dif > float(p1["peso_unitario"]) * 0.05:
-                titulo = "Fluctuación de peso"
-                if not any("fluctuación" in t for t in existentes_titulos):
-                    nuevas.append({
-                        "titulo": titulo,
-                        "descripcion": f"Variación detectada de {dif:.2f} g entre últimas mediciones.",
-                        "icono": "monitor_weight",
-                        "tipo_color": "amarilla"
-                    })
-
-        # Insertar máximo 3, pero sin duplicados en título
-        unicos = []
-        titulos_vistos = set()
-        for n in nuevas:
-            if n["titulo"].lower() not in titulos_vistos:
-                titulos_vistos.add(n["titulo"].lower())
-                unicos.append(n)
-
-        if unicos:
-            supabase.table("alertas").insert(unicos[:3]).execute()
-
-        return jsonify({"success": True, "nuevas": len(unicos[:3])})
-    except Exception as e:
-        print("Error generando alertas:", e)
-        return jsonify({"error": str(e)}), 500
-
-
 
 
