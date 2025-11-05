@@ -2,15 +2,99 @@ from flask import render_template, jsonify, request, session, redirect, url_for,
 from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
-from .utils import requiere_login, safe_int, safe_float
+from .utils import requiere_login, safe_int, safe_float, asignar_estante, formatear_estante_codigo
+
+
+def obtener_catalogo_estantes():
+    """Retorna un mapa con los estantes disponibles formateados."""
+    catalogo = {}
+    try:
+        respuesta = supabase.table("estantes").select("id_estante").execute()
+        estantes = respuesta.data or []
+    except Exception as err:
+        print(f"Advertencia al cargar estantes: {err}")
+        estantes = []
+
+    for estante in estantes:
+        id_estante = estante.get("id_estante")
+        try:
+            id_int = int(id_estante)
+        except (TypeError, ValueError):
+            continue
+        catalogo[id_int] = formatear_estante_codigo(id_int)
+
+    if not catalogo:
+        for idx in range(1, 7):
+            catalogo[idx] = formatear_estante_codigo(idx)
+
+    return catalogo
+
+
+def construir_mapa_categorias(productos):
+    """Genera un mapa categoría → id_estante basado en los productos existentes."""
+    categorias_map = {}
+    for producto in productos:
+        categoria_nombre = (producto.get("categoria") or "").strip()
+        if not categoria_nombre:
+            continue
+        if categoria_nombre in categorias_map:
+            continue
+        categorias_map[categoria_nombre] = asignar_estante(categoria_nombre)
+    return categorias_map
 
 
 @bp.route("/inventario")
 @requiere_login
 def inventario():
     try:
-        # === 1. Cargar productos ===
+        # === 1. Cargar productos y categorías ===
         productos = supabase.table("productos").select("*").execute().data or []
+
+        estantes_catalogo = obtener_catalogo_estantes()
+        categorias_map = construir_mapa_categorias(productos)
+        categorias_en_contexto = {}
+        productos_a_actualizar = []
+
+        for producto in productos:
+            categoria_nombre = (producto.get("categoria") or "").strip()
+            id_estante_original = producto.get("id_estante")
+            id_estante_categoria = categorias_map.get(categoria_nombre) if categoria_nombre else None
+
+            if id_estante_categoria is None and categoria_nombre:
+                id_estante_categoria = asignar_estante(categoria_nombre)
+                categorias_map[categoria_nombre] = id_estante_categoria
+
+            if id_estante_categoria is not None:
+                categorias_en_contexto[categoria_nombre] = id_estante_categoria
+
+                if (
+                    producto.get("idproducto") is not None
+                    and id_estante_categoria != id_estante_original
+                ):
+                    productos_a_actualizar.append({
+                        "idproducto": producto["idproducto"],
+                        "id_estante": id_estante_categoria,
+                    })
+
+                producto["id_estante"] = id_estante_categoria
+                producto["estante_codigo"] = estantes_catalogo.get(
+                    id_estante_categoria,
+                    formatear_estante_codigo(id_estante_categoria),
+                )
+            else:
+                producto["estante_codigo"] = ""
+
+        if productos_a_actualizar:
+            try:
+                supabase.table("productos").upsert(productos_a_actualizar).execute()
+            except Exception as err:
+                print(f"Advertencia al sincronizar id_estante de productos: {err}")
+
+        productos.sort(key=lambda p: (
+            p.get("id_estante") if p.get("id_estante") is not None else float("inf"),
+            (p.get("categoria") or "").lower(),
+            (p.get("nombre") or "").lower()
+        ))
 
         # === 2. Calcular estadísticas ===
         total_stock = sum(p.get("stock", 0) for p in productos)
@@ -27,17 +111,18 @@ def inventario():
         # === 3. Clasificación visual de productos ===
         for producto in productos:
             stock = producto.get("stock", 0)
+            producto["data_stock"] = stock
             precio = producto.get("precio_unitario", 0)
             nombre = producto.get("nombre", "Producto sin nombre")
 
             if stock == 0:
-                producto["status"] = "Agotado"
+                producto["status"] = "agotado"
                 producto["status_class"] = "text-red-500 bg-red-100 dark:bg-red-900"
             elif stock <= 5:
-                producto["status"] = "Stock Bajo"
+                producto["status"] = "bajo"
                 producto["status_class"] = "text-yellow-500 bg-yellow-100 dark:bg-yellow-900"
             else:
-                producto["status"] = "Normal"
+                producto["status"] = "ormal"
                 producto["status_class"] = "text-green-500 bg-green-100 dark:bg-green-900"
 
             producto["precio_formato"] = f"${precio:,.0f}".replace(",", ".")
@@ -136,12 +221,19 @@ def inventario():
             alertas_sugeridas = []
 
         # === 6. Render final ===
+        estantes_codigos = {int(k): v for k, v in estantes_catalogo.items()}
+        estantes_validos = sorted(estantes_codigos.keys())
+        categorias_ordenadas = sorted(nombre for nombre in categorias_en_contexto.keys() if nombre)
+
         return render_template(
             "pagina/inventario.html",
             productos=productos,
             estadisticas=estadisticas,
-            categorias=sorted(set(p.get("categoria") for p in productos if p.get("categoria"))),
-            alertas_sugeridas=alertas_sugeridas
+            categorias=categorias_ordenadas,
+            categoria_estantes=categorias_en_contexto,
+            alertas_sugeridas=alertas_sugeridas,
+            estante_codigos=estantes_codigos,
+            estantes_validos=estantes_validos,
         )
 
     except Exception as e:
@@ -160,14 +252,17 @@ def agregar_producto():
         if not data.get('nombre') or not data.get('categoria'):
             return jsonify({"success": False, "error": "Nombre y categoría son requeridos"}), 400
 
+        categoria_nombre = (data.get("categoria") or "").strip()
+        id_estante_categoria = asignar_estante(categoria_nombre)
+
         nuevo_producto = {
             "nombre": data["nombre"],
-            "categoria": data.get("categoria"),
+            "categoria": categoria_nombre,
             "stock": safe_int(data.get("stock")),
             "precio_unitario": safe_float(data.get("precio_unitario")),
             "peso": safe_float(data.get("peso"), default=1.0),
             "descripcion": data.get("descripcion", ""),
-            "id_estante": safe_int(data.get("id_estante")) if data.get("id_estante") else None,
+            "id_estante": id_estante_categoria,
             "fecha_ingreso": datetime.now().isoformat(),
             "ingresado_por": session.get("usuario_id"),
             "fecha_modificacion": datetime.now().isoformat(),
@@ -212,7 +307,15 @@ def filtrar_productos():
         date_start = request.args.get('dateStart')
         date_end = request.args.get('dateEnd')
 
-        productos = supabase.table("productos").select("*").execute().data
+        productos = supabase.table("productos").select("*").execute().data or []
+        for producto in productos:
+            categoria_nombre = (producto.get("categoria") or "").strip()
+            if not categoria_nombre:
+                continue
+            id_estante_categoria = asignar_estante(categoria_nombre)
+            if id_estante_categoria is not None:
+                producto["id_estante"] = id_estante_categoria
+                producto["estante_codigo"] = formatear_estante_codigo(id_estante_categoria)
         filtrados = productos.copy()
 
         if search:
@@ -388,3 +491,29 @@ def proyeccion_consumo():
         return jsonify({"error": str(e)}), 500
 
 
+def recalcular_estantes():
+    # Recalcula peso actual de cada estante
+    estantes = supabase.table("estantes").select("id_estante, peso_maximo").execute().data
+    for e in estantes:
+        total_peso = (
+            supabase.table("productos")
+            .select("peso, stock")
+            .eq("id_estante", e["id_estante"])
+            .execute()
+            .data
+        )
+        total = sum(p["peso"] * p["stock"] for p in total_peso)
+        estado = (
+            "crítico"
+            if total >= e["peso_maximo"]
+            else "advertencia"
+            if total >= e["peso_maximo"] * 0.8
+            else "estable"
+        )
+        supabase.table("estantes").update(
+            {
+                "peso_actual": total,
+                "estado": estado,
+                "ultima_actualizacion": datetime.now(),
+            }
+        ).eq("id_estante", e["id_estante"]).execute()

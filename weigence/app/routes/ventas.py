@@ -1,11 +1,12 @@
 from flask import render_template, jsonify, request, session, redirect, url_for, flash
+from .utils import requiere_login
 from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
 
 
-
 @bp.route("/ventas")
+@requiere_login
 def ventas():
     ventas = supabase.table("ventas").select("*").execute().data
     detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data
@@ -61,6 +62,7 @@ def ventas():
 
 
 @bp.route("/api/ventas_por_producto")
+@requiere_login
 def api_ventas_por_producto():
     try:
         response = supabase.table("detalle_ventas") \

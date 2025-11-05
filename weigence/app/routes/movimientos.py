@@ -1,8 +1,10 @@
 from flask import render_template
+from .utils import requiere_login
 from . import bp
 from api.conexion_supabase import supabase
 
 @bp.route("/movimientos")
+@requiere_login
 def movimientos():
     try:
         # Consultar con relaciones completas para evitar múltiples queries

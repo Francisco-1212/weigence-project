@@ -10,11 +10,13 @@ const Inventario = {
     page: 1,
     pageSize: 10,
     rows: [],
-    filteredRows: []
+    filteredRows: [],
+    shelfMap: {}
   },
 
   // -------------------- Inicialización --------------------
   init() {
+    this.state.shelfMap = this.normalizarMapa(window.CATEGORIA_ESTANTES || {});
     this.cacheDOM();
     this.bindEvents();
     this.setupDropdowns();
@@ -22,6 +24,55 @@ const Inventario = {
     this.refreshRows();
     this.applyPagination();
     console.info("Inventario inicializado correctamente");
+  },
+  
+  normalizarMapa(map) {
+    const normalizado = {};
+    if (!map || typeof map !== 'object') return normalizado;
+    Object.entries(map).forEach(([nombre, estante]) => {
+      if (!nombre || !estante) return;
+      normalizado[nombre.trim().toLowerCase()] = estante;
+    });
+    return normalizado;
+  },
+
+  calcularEstantePorInicial(inicial) {
+    if (!inicial) return '';
+    const letra = inicial.toUpperCase();
+    if ('ABC'.includes(letra)) return 'E01';
+    if ('DEF'.includes(letra)) return 'E02';
+    if ('GHIJ'.includes(letra)) return 'E03';
+    if ('KLMNO'.includes(letra)) return 'E04';
+    if ('PQRS'.includes(letra)) return 'E05';
+    if ('TUVWXYZ'.includes(letra)) return 'E06';
+    return '';
+  },
+
+  obtenerEstantePorCategoria(nombre) {
+    if (!nombre) return '';
+    const clave = nombre.trim().toLowerCase();
+    if (!clave) return '';
+    if (this.state.shelfMap[clave]) return this.state.shelfMap[clave];
+
+    const estante = this.calcularEstantePorInicial(clave[0]);
+    if (estante) this.state.shelfMap[clave] = estante;
+    return estante;
+  },
+
+  configurarAsignacionEstante(container) {
+    if (!container) return;
+    const selectorCategoria = container.querySelector('select[name="categoria"], input[name="categoria"]');
+    const inputEstante = container.querySelector('input[name="id_estante"]');
+
+    const actualizar = () => {
+      if (!inputEstante) return;
+      const nombreCategoria = selectorCategoria ? selectorCategoria.value : '';
+      inputEstante.value = this.obtenerEstantePorCategoria(nombreCategoria) || '';
+    };
+
+    selectorCategoria?.addEventListener('change', actualizar);
+    selectorCategoria?.addEventListener('input', actualizar);
+    actualizar();
   },
 
   cacheDOM() {
@@ -41,6 +92,27 @@ const Inventario = {
   },
 
   bindEvents() {
+  // Manejo de los botones de filtro de estado
+    const filtroBtns = document.querySelectorAll('.filtro-btn'); // Seleccionar todos los botones de filtro
+  if (filtroBtns) {
+    filtroBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remover clases activas de todos los botones
+        filtroBtns.forEach(b => {
+          b.classList.remove('bg-[var(--primary-color)]', 'text-white');
+          b.classList.add('bg-[var(--card-bg-light)]', 'dark:bg-[var(--card-bg-dark)]', 'text-neutral-900', 'dark:text-neutral-100');
+        });
+
+        // Agregar clases activas al botón seleccionado
+        btn.classList.remove('bg-[var(--card-bg-light)]', 'dark:bg-[var(--card-bg-dark)]', 'text-neutral-900', 'dark:text-neutral-100');
+        btn.classList.add('bg-[var(--primary-color)]', 'text-white');
+
+        // Filtrar las filas de productos según el estado seleccionado
+        const status = btn.getAttribute('data-status');
+        this.filterByStatus(status);
+      });
+    });
+  }
     // Búsqueda con debounce
     if (this.searchInput) {
       let timer;
@@ -87,6 +159,44 @@ const Inventario = {
     });
   },
 
+  // -------------------- Filtrado y Paginación --------------------
+
+filterByStatus(status) {
+  const productRows = document.querySelectorAll('.product-row');
+  console.log(`Estado seleccionado: ${status}`);
+
+  // Limpiar cualquier filtro previo de paginación
+  this.state.filteredRows = [];
+
+  productRows.forEach(row => {
+    const stock = parseInt(row.getAttribute('data-stock'), 10);
+
+    let shouldShow = false;
+
+    if (status === 'todos') {
+      shouldShow = true;
+    } else if (status === 'agotado' && stock === 0) {
+      shouldShow = true;
+    } else if (status === 'bajo' && stock > 0 && stock < 10) {
+      shouldShow = true;
+    } else if (status === 'normal' && stock >= 10) {
+      shouldShow = true;
+    }
+
+    // Aplicar visibilidad usando classList en lugar de style.display
+    if (shouldShow) {
+      row.classList.remove('hidden');
+      this.state.filteredRows.push(row);
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+
+  // Actualizar la paginación
+  this.state.page = 1;
+  this.applyPagination();
+},
+
   // -------------------- Modal Actions --------------------
   modalActions(e) {
     const btn = e.target.closest('button');
@@ -111,6 +221,7 @@ const Inventario = {
     if (!this.modalContent) return;
     this.modalTitle.textContent = "Agregar Nuevo Producto";
     this.modalContent.innerHTML = this.templates.formAdd();
+        this.configurarAsignacionEstante(this.modalContent);
     this.modal.classList.remove('hidden');
   },
 
@@ -119,6 +230,8 @@ const Inventario = {
     data.stock = parseInt(data.stock);
     data.peso = parseFloat(data.peso);
     data.precio_unitario = parseFloat(data.precio_unitario);
+    data.id_estante = this.obtenerEstantePorCategoria(data.categoria);
+
 
     const btn = form.querySelector('button[type="submit"]');
     const originalHTML = btn.innerHTML;
@@ -151,8 +264,11 @@ const Inventario = {
 
   showDetails(producto) {
     this.state.current = producto;
+    if (!this.state.current.id_estante) {
+      this.state.current.id_estante = this.obtenerEstantePorCategoria(this.state.current.categoria);
+    }
     this.modalTitle.textContent = `Detalles: ${producto.nombre}`;
-    this.modalContent.innerHTML = this.templates.details(producto);
+    this.modalContent.innerHTML = this.templates.details(this.state.current);
     this.modal.classList.remove('hidden');
   },
 
@@ -161,6 +277,7 @@ const Inventario = {
     if (!p) return;
     this.modalTitle.textContent = `Editar Producto: ${p.nombre}`;
     this.modalContent.innerHTML = this.templates.formEdit(p);
+    this.configurarAsignacionEstante(this.modalContent);
   },
 
   saveEdit(form) {
@@ -172,7 +289,8 @@ const Inventario = {
       stock: parseInt(fd.get('stock')),
       peso: parseFloat(fd.get('peso')),
       descripcion: fd.get('descripcion'),
-      d_estante: fd.get('d_estante'),
+      codigo_estante: this.state.current.codigo_estante || this.state.current.d_estante || '',
+      d_estante: this.state.current.codigo_estante || this.state.current.d_estante || '',
       modificado_por: 'Usuario Actual',
       fecha_modificacion: new Date().toLocaleString()
     };
@@ -221,8 +339,8 @@ const Inventario = {
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Stock *</label>
-            <input type="number" name="stock" min="0" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+            <label class="block text-sm font-medium mb-1">Estante asignado</label>
+            <input type="text" name="id_estante" readonly placeholder="Asignado automáticamente" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Peso Unitario (g) *</label>
@@ -260,7 +378,8 @@ const Inventario = {
             <p><span class="font-medium">Categoría:</span> ${p.categoria}</p>
             <p><span class="font-medium">Stock:</span> ${p.stock}</p>
             <p><span class="font-medium">Peso:</span> ${p.peso} g</p>
-            <p><span class="font-medium">Estante:</span> ${p.d_estante || 'N/A'}</p>
+            <p><span class="font-medium">Estante:</span> ${p.codigo_estante || p.d_estante || 'N/A'}</p>
+            <p><span class="font-medium">Estante:</span> ${p.id_estante || 'N/A'}</p>
             <p><span class="font-medium">Descripción:</span> ${p.descripcion || '—'}</p>
           </div>
         </div>
@@ -303,7 +422,7 @@ const Inventario = {
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Estante</label>
-            <input type="text" name="d_estante" value="${p.d_estante || ''}" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+            <input type="text" name="d_estante" value="${p.codigo_estante || p.d_estante || ''}" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100" disabled>
           </div>
         </div>
         <div>
@@ -651,27 +770,46 @@ WeigenceMonitor.actualizarSVG = async function () {
       text.textContent = `E${e.id_estante}`;
       svg.appendChild(text);
     });
-
     // tooltip
     let tooltip = document.getElementById("tooltip-estante");
     if (!tooltip) {
       tooltip = document.createElement("div");
       tooltip.id = "tooltip-estante";
       tooltip.className =
-        "hidden absolute text-xs bg-neutral-800 text-white rounded-md px-2 py-1 shadow-md pointer-events-none";
+        "hidden absolute text-xs bg-neutral-800 text-white rounded-md px-2 py-1 shadow-md pointer-events-none z-50";
       svg.parentElement.appendChild(tooltip);
     }
 
     svg.querySelectorAll("rect").forEach(rect => {
       rect.addEventListener("mousemove", evt => {
         tooltip.classList.remove("hidden");
-        tooltip.style.left = evt.offsetX + 20 + "px";
-        tooltip.style.top = evt.offsetY - 10 + "px";
+
+        // Coordenadas globales del SVG y del mouse
+        const svgRect = svg.getBoundingClientRect();
+        const x = evt.clientX - svgRect.left;
+        const y = evt.clientY - svgRect.top;
+
+        // Posición base (a la derecha del cursor)
+        tooltip.style.left = `${x + 15}px`;
+        tooltip.style.top = `${y - tooltip.offsetHeight / 2}px`;
+
+        // Ajustar si se sale del borde derecho
+        const tipRect = tooltip.getBoundingClientRect();
+        if (tipRect.right > window.innerWidth - 10) {
+          tooltip.style.left = `${x - tipRect.width - 15}px`;
+        }
+
+        // Ajustar si se sale por arriba
+        if (tipRect.top < 0) {
+          tooltip.style.top = `${y + 10}px`;
+        }
+
         tooltip.innerHTML = `
           <b>Estante ${rect.dataset.id}</b><br>
           Estado: ${rect.dataset.estado}<br>
           Ocupación: ${rect.dataset.ocupacion}%`;
       });
+
       rect.addEventListener("mouseleave", () => tooltip.classList.add("hidden"));
     });
   } catch (err) {
@@ -777,3 +915,5 @@ document.addEventListener("DOMContentLoaded", () => WeigenceMonitor.init());
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', ()=>Inventario.init());
+
+

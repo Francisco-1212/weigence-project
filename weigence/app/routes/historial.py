@@ -1,8 +1,10 @@
 from flask import render_template
+from .utils import requiere_login
 from . import bp
 from api.conexion_supabase import supabase
 
 @bp.route("/historial")
+@requiere_login
 def historial():
     try:
         q = (

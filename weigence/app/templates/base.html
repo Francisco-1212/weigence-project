@@ -38,6 +38,9 @@
 
   <!-- Scripts -->
     <script>
+      window.CATEGORIA_ESTANTES = {{ categoria_estantes | default({}) | tojson }};
+    </script>
+    <script>
       {% if movimientos is defined %}
         window.MOVIMIENTOS = {{ movimientos|tojson }};
       {% else %}
