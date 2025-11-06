@@ -79,20 +79,18 @@
     </div>
 
     <!-- Recomendaciones AI -->
-    <div class="ia-panel rounded-xl p-5 shadow-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+    <section class="ia-panel rounded-xl p-5 shadow-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
       <div class="flex items-center gap-2 mb-3">
-        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 ">auto_awesome</span>
-        <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Recomendaciones AI</h4>
+        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">auto_awesome</span>
+        <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          Recomendaciones del sistema
+        </h4>
       </div>
-      <ul class="list-disc ml-6 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-        <li>Refuerza la autenticación en <strong>Zona B</strong> por intentos de acceso no autorizados.</li>
-        <li>Recalibra <strong>Sensor #12</strong> en las próximas 12h.</li>
-        <li>Implementa control automático de peso en <strong>#X456</strong>.</li>
+
+      <ul id="ai-recs-list" class="list-disc ml-6 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+        <li>Cargando análisis automático...</li>
       </ul>
-      <div class="text-right mt-4">
-        <button class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Ver plan de acción</button>
-      </div>
-    </div>
+    </section>
 
   </section>
 
@@ -114,13 +112,13 @@
       <!-- Chart 2 -->
       <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
         <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Incidencias (últimos 7 días)</p>
-        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
+        <canvas id="chartIncidencias" class="h-[250px] w-full !p-2"></canvas>
       </div>
 
       <!-- Chart 3 -->
       <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
         <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Mapa de actividad (24h)</p>
-        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
+        <canvas id="chartActividad" class="h-[250px] w-full !p-2"></canvas>
 
       </div>
 

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Editar Perfil</h1>
+    
+    <form method="POST" class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+      <div class="space-y-6">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Nombre</label>
+          <input type="text" 
+                 name="nombre" 
+                 value="{{ session['usuario_nombre'] }}"
+                 class="w-full rounded-lg border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700">
+        </div>
+
+        <!-- Correo -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Correo</label>
+          <input type="email" 
+                 name="correo" 
+                 value="{{ session['usuario_correo'] }}"
+                 class="w-full rounded-lg border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700">
+        </div>
+
+        <button type="submit" 
+                class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+          Guardar cambios
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

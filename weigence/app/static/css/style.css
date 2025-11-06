@@ -788,6 +788,7 @@ td {
   border-radius: 0.75rem;
   padding: 1.25rem;
   transition: all 0.2s ease-in-out;
+  
 }
 
 .insights-card:hover {
@@ -888,3 +889,18 @@ html.dark .timeline-item.dragging {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
 }
+  #chartEventos {
+    max-width: 220px; /* reduce tamaño del donut */
+    max-height: 220px;
+    margin: 0 auto;
+  }
+
+  #chartIncidencias,
+  #chartActividad {
+    max-height: 250px;
+  }
+
+  .grid > canvas {
+    display: block;
+    margin: 0 auto;
+  }

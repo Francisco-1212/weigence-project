@@ -43,8 +43,6 @@ def historial():
                 "observacion": m.get("observacion", ""),
             })
 
-        movimientos = movimientos[:5]
-
         eq = (
             supabase.table("alertas")
             .select("titulo, descripcion, tipo_color, fecha_creacion, estado")

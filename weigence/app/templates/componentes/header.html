@@ -21,15 +21,17 @@
       </div>
     </div>
   </div> 
-
-  <!-- Parte central: Búsqueda -->
+  <!-- Recomendación IA en header -->
   <div class="relative flex-1 mx-6">
-    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">search</span>
-    <input 
-      class="w-full rounded-xl bg-neutral-200 dark:bg-neutral-800 border border-transparent pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-neutral-700 transition-all placeholder-neutral-500 dark:placeholder-neutral-400 text-sm text-neutral-900 dark:text-neutral-100" 
-      placeholder="Buscar en el sistema..." 
-      type="search"
-      aria-label="Buscar en el sistema" />
+    <div
+      id="ai-recomendacion-header"
+      class="ia-panel w-full rounded-xl bg-neutral-200 dark:bg-neutral-800 border border-transparent px-10 py-2.5 flex items-center text-sm text-neutral-800 dark:text-neutral-200 truncate transition-all"
+    >
+      <span class="material-symbols-outlined absolute left-3 text-primary-500 text-base">auto_awesome</span>
+      <span id="ai-recomendacion-text" class="truncate select-none">
+        Cargando recomendaciones del sistema...
+      </span>
+    </div>
   </div>
 
   <!-- Parte derecha: Controles -->

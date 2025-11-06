@@ -3,6 +3,7 @@ from flask import Flask, session
 from flask_login import LoginManager
 from .routes import bp as routes_bp
 from .routes.utils import obtener_notificaciones
+from flask import Blueprint
 
 def create_app():
     app = Flask(__name__)
@@ -24,13 +25,22 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        from .models import User
+        from app.models import User
         from api.conexion_supabase import supabase
         usuarios = supabase.table("usuarios").select("*").eq("rut_usuario", user_id).execute().data
         return User(usuarios[0]) if usuarios else None
 
     app.register_blueprint(routes_bp)
 
+    # --- Variables globales para templates ---
+    @app.context_processor
+    def utility_processor():
+        return dict(
+            usuario_nombre=session.get("usuario_nombre", ""),
+            usuario_rol=session.get("usuario_rol", ""),
+            usuario_correo=session.get("usuario_correo", "")
+        )
+    
     # --- Notificaciones globales ---
     @app.context_processor
     def inject_notificaciones():

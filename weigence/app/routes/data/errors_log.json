@@ -1,5 +1,9 @@
 [
   {
+    "timestamp": "2025-11-05T19:37:32.334418",
+    "message": "Error al obtener datos filtrados"
+  },
+  {
     "timestamp": "2025-11-04T22:34:25.306654",
     "message": "Error al obtener datos filtrados"
   },
