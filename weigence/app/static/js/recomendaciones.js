@@ -1,74 +1,141 @@
 (function () {
+  const headerPanel = document.getElementById("ai-recomendacion-header");
+  const headerText = document.getElementById("ai-recomendacion-text");
+  const auditoriaPanel = document.getElementById("ai-recs-list")?.closest(".ia-panel");
+  let rotationTimer = null;
+
+  const LABELS = {
+    normal: "Normal",
+    advertencia: "Advertencia",
+    critico: "Crítico",
+  };
+
   function obtenerContexto() {
     const path = window.location.pathname.split("/").filter(Boolean);
     return path[0] || "dashboard";
   }
 
+  function normalizar(rec) {
+    if (!rec) return null;
+    if (typeof rec === "string") {
+      return { mensaje: rec, nivel: "normal", categoria: null };
+    }
+    const mensaje = (rec.mensaje || "").toString().trim();
+    if (!mensaje) return null;
+    const nivel = (rec.nivel || "normal").toLowerCase();
+    return {
+      mensaje,
+      nivel: ["normal", "advertencia", "critico"].includes(nivel) ? nivel : "normal",
+      categoria: rec.categoria || null,
+    };
+  }
+
+  function aplicarSeveridad(nivel) {
+    if (!headerPanel) return;
+    headerPanel.dataset.nivel = nivel || "normal";
+  }
+
+  function crearItemLista(rec) {
+    const nivel = rec.nivel || "normal";
+    const etiqueta = LABELS[nivel] || LABELS.normal;
+    return `
+      <li class="leading-snug flex flex-col gap-1">
+        <span class="ia-badge ia-badge--${nivel}">${etiqueta}</span>
+        <span class="ia-mensaje">${rec.mensaje}</span>
+      </li>
+    `;
+  }
+
   function mostrarAuditoria(lista) {
     const ul = document.getElementById("ai-recs-list");
     if (!ul) return;
+    const niveles = { normal: 0, advertencia: 1, critico: 2 };
     if (!lista.length) {
-      ul.innerHTML = "<li>No se encontraron recomendaciones.</li>";
+      ul.innerHTML = "<li class=\"leading-snug\">No se encontraron recomendaciones.</li>";
+      if (auditoriaPanel) auditoriaPanel.dataset.nivel = "normal";
       return;
     }
-    ul.innerHTML = lista.map(r => `<li>${r}</li>`).join("");
-    ul.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, fill: "forwards" });
+    const severidad = lista.reduce((nivel, rec) => {
+      const valor = niveles[rec.nivel] ?? 0;
+      return valor > (niveles[nivel] ?? 0) ? rec.nivel : nivel;
+    }, "normal");
+    ul.innerHTML = lista.map(crearItemLista).join("");
+    ul.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: "forwards" });
+    if (auditoriaPanel) auditoriaPanel.dataset.nivel = severidad;
   }
 
-  // Rotación de mensajes en header
   function rotarMensajes(lista) {
-    const el = document.getElementById("ai-recomendacion-text");
-    if (!el || !lista.length) return;
-    let idx = 0;
-    const duracion = 10000; // 10 segundos
-
-    function mostrar() {
-      const msg = lista[idx];
-      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: "forwards" })
-        .onfinish = () => {
-          el.textContent = msg;
-          el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, fill: "forwards" });
-        };
-      idx = (idx + 1) % lista.length;
+    if (!headerText || !headerPanel || !lista.length) return;
+    if (rotationTimer) {
+      clearInterval(rotationTimer);
     }
 
+    let indice = 0;
+    const duracion = 10000;
+
+    const mostrar = () => {
+      const rec = lista[indice];
+      const nivel = rec?.nivel || "normal";
+      headerText.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: "forwards" }).onfinish = () => {
+        headerText.textContent = rec?.mensaje || "";
+        aplicarSeveridad(nivel);
+        headerText.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, fill: "forwards" });
+      };
+      indice = (indice + 1) % lista.length;
+    };
+
     mostrar();
-    setInterval(mostrar, duracion);
+    rotationTimer = setInterval(mostrar, duracion);
+  }
+
+  function procesarRespuesta(data) {
+    if (!Array.isArray(data)) return [];
+    return data.map(normalizar).filter(Boolean);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    const ctx = obtenerContexto();
+    const contexto = obtenerContexto();
 
-    const pCtx = fetch(`/api/recomendaciones?contexto=${encodeURIComponent(ctx)}`)
-      .then(r => (r.ok ? r.json() : []))
-      .then(arr => arr[0] || null)
-      .catch(() => null);
-
-    const pGlobal = fetch("/api/ia/header")
-      .then(r => (r.ok ? r.json() : []))
-      .then(arr => (Array.isArray(arr) ? arr : []))
+    const pContexto = fetch(`/api/recomendaciones?contexto=${encodeURIComponent(contexto)}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(procesarRespuesta)
       .catch(() => []);
 
-    Promise.all([pCtx, pGlobal]).then(([ctxMsg, globalArr]) => {
-      const all = [ctxMsg, ...globalArr.filter(Boolean)];
-      const mensajes = all.filter(Boolean).slice(0, 5);
-      rotarMensajes(mensajes.length ? mensajes : ["No hay recomendaciones disponibles."]);
+    const pGlobal = fetch("/api/ia/header")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(procesarRespuesta)
+      .catch(() => []);
+
+    Promise.all([pContexto, pGlobal]).then(([ctxArr, globalArr]) => {
+      const mensajes = [...ctxArr, ...globalArr];
+      if (!mensajes.length) {
+        mensajes.push({ mensaje: "No hay recomendaciones disponibles.", nivel: "normal" });
+      }
+      rotarMensajes(mensajes);
     });
 
-    if (ctx === "auditoria") {
-    fetch("/api/ia/auditoria")
-        .then(r => r.ok ? r.json() : [])
-        .then(data => {
-        const ul = document.getElementById("ai-recs-list");
-        if (!ul) return;
-        ul.innerHTML = data.length
-            ? data.map(r => `<li class="leading-snug">${r}</li>`).join("")
-            : "<li>Sin análisis disponibles.</li>";
-        })
-        .catch(() => {
-        const ul = document.getElementById("ai-recs-list");
-        if (ul) ul.innerHTML = "<li>Error al cargar IA avanzada.</li>";
+    if (contexto === "auditoria") {
+      const cargarAuditoria = () => {
+        fetch("/api/ia/auditoria")
+          .then((r) => (r.ok ? r.json() : []))
+          .then(procesarRespuesta)
+          .then(mostrarAuditoria)
+          .catch(() => {
+            mostrarAuditoria([
+              { mensaje: "Error al cargar IA avanzada.", nivel: "critico" },
+            ]);
+          });
+      };
+
+      cargarAuditoria();
+
+      const boton = document.getElementById("btn-refresh-auditoria");
+      if (boton) {
+        boton.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          cargarAuditoria();
         });
+      }
     }
   });
 })();

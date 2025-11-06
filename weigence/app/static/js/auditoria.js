@@ -79,19 +79,65 @@ window.addEventListener("load", () => {
   }, 200);
 });
 
-// === Actualización automática de recomendaciones (cada 60 s) ===
+const LABELS = {
+  normal: "Normal",
+  advertencia: "Advertencia",
+  critico: "Crítico",
+};
+
+const auditoriaPanel = document.getElementById("ai-recs-list")?.closest(".ia-panel");
+
+function procesarRespuesta(data) {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((rec) => {
+      if (typeof rec === "string") {
+        return { mensaje: rec, nivel: "normal" };
+      }
+      const mensaje = (rec?.mensaje || "").toString().trim();
+      if (!mensaje) return null;
+      const nivel = (rec?.nivel || "normal").toLowerCase();
+      return {
+        mensaje,
+        nivel: ["normal", "advertencia", "critico"].includes(nivel) ? nivel : "normal",
+      };
+    })
+    .filter(Boolean);
+}
+
+function renderAuditoria(lista) {
+  const ul = document.getElementById("ai-recs-list");
+  if (!ul) return;
+  const niveles = { normal: 0, advertencia: 1, critico: 2 };
+  if (!lista.length) {
+    ul.innerHTML = "<li class=\"leading-snug\">Sin recomendaciones por ahora.</li>";
+    if (auditoriaPanel) auditoriaPanel.dataset.nivel = "normal";
+    return;
+  }
+  const severidad = lista.reduce((nivel, rec) => {
+    const valor = niveles[rec.nivel] ?? 0;
+    return valor > (niveles[nivel] ?? 0) ? rec.nivel : nivel;
+  }, "normal");
+  ul.innerHTML = lista
+    .map((rec) => {
+      const nivel = rec.nivel || "normal";
+      const etiqueta = LABELS[nivel] || LABELS.normal;
+      return `
+        <li class="leading-snug flex flex-col gap-1">
+          <span class="ia-badge ia-badge--${nivel}">${etiqueta}</span>
+          <span class="ia-mensaje">${rec.mensaje}</span>
+        </li>`;
+    })
+    .join("");
+  if (auditoriaPanel) auditoriaPanel.dataset.nivel = severidad;
+}
+
 setInterval(() => {
   fetch("/api/recomendaciones?contexto=auditoria")
     .then((r) => (r.ok ? r.json() : []))
-    .then((data) => {
-      const ul = document.getElementById("ai-recs-list");
-      if (!ul) return;
-      ul.innerHTML = data.length
-        ? data.map((r) => `<li class="leading-snug">${r}</li>`).join("")
-        : "<li>Sin recomendaciones por ahora.</li>";
-    })
+    .then(procesarRespuesta)
+    .then(renderAuditoria)
     .catch(() => {
-      const ul = document.getElementById("ai-recs-list");
-      if (ul) ul.innerHTML = "<li>Error al actualizar recomendaciones.</li>";
+      renderAuditoria([{ mensaje: "Error al actualizar recomendaciones.", nivel: "critico" }]);
     });
 }, 60000);
