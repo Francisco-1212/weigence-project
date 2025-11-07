@@ -724,77 +724,265 @@ td {
   }
 }
 
+/* ============================================================
+   IA PANEL — ULTRA LIQUID EDGE (Producto Top)
+   ============================================================ */
 
-/* movimiento */
-.movimiento-item.selected {
-  background: #e0f2fe;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 0 2px #38bdf8;
-}
-.panel {
-  background: var(--card-bg-light);
-  border: 1px solid var(--border-light);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideIn {
-  from { transform: translateX(40px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-.animate-slideIn { animation: slideIn 0.35s ease-out; }
-
-/* === ESTILO FUTURISTA IA === */
 .ia-panel {
   position: relative;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  background-color: var(--card-bg-dark);
+  border-radius: 14px;
   overflow: hidden;
+  padding: 0.75rem;
+  background-color: var(--card-bg-dark);
+  border: 1px solid rgba(255,255,255,0.04);
 }
 
-.ia-panel[data-nivel="normal"] {
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.ia-panel[data-nivel="advertencia"] {
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
-}
-
-.ia-panel[data-nivel="critico"] {
-  border-color: rgba(239, 68, 68, 0.6);
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
-}
-
-.ia-panel::before {
+/* ============================================================
+   CAPA 1 — BORDE REAL ULTRA-FINO + GRADIENTE LÍQUIDO
+   ============================================================ */
+.ia-panel::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg,
-    #00f5ff 0%,
-    #7c3aed 50%,
-    #00f5ff 100%);
-  mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask-composite: destination-out;
+
+  /* Borde ultra fino */
+  border: 1px solid transparent;
+
+  /* Gradiente IA suave (se ajusta por nivel) */
+  --ia-c1: rgba(120,160,255,0.45);
+  --ia-c2: rgba(180,210,255,0.55);
+
+  background: linear-gradient(
+    135deg,
+    var(--ia-c1),
+    var(--ia-c2),
+    var(--ia-c1)
+  ) border-box;
+
+  background-size: 300% 300%;
+  background-position: 0% 50%;
+
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+
   pointer-events: none;
-  animation: iaPulse 5s ease-in-out infinite;
-  opacity: 0.6;
+  animation: iaLiquid 8s ease-in-out infinite;
+  opacity: 0.70; /* visible pero suave */
 }
 
-@keyframes iaPulse {
-  0%,100% {opacity: 0.4;}
-  50% {opacity: 0.9;}
+/* ============================================================
+   CAPA 2 — GLOW EXTERNO SUTIL (NO ENGORDA EL BORDE)
+   ============================================================ */
+.ia-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+
+  --glow-c: rgba(120,160,255,0.28);
+
+  box-shadow:
+    0 0 8px var(--glow-c),
+    0 0 14px var(--glow-c);
+
+  pointer-events: none;
+  animation: iaGlow 6s ease-in-out infinite;
+  opacity: 0.45; /* brillo suave */
 }
 
+/* ============================================================
+   ANIMACIONES IA
+   ============================================================ */
+
+/* Movimiento líquido del gradiente (borde) */
+@keyframes iaLiquid {
+  0%   { background-position: 0% 50%; opacity: 0.60; }
+  50%  { background-position: 100% 50%; opacity: 0.85; }
+  100% { background-position: 0% 50%; opacity: 0.60; }
+}
+
+/* Glow respirando suavemente */
+@keyframes iaGlow {
+  0% {
+    opacity: 0.40;
+    box-shadow: 0 0 8px var(--glow-c), 0 0 14px var(--glow-c);
+  }
+  50% {
+    opacity: 0.60;
+    box-shadow: 0 0 12px var(--glow-c), 0 0 20px var(--glow-c);
+  }
+  100% {
+    opacity: 0.40;
+    box-shadow: 0 0 8px var(--glow-c), 0 0 14px var(--glow-c);
+  }
+}
+
+/* ============================================================
+   COLORES POR NIVEL — IA SUAVE (ELEGANTE, NO CHILLÓN)
+   ============================================================ */
+
+/* 🔵 NORMAL — Azul IA tenue */
+.ia-panel[data-nivel="normal"]::after {
+  --ia-c1: rgba(120,160,255,0.45);
+  --ia-c2: rgba(180,210,255,0.55);
+}
+.ia-panel[data-nivel="normal"]::before {
+  --glow-c: rgba(120,160,255,0.35);
+}
+
+/* 🟡 ADVERTENCIA — Ámbar cálido suave */
+.ia-panel[data-nivel="advertencia"]::after {
+  --ia-c1: rgba(255,200,120,0.40);
+  --ia-c2: rgba(255,220,160,0.55);
+}
+.ia-panel[data-nivel="advertencia"]::before {
+  --glow-c: rgba(255,200,120,0.40);
+}
+
+/* 🔴 CRÍTICO — Rojo pastel apagado (no molesta) */
+.ia-panel[data-nivel="critico"]::after {
+  --ia-c1: rgba(255,130,130,0.50);
+  --ia-c2: rgba(255,180,180,0.65);
+}
+.ia-panel[data-nivel="critico"]::before {
+  --glow-c: rgba(255,130,130,0.48);
+}
+
+
+
+/* =====================================
+   ICONO IA — GRADIENTE LÍQUIDO ANIMADO
+   ===================================== */
+
+.ia-icon {
+  font-size: 1rem;
+  margin-right: 0.4rem;
+  display: inline-block;
+
+  /* Necesario para gradiente animado */
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  background-size: 250% 250%;
+  animation: iaIconLiquid 6s ease-in-out infinite, iaIconPulse 6s ease-in-out infinite;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* ============================================================
+   Colores por nivel — ahora con 3 tonos para animación real
+   ============================================================ */
+
+/* 🔵 NORMAL */
+.ia-panel[data-nivel="normal"] .ia-icon {
+  background-image: linear-gradient(
+    135deg,
+    rgba(120,160,255,0.25),
+    rgba(165,210,255,0.85),
+    rgba(120,160,255,0.45)
+  );
+}
+
+/* 🟡 ADVERTENCIA */
+.ia-panel[data-nivel="advertencia"] .ia-icon {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255,200,120,0.25),
+    rgba(255,220,160,0.90),
+    rgba(255,200,120,0.45)
+  );
+}
+
+/* 🔴 CRÍTICO */
+.ia-panel[data-nivel="critico"] .ia-icon {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255,130,130,0.35),
+    rgba(255,180,180,0.95),
+    rgba(255,130,130,0.50)
+  );
+}
+
+/* ============================================================
+   Animación del gradiente líquido
+   ============================================================ */
+@keyframes iaIconLiquid {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ============================================================
+   Pulso IA suave (opcional pero elegante)
+   ============================================================ */
+@keyframes iaIconPulse {
+  0%,100% { opacity: 0.75; transform: translateY(0); }
+  50%     { opacity: 1;  transform: translateY(-0.5px); }
+}
+@keyframes iaGlowMove {
+  0% {
+    opacity: 0.35;
+    transform: scale(1);
+    box-shadow:
+      0 0 6px   var(--glow-c),
+      0 0 14px  var(--glow-c);
+  }
+  50% {
+    opacity: 0.58;
+    transform: scale(1.015);
+    box-shadow:
+      0 0 10px  var(--glow-c),
+      0 0 20px  var(--glow-c);
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+    box-shadow:
+      0 0 6px   var(--glow-c),
+      0 0 14px  var(--glow-c);
+  }
+}
+
+/* ============================================================
+   Glow IA muy suave
+   ============================================================ */
+.ia-panel[data-nivel="normal"] .ia-icon {
+  text-shadow: 0 0 6px rgba(120,160,255,0.25);
+}
+.ia-panel[data-nivel="advertencia"] .ia-icon {
+  text-shadow: 0 0 6px rgba(255,200,120,0.22);
+}
+.ia-panel[data-nivel="critico"] .ia-icon {
+  text-shadow: 0 0 6px rgba(255,130,130,0.25);
+}
+
+
+/* =====================================
+    ANIMACIÓN ICONO (pulso IA sutil)
+   ===================================== */
+@keyframes iaIconPulse {
+  0%   { opacity: 0.7; transform: translateY(0); }
+  50%  { opacity: 1;  transform: translateY(-0.5px); }
+  100% { opacity: 0.7; transform: translateY(0); }
+}
+
+
+/* ============================================================
+   Animación del borde IA (líquido / holográfico)
+   ============================================================ */
+@keyframes iaGradientMove {
+  0% { background-position: 0% 50%; opacity: 0.85; }
+  50% { background-position: 100% 50%; opacity: 1; }
+  100% { background-position: 0% 50%; opacity: 0.85; }
+}
+
+/* ============================================================
+   BADGES IA — versión producto top
+   ============================================================ */
 .ia-badge {
   display: inline-flex;
   align-items: center;
@@ -803,31 +991,44 @@ td {
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
+
+  padding: 0.2rem 0.55rem;
   border-radius: 9999px;
-  width: fit-content;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
 }
 
+/* Normal */
 .ia-badge--normal {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  color: #3b82f6;
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.25);
 }
 
+/* Advertencia */
 .ia-badge--advertencia {
-  background: rgba(245, 158, 11, 0.18);
   color: #b45309;
+  background: rgba(245,158,11,0.18);
+  border-color: rgba(245,158,11,0.28);
 }
 
+/* Crítico */
 .ia-badge--critico {
-  background: rgba(239, 68, 68, 0.18);
   color: #b91c1c;
+  background: rgba(239,68,68,0.20);
+  border-color: rgba(239,68,68,0.32);
 }
 
+/* ============================================================
+   Mensaje IA
+   ============================================================ */
 .ia-mensaje {
   display: block;
-  color: inherit;
+  color: var(--text-soft);
   line-height: 1.4;
 }
+
 
 /* Ajustes visuales de System Insights */
 .insights-card {
