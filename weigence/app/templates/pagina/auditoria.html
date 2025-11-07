@@ -78,19 +78,28 @@
       </div>
     </div>
 
-    <!-- Recomendaciones AI -->
-    <section class="ia-panel rounded-xl p-5 shadow-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]" data-nivel="normal">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">auto_awesome</span>
-        <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Recomendaciones del sistema
+    <!-- Recomendación AI -->
+    <article id="ai-recomendacion-auditoria" class="ia-recommendation" data-ia-card data-severity="info">
+      <div class="ia-recommendation__halo" aria-hidden="true"></div>
+      <div class="ia-recommendation__body">
+        <div class="ia-recommendation__meta">
+          <span class="material-symbols-outlined text-primary-500 text-lg" data-ia-icon>auto_awesome</span>
+          <span data-ia-severity>Analizando entorno</span>
+        </div>
+        <h4 class="ia-recommendation__title" data-ia-title>
+          Generando recomendación estratégica...
         </h4>
+        <p class="ia-recommendation__message" data-ia-message>
+          El motor IA está consolidando métricas recientes para producir un diagnóstico único con contexto operativo.
+        </p>
+        <div class="ia-recommendation__solution">
+          <span class="ia-recommendation__label">Plan sugerido</span>
+          <p class="ia-recommendation__solution-text" data-ia-solution>
+            El sistema propondrá una intervención prioritaria una vez completado el análisis.
+          </p>
+        </div>
       </div>
-
-      <ul id="ai-recs-list" class="list-disc ml-6 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-        <li>Cargando análisis automático...</li>
-      </ul>
-    </section>
+    </article>
 
   </section>
 

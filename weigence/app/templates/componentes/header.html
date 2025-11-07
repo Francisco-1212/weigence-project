@@ -23,16 +23,27 @@
   </div> 
   <!-- Recomendación IA en header -->
   <div class="relative flex-1 mx-6">
-    <div
-      id="ai-recomendacion-header"
-      data-nivel="normal"
-      class="ia-panel w-full rounded-xl bg-neutral-200 dark:bg-neutral-800 border border-transparent px-10 py-2.5 flex items-center text-sm text-neutral-800 dark:text-neutral-200 truncate transition-all"
-    >
-      <span class="material-symbols-outlined absolute left-3 text-primary-500 text-base">auto_awesome</span>
-      <span id="ai-recomendacion-text" class="truncate select-none">
-        Cargando recomendaciones del sistema...
-      </span>
-    </div>
+    <article id="ai-recomendacion-header" class="ia-recommendation" data-ia-card data-severity="info">
+      <div class="ia-recommendation__halo" aria-hidden="true"></div>
+      <div class="ia-recommendation__body">
+        <div class="ia-recommendation__meta">
+          <span class="material-symbols-outlined text-primary-500 text-lg" data-ia-icon>auto_awesome</span>
+          <span data-ia-severity>Analizando entorno</span>
+        </div>
+        <h3 class="ia-recommendation__title" data-ia-title>
+          Generando diagnóstico inteligente...
+        </h3>
+        <p class="ia-recommendation__message" data-ia-message>
+          Estamos recopilando métricas recientes para preparar una recomendación personalizada.
+        </p>
+        <div class="ia-recommendation__solution">
+          <span class="ia-recommendation__label">Plan sugerido</span>
+          <p class="ia-recommendation__solution-text" data-ia-solution>
+            El motor IA propondrá un curso de acción en breve.
+          </p>
+        </div>
+      </div>
+    </article>
   </div>
 
   <!-- Parte derecha: Controles -->
