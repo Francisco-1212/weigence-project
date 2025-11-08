@@ -737,6 +737,117 @@ td {
   border: 1px solid rgba(255,255,255,0.04);
 }
 
+.ia-panel--header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  min-height: 4.5rem;
+}
+
+.ia-panel__icon-wrapper {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(120,160,255,0.15), rgba(120,160,255,0.05));
+  backdrop-filter: blur(6px);
+}
+
+.ia-panel[data-severity="warning"] .ia-panel__icon-wrapper {
+  background: linear-gradient(135deg, rgba(255,200,120,0.18), rgba(255,200,120,0.05));
+}
+
+.ia-panel[data-severity="critical"] .ia-panel__icon-wrapper {
+  background: linear-gradient(135deg, rgba(255,150,150,0.22), rgba(255,150,150,0.06));
+}
+
+.ia-panel__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ia-panel__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ia-panel__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ia-panel__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background-color: rgba(120,160,255,0.2);
+  color: rgba(40,60,120,0.95);
+}
+
+.ia-panel__message {
+  font-size: 0.9rem;
+  line-height: 1.35rem;
+  font-weight: 500;
+}
+
+.ia-panel__hint {
+  font-size: 0.75rem;
+  line-height: 1.2rem;
+  color: rgba(60,70,110,0.9);
+}
+
+.dark .ia-panel__hint {
+  color: rgba(198,212,255,0.75);
+}
+
+.ia-panel[data-severity="warning"] .ia-panel__badge {
+  background-color: rgba(255,200,120,0.25);
+  color: rgba(120,90,40,0.95);
+}
+
+.ia-panel[data-severity="critical"] .ia-panel__badge {
+  background-color: rgba(255,150,150,0.25);
+  color: rgba(120,40,40,0.95);
+}
+
+.dark .ia-panel[data-severity="warning"] .ia-panel__badge {
+  color: rgba(255,220,180,0.95);
+}
+
+.dark .ia-panel[data-severity="critical"] .ia-panel__badge {
+  color: rgba(255,190,190,0.95);
+}
+
+.ia-panel--header .ia-icon {
+  font-size: 1.6rem;
+}
+
+.ia-panel--header .ia-panel__message {
+  max-width: 100%;
+}
+
+.ia-panel--header .ia-panel__hint {
+  max-width: 52ch;
+}
+
+.ia-panel__hint.is-hidden {
+  display: none;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
 /* ============================================================
    CAPA 1 — BORDE REAL ULTRA-FINO + GRADIENTE LÍQUIDO
    ============================================================ */
