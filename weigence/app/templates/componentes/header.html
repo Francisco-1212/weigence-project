@@ -23,15 +23,30 @@
   </div> 
   <!-- Recomendación IA en header -->
   <div class="relative flex-1 mx-6">
-    <div
+    <article
       id="ai-recomendacion-header"
+      class="ia-panel ia-panel--header bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
+      data-ia-card
+      data-severity="info"
       data-nivel="normal"
-      class="ia-panel w-full rounded-xl bg-neutral-200 dark:bg-neutral-800 border border-transparent px-10 py-2.5 flex items-center text-sm text-neutral-800 dark:text-neutral-200 truncate transition-all">
-      <span class="material-symbols-outlined absolute left-3 ia-icon">auto_awesome</span>
-      <span id="ai-recomendacion-text" class="truncate select-none">
-        Cargando recomendaciones del sistema...
-      </span>
-    </div>
+      aria-live="polite"
+      role="status">
+      <div class="ia-panel__icon-wrapper" aria-hidden="true">
+        <span class="material-symbols-outlined ia-icon" data-ia-icon>auto_awesome</span>
+      </div>
+      <div class="ia-panel__content">
+        <div class="ia-panel__title-row">
+          <span class="ia-panel__label" data-ia-title>Motor IA activo</span>
+          <span class="ia-panel__badge" data-ia-severity>Analizando datos…</span>
+        </div>
+        <p class="ia-panel__message" data-ia-message>
+          Cargando recomendaciones inteligentes para este módulo.
+        </p>
+        <p class="ia-panel__hint" data-ia-solution>
+          Detectaremos oportunidades poco evidentes y las mostraremos aquí.
+        </p>
+      </div>
+    </article>
   </div>
 
   <!-- Parte derecha: Controles -->

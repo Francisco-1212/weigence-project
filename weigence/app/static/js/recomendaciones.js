@@ -10,6 +10,12 @@
     critical: 'Riesgo crítico',
   };
 
+  const severityNivel = {
+    info: 'normal',
+    warning: 'advertencia',
+    critical: 'critico',
+  };
+
   const severityIcons = {
     info: 'auto_awesome',
     warning: 'warning',
@@ -28,6 +34,8 @@
       : 'info';
 
     card.dataset.severity = normalizedSeverity;
+    const nivel = severityNivel[normalizedSeverity] || severityNivel.info;
+    card.setAttribute('data-nivel', nivel);
     const icon = card.querySelector('[data-ia-icon]');
     const title = card.querySelector('[data-ia-title]');
     const severity = card.querySelector('[data-ia-severity]');
@@ -47,7 +55,11 @@
       message.textContent = mensaje || 'Sin detalles disponibles.';
     }
     if (solution) {
-      solution.textContent = solucion || 'Sin acciones sugeridas.';
+      const hasSolution = Boolean(solucion);
+      solution.textContent = hasSolution
+        ? solucion
+        : 'Sin acciones sugeridas.';
+      solution.classList.toggle('is-hidden', !hasSolution);
     }
 
     card.classList.remove('is-visible');
