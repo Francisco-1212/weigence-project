@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+import logging
 from typing import Dict, Optional
 
 from .ia_repository import AuditLogPayload, IARepository, repository
+
+logger = logging.getLogger(__name__)
 
 
 class AuditLogger:
@@ -22,7 +25,20 @@ class AuditLogger:
         mensaje: str,
         solucion: str,
         metadata: Optional[Dict[str, float]] = None,
+        confianza: float | None = None,
     ) -> bool:
+        """Registra la recomendación final y su metadata de soporte."""
+
+        metadata = metadata or {}
+        confianza_val = float(
+            confianza
+            if confianza is not None
+            else metadata.get("signal_strength")
+            or metadata.get("trend_percent")
+            or metadata.get("weight_volatility")
+            or 0.0
+        )
+        logger.debug("[IA] Preparando payload de auditoría para el módulo %s", tipo)
         payload = AuditLogPayload(
             timestamp=datetime.utcnow(),
             tipo=tipo,
@@ -30,7 +46,8 @@ class AuditLogger:
             titulo=titulo,
             mensaje=mensaje,
             solucion=solucion,
-            metadata=metadata or {},
+            confianza=confianza_val,
+            metadata=metadata,
         )
         return self._repo.registrar_evento_auditoria(payload)
 
