@@ -1,0 +1,396 @@
+{
+  "score_thresholds": {
+    "warning": 0.4,
+    "critical": 0.7
+  },
+  "profiles": {
+    "perfil_operativo": {
+      "fallback_template": "estado_estable",
+      "rules": [
+        {
+          "key": "operaciones_bajo_ritmo",
+          "template": "operational_focus",
+          "summary": "La operación muestra señales de lentitud sostenida.",
+          "minimum_score": 0.25,
+          "severity": {
+            "warning": 0.4,
+            "critical": 0.65
+          },
+          "metrics": [
+            {
+              "name": "movements_per_hour",
+              "direction": "below",
+              "threshold": 0.35,
+              "scale": 0.35,
+              "weight": 0.5,
+              "phrase": "Flujo operativo reducido ({value:.2f} mov/h)."
+            },
+            {
+              "name": "inactivity_hours",
+              "direction": "above",
+              "threshold": 2.0,
+              "scale": 4.0,
+              "weight": 0.3,
+              "phrase": "Inactividad acumulada de {value:.1f}h."
+            },
+            {
+              "name": "sales_trend_percent",
+              "direction": "below",
+              "threshold": -0.12,
+              "scale": 0.25,
+              "weight": 0.2,
+              "phrase": "Ventas cayendo {value:.1%} vs histórico."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "low_activity", "weight": 0.08},
+            {"type": "pattern_flag", "flag": "extended_inactivity", "weight": 0.12}
+          ]
+        },
+        {
+          "key": "presion_de_alertas",
+          "template": "alert_focus",
+          "summary": "El panel operativo acumula alertas que requieren acción inmediata.",
+          "minimum_score": 0.3,
+          "severity": {
+            "warning": 0.45,
+            "critical": 0.7
+          },
+          "metrics": [
+            {
+              "name": "critical_alerts",
+              "direction": "above",
+              "threshold": 1.0,
+              "scale": 3.0,
+              "weight": 0.4,
+              "phrase": "Alertas críticas activas: {value:.0f}."
+            },
+            {
+              "name": "warning_alerts",
+              "direction": "above",
+              "threshold": 2.0,
+              "scale": 4.0,
+              "weight": 0.3,
+              "phrase": "Advertencias técnicas vigentes: {value:.0f}."
+            },
+            {
+              "name": "signal_strength",
+              "direction": "above",
+              "threshold": 0.4,
+              "scale": 0.6,
+              "weight": 0.3,
+              "phrase": "Señal compuesta en {value:.2f}."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "alert_pressure", "weight": 0.1},
+            {"type": "metric_ratio", "numerator": "critical_alerts", "denominator": "warning_alerts", "threshold": 0.6, "weight": 0.05}
+          ]
+        }
+      ]
+    },
+    "perfil_comercial": {
+      "fallback_template": "estado_estable",
+      "rules": [
+        {
+          "key": "ventas_en_descenso",
+          "template": "sales_pressure_v2",
+          "summary": "Las ventas pierden tracción y comprometen la meta del módulo.",
+          "minimum_score": 0.3,
+          "severity": {
+            "warning": 0.35,
+            "critical": 0.6
+          },
+          "metrics": [
+            {
+              "name": "sales_trend_percent",
+              "direction": "below",
+              "threshold": -0.18,
+              "scale": 0.3,
+              "weight": 0.45,
+              "phrase": "Tendencia de ventas en {value:.1%}."
+            },
+            {
+              "name": "sales_anomaly_score",
+              "direction": "below",
+              "threshold": -1.0,
+              "scale": 1.5,
+              "weight": 0.3,
+              "phrase": "Anomalía estadística (z={value:.2f})."
+            },
+            {
+              "name": "weight_change_rate",
+              "direction": "below",
+              "threshold": -0.08,
+              "scale": 0.2,
+              "weight": 0.25,
+              "phrase": "Inventario cayendo {value:.1%}."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "sales_drop", "weight": 0.12},
+            {"type": "metric_ratio", "numerator": "sales_vs_inventory", "denominator": "signal_strength", "threshold": 1.2, "weight": 0.08}
+          ]
+        },
+        {
+          "key": "crecimiento_sostenido",
+          "template": "growth_momentum",
+          "summary": "Se consolida un escenario comercial favorable.",
+          "minimum_score": 0.25,
+          "severity": {
+            "warning": 0.3,
+            "critical": 0.55
+          },
+          "metrics": [
+            {
+              "name": "sales_trend_percent",
+              "direction": "above",
+              "threshold": 0.12,
+              "scale": 0.25,
+              "weight": 0.4,
+              "phrase": "Ventas creciendo {value:.1%}."
+            },
+            {
+              "name": "signal_strength",
+              "direction": "above",
+              "threshold": 0.45,
+              "scale": 0.4,
+              "weight": 0.35,
+              "phrase": "Señal agregada en {value:.2f}."
+            },
+            {
+              "name": "weight_change_rate",
+              "direction": "above",
+              "threshold": 0.03,
+              "scale": 0.15,
+              "weight": 0.25,
+              "phrase": "Inventario recuperándose {value:.1%}."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "positive_recovery", "weight": 0.1}
+          ]
+        }
+      ]
+    },
+    "perfil_inventario": {
+      "fallback_template": "estado_estable",
+      "rules": [
+        {
+          "key": "inventario_en_riesgo",
+          "template": "inventory_focus",
+          "summary": "El inventario muestra deterioro y riesgo de quiebre.",
+          "minimum_score": 0.28,
+          "severity": {
+            "warning": 0.35,
+            "critical": 0.6
+          },
+          "metrics": [
+            {
+              "name": "weight_volatility",
+              "direction": "above",
+              "threshold": 0.22,
+              "scale": 0.3,
+              "weight": 0.4,
+              "phrase": "Volatilidad de peso {value:.2f}."
+            },
+            {
+              "name": "weight_change_rate",
+              "direction": "below",
+              "threshold": -0.08,
+              "scale": 0.2,
+              "weight": 0.35,
+              "phrase": "Consumo neto de inventario {value:.1%}."
+            },
+            {
+              "name": "warning_alerts",
+              "direction": "above",
+              "threshold": 1.0,
+              "scale": 3.0,
+              "weight": 0.25,
+              "phrase": "Alertas de inventario activas: {value:.0f}."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "inventory_loss", "weight": 0.15},
+            {"type": "pattern_flag", "flag": "weight_instability", "weight": 0.1}
+          ]
+        },
+        {
+          "key": "inventario_recuperado",
+          "template": "inventory_recovery",
+          "summary": "Los indicadores de stock mejoran tras los ajustes recientes.",
+          "minimum_score": 0.25,
+          "severity": {
+            "warning": 0.3,
+            "critical": 0.55
+          },
+          "metrics": [
+            {
+              "name": "weight_change_rate",
+              "direction": "above",
+              "threshold": 0.04,
+              "scale": 0.18,
+              "weight": 0.45,
+              "phrase": "Reposición efectiva {value:.1%}."
+            },
+            {
+              "name": "weight_volatility",
+              "direction": "below",
+              "threshold": 0.18,
+              "scale": 0.25,
+              "weight": 0.3,
+              "phrase": "Volatilidad contenida {value:.2f}."
+            },
+            {
+              "name": "signal_strength",
+              "direction": "above",
+              "threshold": 0.35,
+              "scale": 0.35,
+              "weight": 0.25,
+              "phrase": "Señal compuesta en {value:.2f}."
+            }
+          ],
+          "modifiers": [
+            {"type": "pattern_flag", "flag": "positive_recovery", "weight": 0.1}
+          ]
+        }
+      ]
+    }
+  },
+  "templates": {
+    "operational_focus": {
+      "titles": [
+        "Actividad operativa requiere refuerzo",
+        "Flujo en piso bajo niveles objetivo"
+      ],
+      "summary_modules": [
+        "Movimiento promedio de {movements_per_hour:.2f} operaciones/h en las últimas {movement_window_hours}h.",
+        "Inactividad acumulada de {inactivity_hours:.1f}h con tendencia de ventas {trend_percent:.1f}%."
+      ],
+      "detail_modules": [
+        "Los registros muestran una merma progresiva del flujo operativo que se extiende desde hace {inactivity_hours:.1f}h.",
+        "La caída de movimientos coincide con un descenso comercial del {trend_percent:.1f}% y un z-score de {sales_anomaly_score:.2f}.",
+        "El índice de señal compuesta se sitúa en {signal_strength:.2f}, reflejando fatiga operativa."
+      ],
+      "solutions": [
+        "Reasignar personal crítico, habilitar seguimiento minuto a minuto y coordinar un plan de recuperación en las próximas 2h.",
+        "Activar microturnos de soporte y auditar bloqueos operativos para restituir el flujo estándar."
+      ]
+    },
+    "alert_focus": {
+      "titles": [
+        "Sobrecarga de alertas en tablero",
+        "Prioridad roja en alarmas operativas"
+      ],
+      "summary_modules": [
+        "{critical_alerts:.0f} alertas críticas y {warning_alerts:.0f} advertencias activas.",
+        "Señal compuesta en {signal_strength:.2f} con ventas variando {trend_percent:.1f}%."
+      ],
+      "detail_modules": [
+        "La densidad de incidencias excede el umbral saludable y amenaza la continuidad operativa.",
+        "Varias alarmas se relacionan con caídas de ventas y con inventario tensionado.",
+        "Se proyecta escalamiento si no se atienden los focos en las próximas {movement_window_hours}h."
+      ],
+      "solutions": [
+        "Implementar sala de control dedicada, asignar responsables por alerta y ejecutar cierre gradual en menos de 4h.",
+        "Escalonar incidentes críticos a soporte especializado y pausar tareas no esenciales hasta contener el tablero."
+      ]
+    },
+    "sales_pressure_v2": {
+      "titles": [
+        "Ventas bajo presión sostenida",
+        "Riesgo comercial en evolución"
+      ],
+      "summary_modules": [
+        "Las ventas caen {trend_percent:.1f}% con anomalía estadística de {sales_anomaly_score:.2f}.",
+        "Inventario acompaña la caída con variación {weight_change_rate:.1%}."
+      ],
+      "detail_modules": [
+        "La contracción impacta los objetivos diarios y reduce la rotación de productos clave.",
+        "El indicador compuesto marca {signal_strength:.2f} presionando al equipo comercial.",
+        "Se detectan correlaciones con alertas activas y posible freno operativo." 
+      ],
+      "solutions": [
+        "Lanzar plan de estímulo express, reforzar promociones tácticas y ajustar inventario crítico de alta rotación.",
+        "Coordinar con operaciones un shock de reposición y habilitar acciones comerciales específicas por segmento."
+      ]
+    },
+    "growth_momentum": {
+      "titles": [
+        "Impulso comercial en ascenso",
+        "Recuperación validada por métricas"
+      ],
+      "summary_modules": [
+        "Ventas creciendo {trend_percent:.1f}% con señal compuesta {signal_strength:.2f}.",
+        "Inventario acompaña con variación {weight_change_rate:.1%}."
+      ],
+      "detail_modules": [
+        "Las últimas {sales_window_hours}h consolidan el repunte, reduciendo la volatilidad comercial.",
+        "La respuesta de inventario evita quiebres y estabiliza la disponibilidad.",
+        "La tendencia positiva se sostiene pese a variaciones de demanda." 
+      ],
+      "solutions": [
+        "Documentar aprendizajes, replicar ajustes exitosos en turnos rezagados y fijar seguimiento diario.",
+        "Escalar promociones efectivas y asegurar stock para los próximos tres turnos." 
+      ]
+    },
+    "inventory_focus": {
+      "titles": [
+        "Inventario en zona de riesgo",
+        "Stock operativo comprometido"
+      ],
+      "summary_modules": [
+        "Volatilidad de {weight_volatility:.2f} con consumo neto {weight_change_rate:.1%}.",
+        "Alertas activas presionan la disponibilidad ({warning_alerts:.0f})."
+      ],
+      "detail_modules": [
+        "Los pesajes muestran una dinámica errática que anticipa quiebre en líneas críticas.",
+        "La caída de inventario se aceleró en las últimas {weight_change_rate:.1%} respecto al histórico.",
+        "Se detectan señales de reposición tardía y congestión logística." 
+      ],
+      "solutions": [
+        "Activar reconteo asistido, priorizar productos sensibles y reforzar la reposición inmediata.",
+        "Ajustar frecuencias de control y habilitar alertas proactivas de reposición cada hora." 
+      ]
+    },
+    "inventory_recovery": {
+      "titles": [
+        "Stock en fase de recuperación",
+        "Inventario estabilizado tras ajustes"
+      ],
+      "summary_modules": [
+        "La reposición logra variación {weight_change_rate:.1%} con volatilidad contenida {weight_volatility:.2f}.",
+        "Señal global en {signal_strength:.2f} confirmando la corrección." 
+      ],
+      "detail_modules": [
+        "El ritmo de reposición supera el consumo y estabiliza los indicadores de peso.",
+        "Las alertas se reducen mientras se mantiene disponibilidad sobre el portafolio clave.",
+        "Las próximas {movement_window_hours}h son críticas para sostener el equilibrio." 
+      ],
+      "solutions": [
+        "Mantener cadencia de reposición reforzada y monitoreo de productos estrella cada 2h.",
+        "Documentar ajustes exitosos y replicarlos en módulos con comportamientos similares." 
+      ]
+    },
+    "estado_estable": {
+      "titles": [
+        "Operación sin desvíos relevantes",
+        "Indicadores dentro de parámetros"
+      ],
+      "summary_modules": [
+        "Tendencia comercial en {trend_percent:.1f}% y volatilidad de peso {weight_volatility:.2f}.",
+        "Alertas controladas con {warning_alerts:.0f} avisos activos." 
+      ],
+      "detail_modules": [
+        "Los indicadores clave se mantienen estables dentro de los umbrales establecidos.",
+        "La actividad operativa se sostiene sin anomalías ni alertas críticas.",
+        "Se recomienda mantener el seguimiento estándar y reforzar la vigilancia preventiva." 
+      ],
+      "solutions": [
+        "Continuar con las rutinas de supervisión y planificar un control extendido en 12h.",
+        "Compartir hallazgos positivos con el equipo y sostener las prácticas actuales." 
+      ]
+    }
+  }
+}
