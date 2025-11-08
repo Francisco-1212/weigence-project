@@ -1,7 +1,7 @@
 """Rule engine that combines heuristics, anomalies and pattern inference."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Dict, List, Optional
 
 from .ia_snapshots import IASnapshot
@@ -23,6 +23,14 @@ class IAEngine:
     """Combines multiple heuristics to derive a single actionable insight."""
 
     _SEVERITY_SCORE = {"critical": 3, "warning": 2, "info": 1}
+    _KNOWN_KEYS = {
+        "sales_collapse",
+        "inventory_instability",
+        "alert_pressure",
+        "operational_inertia",
+        "positive_outlook",
+        "stable_outlook",
+    }
 
     def evaluate(self, snapshot: IASnapshot) -> EngineInsight:
         candidates: List[EngineInsight] = []
@@ -38,10 +46,11 @@ class IAEngine:
                 candidates.append(insight)
 
         if not candidates:
-            return self._default(snapshot)
+            return self._sanitizar(self._default(snapshot))
 
         candidates.sort(key=self._prioridad, reverse=True)
-        return candidates[0]
+        mejor = candidates[0]
+        return self._sanitizar(mejor)
 
     # ------------------------------------------------------------------
     # Reglas específicas
@@ -199,6 +208,34 @@ class IAEngine:
     def _prioridad(self, insight: EngineInsight) -> float:
         severidad = self._SEVERITY_SCORE.get(insight.severity, 1)
         return severidad * 10 + insight.confidence
+
+    def _sanitizar(self, insight: EngineInsight) -> EngineInsight:
+        """Normalize the insight so the formatter receives consistent payloads."""
+
+        key = insight.key if insight.key in self._KNOWN_KEYS else "stable_outlook"
+        severity = insight.severity if insight.severity in self._SEVERITY_SCORE else "info"
+        confidence = min(max(float(insight.confidence or 0.0), 0.0), 1.0)
+        summary = insight.summary or "Sin hallazgos destacados"
+        drivers = [driver for driver in insight.drivers if driver]
+        data_points: Dict[str, float] = {}
+        for clave, valor in insight.data_points.items():
+            try:
+                data_points[clave] = float(valor)
+            except (TypeError, ValueError):
+                continue
+
+        if not data_points:
+            data_points = {"trend_percent": 0.0}
+
+        return replace(
+            insight,
+            key=key,
+            severity=severity,
+            confidence=confidence,
+            summary=summary,
+            drivers=drivers,
+            data_points=data_points,
+        )
 
 
 engine = IAEngine()

@@ -31,9 +31,20 @@ class IAService:
     def generar_recomendacion_auditoria(self, contexto: str | None = None) -> Dict[str, str]:
         """Genera y registra una recomendación IA para el módulo solicitado."""
 
+        logger.debug("[IAService] Iniciando generación de snapshot para contexto %s", contexto)
         snapshot = self._builder.build(contexto=contexto)
+        logger.debug("[IAService] Snapshot generado con %d totales de ventas", len(snapshot.sales_totals))
+
         insight = self._engine.evaluate(snapshot)
-        resultado = self._formatter.render(insight, snapshot)
+        logger.debug("[IAService] Insight calculado: key=%s severity=%s", insight.key, insight.severity)
+
+        try:
+            resultado = self._formatter.render(insight, snapshot)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.exception("[IAService] Error al renderizar insight IA: %s", exc)
+            raise
+
+        resultado = self._normalizar_payload(resultado)
 
         logger.info(
             "[IA] Interpretación completada, resultado: %s",
@@ -67,6 +78,30 @@ class IAService:
             confianza=insight.confidence,
         )
         return resultado
+
+    def _normalizar_payload(self, payload: Dict[str, str]) -> Dict[str, str]:
+        """Asegura la presencia de los campos requeridos por el frontend."""
+
+        campos = {
+            "titulo": "Diagnóstico operativo",
+            "mensaje_resumen": "Sin resumen disponible.",
+            "mensaje_detallado": "Detalle no disponible.",
+            "mensaje": "Sin mensaje disponible.",
+            "detalle": "Detalle no disponible.",
+            "solucion": "Revisar manualmente el módulo y ejecutar nuevamente el motor.",
+            "severidad": "info",
+        }
+
+        normalizado = {**campos, **(payload or {})}
+        normalizado["mensaje"] = normalizado.get("mensaje_resumen") or normalizado.get("mensaje")
+        normalizado["detalle"] = normalizado.get("mensaje_detallado") or normalizado.get("detalle")
+
+        for clave in ("titulo", "mensaje", "detalle", "solucion"):
+            valor = normalizado.get(clave)
+            if not valor:
+                normalizado[clave] = campos[clave]
+
+        return normalizado
 
 
 def generar_recomendacion_auditoria(contexto: str | None = None) -> Dict[str, str]:
