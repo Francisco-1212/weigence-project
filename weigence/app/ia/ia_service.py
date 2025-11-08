@@ -1,12 +1,15 @@
 """Public entry point for the IA recommendation engine."""
 from __future__ import annotations
 
+import logging
 from typing import Dict
 
 from .ia_engine import IAEngine, engine
 from .ia_formatter import IAFormatter, formatter
 from .ia_logger import AuditLogger, audit_logger
 from .ia_snapshots import SnapshotBuilder, snapshot_builder
+
+logger = logging.getLogger(__name__)
 
 
 class IAService:
@@ -26,9 +29,16 @@ class IAService:
         self._logger = logger or audit_logger
 
     def generar_recomendacion_auditoria(self, contexto: str | None = None) -> Dict[str, str]:
+        """Genera y registra una recomendación IA para el módulo solicitado."""
+
         snapshot = self._builder.build(contexto=contexto)
         insight = self._engine.evaluate(snapshot)
         resultado = self._formatter.render(insight, snapshot)
+
+        logger.info(
+            "[IA] Interpretación completada, resultado: %s",
+            resultado.get("titulo", "sin título"),
+        )
 
         metadata = {
             "trend_percent": float(
@@ -54,6 +64,7 @@ class IAService:
             mensaje=resultado["mensaje"],
             solucion=resultado["solucion"],
             metadata=metadata,
+            confianza=insight.confidence,
         )
         return resultado
 
