@@ -847,6 +847,54 @@ td {
 .is-hidden {
   display: none !important;
 }
+/* ============================================================
+   IA Header — Compacto y armónico
+   ============================================================ */
+
+.ia-header-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  min-height: 40px;
+  background-color: var(--card-bg-dark);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+
+.ia-header-icon {
+  font-size: 1.15rem;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+/* Marquee container */
+.ia-header-marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Texto animado */
+.ia-header-marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ia-header-marquee var(--marquee-duration, 22s) linear infinite;
+  font-size: 0.85rem;
+  opacity: 0.95;
+}
+
+@keyframes ia-header-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Sin pausa al hover */
+.ia-header-marquee-container:hover .ia-header-marquee-text {
+  animation-play-state: running;
+}
 
 /* ============================================================
    CAPA 1 — BORDE REAL ULTRA-FINO + GRADIENTE LÍQUIDO
