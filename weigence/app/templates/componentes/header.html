@@ -29,7 +29,9 @@
       data-ia-card
       data-severity="info"
       data-nivel="normal"
+      data-ia-status="idle"
       aria-live="polite"
+      aria-busy="false"
       role="status"
     >
       <span class="material-symbols-outlined ia-header-icon" data-ia-icon>
@@ -37,9 +39,13 @@
       </span>
 
       <div class="ia-header-marquee-container">
-        <div id="ai-recomendacion-text"
-            class="ia-header-marquee-text"
-            title="">
+        <div
+          id="ai-recomendacion-text"
+          class="ia-header-marquee-text"
+          data-ia-message
+          data-ia-marquee
+          title=""
+        >
         </div>
       </div>
     </article>
