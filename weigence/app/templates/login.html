@@ -83,7 +83,7 @@
           </div>
           <div class="mt-6 flex items-center justify-between">
             <div class="flex items-center">
-              <input class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary bg-gray-100 dark:bg-gray-700 focus:ring-primary" id="remember" name="remember" type="checkbox"/>
+              <input class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary bg-gray-100 dark:bg-gray-700 focus:ring-primary" id="remember" name="remember" type="checkbox" value="on"/>
               <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300" for="remember">Recordarme</label>
             </div>
             <div class="text-sm">
@@ -128,132 +128,81 @@
   </div>
 
   <script>
-    // ========== REMEMBER-ME FUNCTIONALITY ==========
+    // ========== REMEMBER-ME FUNCTIONALITY (Temporal - Solo para formulario) ==========
     function initRememberMe() {
-      const STORAGE_KEY_EMAIL = 'weigence_login_email';
-      const STORAGE_KEY_PASSWORD = 'weigence_login_password';
+      const STORAGE_KEY_EMAIL = 'weigence_temp_email';
+      const STORAGE_KEY_PASSWORD = 'weigence_temp_password';
       const usuarioEl = document.getElementById('usuario');
       const passwordEl = document.getElementById('password');
       const rememberEl = document.getElementById('remember');
 
       if (!usuarioEl || !passwordEl || !rememberEl) {
-        console.warn('[RememberMe] No se encontraron elementos #usuario, #password o #remember');
+        console.warn('[RememberMe] No se encontraron elementos necesarios');
         return;
       }
 
-      function saveCredentials(email, password) {
-        try {
-          if (email && email.trim()) {
-            localStorage.setItem(STORAGE_KEY_EMAIL, email.trim());
-            console.log('[RememberMe] Email guardado en localStorage:', email.trim());
-          }
-          if (password) {
-            localStorage.setItem(STORAGE_KEY_PASSWORD, password);
-            console.log('[RememberMe] Contraseña guardada en localStorage');
-          }
-        } catch (e) {
-          console.error('[RememberMe] Error guardando credenciales:', e);
+      // Cargar credenciales temporales guardadas (en la misma sesión del navegador)
+      try {
+        const tempEmail = sessionStorage.getItem(STORAGE_KEY_EMAIL);
+        const tempPassword = sessionStorage.getItem(STORAGE_KEY_PASSWORD);
+        if (tempEmail) {
+          usuarioEl.value = tempEmail;
+          rememberEl.checked = true;
         }
-      }
-
-      function deleteCredentials() {
-        try {
-          localStorage.removeItem(STORAGE_KEY_EMAIL);
-          localStorage.removeItem(STORAGE_KEY_PASSWORD);
-          console.log('[RememberMe] Credenciales eliminadas de localStorage');
-        } catch (e) {
-          console.error('[RememberMe] Error eliminando credenciales:', e);
+        if (tempPassword) {
+          passwordEl.value = tempPassword;
         }
+        console.log('[RememberMe] Credenciales temporales restauradas');
+      } catch (e) {
+        console.warn('[RememberMe] No hay credenciales temporales');
       }
 
-      function getStoredCredentials() {
-        try {
-          const email = localStorage.getItem(STORAGE_KEY_EMAIL);
-          const password = localStorage.getItem(STORAGE_KEY_PASSWORD);
-          console.log('[RememberMe] Credenciales recuperadas de localStorage');
-          return { email, password };
-        } catch (e) {
-          console.error('[RememberMe] Error leyendo localStorage:', e);
-          return { email: null, password: null };
-        }
-      }
-
-      // Cargar credenciales guardadas si existen (al iniciar la página)
-      const { email: storedEmail, password: storedPassword } = getStoredCredentials();
-      if (storedEmail) {
-        console.log('[RememberMe] Restaurando email guardado:', storedEmail);
-        usuarioEl.value = storedEmail;
-        rememberEl.checked = true;
-      }
-      if (storedPassword) {
-        console.log('[RememberMe] Restaurando contraseña guardada');
-        passwordEl.value = storedPassword;
-        rememberEl.checked = true;
-      }
-      if (storedEmail || storedPassword) {
-        console.log('[RememberMe] Credenciales restauradas y checkbox marcado');
-      } else {
-        console.log('[RememberMe] No hay credenciales guardadas');
-      }
-
-      // Escuchar cambios en el checkbox "Recordarme"
+      // Guardar credenciales temporales cuando se marca "Recordarme"
       rememberEl.addEventListener('change', function () {
-        console.log('[RememberMe] Checkbox cambió. Estado:', this.checked);
-        if (this.checked) {
-          if (usuarioEl.value || passwordEl.value) {
-            saveCredentials(usuarioEl.value, passwordEl.value);
+        try {
+          if (this.checked) {
+            if (usuarioEl.value) sessionStorage.setItem(STORAGE_KEY_EMAIL, usuarioEl.value);
+            if (passwordEl.value) sessionStorage.setItem(STORAGE_KEY_PASSWORD, passwordEl.value);
+            console.log('[RememberMe] Credenciales temporales guardadas');
           } else {
-            console.log('[RememberMe] Checkbox marcado pero campos vacíos');
+            sessionStorage.removeItem(STORAGE_KEY_EMAIL);
+            sessionStorage.removeItem(STORAGE_KEY_PASSWORD);
+            console.log('[RememberMe] Credenciales temporales eliminadas');
           }
-        } else {
-          deleteCredentials();
+        } catch (e) {
+          console.warn('[RememberMe] Error con sessionStorage:', e);
         }
       });
 
-      // Escuchar cambios en el input del email para sincronizar en tiempo real
+      // Actualizar credenciales temporales mientras se escriben (si "Recordarme" está marcado)
       usuarioEl.addEventListener('input', function () {
-        console.log('[RememberMe] Usuario escribiendo:', this.value);
         if (rememberEl.checked) {
-          saveCredentials(this.value, passwordEl.value);
-        }
-      });
-
-      // Escuchar cambios en el input de la contraseña para sincronizar en tiempo real
-      passwordEl.addEventListener('input', function () {
-        console.log('[RememberMe] Contraseña siendo escrita');
-        if (rememberEl.checked) {
-          saveCredentials(usuarioEl.value, this.value);
-        }
-      });
-
-      // Al hacer submit del formulario, guardar/eliminar según el estado del checkbox
-      const loginForm = document.querySelector('form[method="POST"]') || document.querySelector('form');
-      if (loginForm) {
-        loginForm.addEventListener('submit', function (e) {
-          console.log('[RememberMe] Formulario siendo enviado. Checkbox:', rememberEl.checked);
-          if (rememberEl.checked && (usuarioEl.value || passwordEl.value)) {
-            saveCredentials(usuarioEl.value, passwordEl.value);
-            console.log('[RememberMe] Credenciales guardadas antes de enviar formulario');
-          } else {
-            deleteCredentials();
-            console.log('[RememberMe] Credenciales eliminadas antes de enviar formulario');
+          try {
+            sessionStorage.setItem(STORAGE_KEY_EMAIL, this.value);
+          } catch (e) {
+            console.warn(e);
           }
-        });
-        console.log('[RememberMe] Formulario encontrado y listeners añadidos');
-      } else {
-        console.warn('[RememberMe] No se encontró el formulario de login');
-      }
+        }
+      });
 
-      console.log('[RememberMe] Inicialización completada');
+      passwordEl.addEventListener('input', function () {
+        if (rememberEl.checked) {
+          try {
+            sessionStorage.setItem(STORAGE_KEY_PASSWORD, this.value);
+          } catch (e) {
+            console.warn(e);
+          }
+        }
+      });
+
+      console.log('[RememberMe] Inicialización completada (Temporal)');
     }
 
     // Ejecutar cuando el DOM esté listo
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initRememberMe);
-      console.log('[RememberMe] Esperando DOMContentLoaded...');
     } else {
       initRememberMe();
-      console.log('[RememberMe] DOM ya estaba listo, ejecutando inmediatamente');
     }
 
     // ========== FORGOT PASSWORD MODAL FUNCTIONALITY ==========

@@ -10,10 +10,14 @@ def create_app():
     app.config["DEBUG"] = True
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0  # desactiva cache estático
-    app.config["REMEMBER_COOKIE_DURATION"] = 2592000  # 30 días en segundos
-    app.config["REMEMBER_COOKIE_SECURE"] = True
-    app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-
+    
+    # Configuración de sesiones persistentes
+    from datetime import timedelta
+    app.config["SESSION_COOKIE_SECURE"] = False  # False para desarrollo HTTP, True para HTTPS
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)  # 30 días
+    
     app.secret_key = os.getenv("SECRET_KEY", "weigence_secret_key_2024")
 
     # Inicializar Flask-Login
