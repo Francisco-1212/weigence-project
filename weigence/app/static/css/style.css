@@ -937,6 +937,27 @@ td {
   display: none !important;
 }
 /* ============================================================
+   IA Cards — Estados compartidos
+   ============================================================ */
+
+[data-ia-card] {
+  transition: opacity 0.3s ease;
+}
+
+[data-ia-card][data-ia-status="loading"],
+[data-ia-card][data-ia-status="refreshing"] {
+  opacity: 0.7;
+}
+
+[data-ia-card][data-ia-status="stale"] {
+  opacity: 0.9;
+}
+
+[data-ia-card][data-ia-status="error"] {
+  opacity: 1;
+}
+
+/* ============================================================
    IA Header — Compacto y armónico
    ============================================================ */
 
