@@ -7,16 +7,75 @@ from statistics import mean, pstdev
 from typing import Any, Dict, Iterable, List, Optional
 
 from .ia_repository import IARepository, repository
+from .ia_snapshot_utils import snapshot_to_dict
+
+
+def _default_alerts() -> Dict[str, int]:
+    return {"critical": 0, "warning": 0, "info": 0}
+
+
+def _parse_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return datetime.utcnow()
+    return datetime.utcnow()
+
+
+def _coerce_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_optional_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coerce_list(values: Any) -> List[float]:
+    if isinstance(values, (list, tuple)):
+        return [_coerce_float(item, 0.0) for item in values]
+    if values is None:
+        return []
+    return [_coerce_float(values, 0.0)]
+
+
+def _coerce_patterns(values: Any) -> List[str]:
+    if isinstance(values, (list, tuple)):
+        return [str(item) for item in values if item is not None]
+    if values is None:
+        return []
+    return [str(values)]
 
 
 @dataclass
 class IASnapshot:
     """Aggregated metrics that describe the operational context."""
 
-    generated_at: datetime
-    sales_window_hours: int
-    weight_window_hours: int
-    movement_window_hours: int
+    generated_at: datetime = field(default_factory=datetime.utcnow)
+    sales_window_hours: int = 0
+    weight_window_hours: int = 0
+    movement_window_hours: int = 0
     sales_totals: List[float] = field(default_factory=list)
     sales_trend_percent: float = 0.0
     sales_anomaly_score: float = 0.0
@@ -27,11 +86,18 @@ class IASnapshot:
     weight_volatility: float = 0.0
     weight_change_rate: float = 0.0
     last_weight: Optional[float] = None
-    alerts_summary: Dict[str, int] = field(default_factory=dict)
+    alerts_summary: Dict[str, int] = field(default_factory=_default_alerts)
     movements_per_hour: float = 0.0
     inactivity_hours: float = 0.0
     pattern_flags: List[str] = field(default_factory=list)
     signal_strength: float = 0.0
+
+    def __post_init__(self) -> None:
+        self.alerts_summary = {
+            "critical": _coerce_int(self.alerts_summary.get("critical")),
+            "warning": _coerce_int(self.alerts_summary.get("warning")),
+            "info": _coerce_int(self.alerts_summary.get("info")),
+        }
 
     @property
     def critical_alerts(self) -> int:
@@ -44,11 +110,59 @@ class IASnapshot:
     @property
     def info_alerts(self) -> int:
         return self.alerts_summary.get("info", 0)
-        
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert snapshot to dictionary."""
-        from .ia_snapshot_utils import snapshot_to_dict
+
         return snapshot_to_dict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "IASnapshot":
+        """Create a sanitized snapshot from raw dictionaries."""
+
+        snapshot = cls()
+        snapshot.generated_at = _parse_datetime(data.get("generated_at"))
+        snapshot.sales_window_hours = _coerce_int(data.get("sales_window_hours"))
+        snapshot.weight_window_hours = _coerce_int(data.get("weight_window_hours"))
+        snapshot.movement_window_hours = _coerce_int(data.get("movement_window_hours"))
+        snapshot.sales_totals = _coerce_list(data.get("sales_totals"))
+        snapshot.sales_trend_percent = _coerce_float(data.get("sales_trend_percent"))
+        snapshot.sales_anomaly_score = _coerce_float(data.get("sales_anomaly_score"))
+        snapshot.sales_volatility = _coerce_float(data.get("sales_volatility"))
+        snapshot.last_sale_total = _coerce_optional_float(data.get("last_sale_total"))
+        snapshot.baseline_sale = _coerce_optional_float(data.get("baseline_sale"))
+        snapshot.weight_values = _coerce_list(data.get("weight_values"))
+        snapshot.weight_volatility = _coerce_float(data.get("weight_volatility"))
+        snapshot.weight_change_rate = _coerce_float(data.get("weight_change_rate"))
+        snapshot.last_weight = _coerce_optional_float(data.get("last_weight"))
+
+        alerts_summary = data.get("alerts_summary")
+        if isinstance(alerts_summary, dict):
+            snapshot.alerts_summary = {
+                "critical": _coerce_int(alerts_summary.get("critical")),
+                "warning": _coerce_int(alerts_summary.get("warning")),
+                "info": _coerce_int(alerts_summary.get("info")),
+            }
+        else:
+            snapshot.alerts_summary = {
+                "critical": _coerce_int(data.get("critical_alerts")),
+                "warning": _coerce_int(data.get("warning_alerts")),
+                "info": _coerce_int(data.get("info_alerts")),
+            }
+
+        snapshot.movements_per_hour = _coerce_float(data.get("movements_per_hour"))
+        snapshot.inactivity_hours = _coerce_float(data.get("inactivity_hours"))
+        snapshot.pattern_flags = _coerce_patterns(data.get("pattern_flags"))
+        snapshot.signal_strength = _coerce_float(data.get("signal_strength"))
+        return snapshot
+
+    def merge(self, extra: Dict[str, Any] | None) -> "IASnapshot":
+        """Return a new snapshot merging current data with the provided values."""
+
+        if not extra:
+            return IASnapshot.from_dict(self.to_dict())
+        merged = {**self.to_dict(), **extra}
+        return IASnapshot.from_dict(merged)
 
 
 class SnapshotBuilder:
@@ -106,6 +220,10 @@ class SnapshotBuilder:
 
     def _enriquecer_ventas(self, snapshot: IASnapshot, ventas: List[Dict[str, object]]) -> None:
         if not ventas:
+            snapshot.sales_totals = []
+            snapshot.sales_volatility = 0.0
+            snapshot.sales_anomaly_score = 0.0
+            snapshot.sales_trend_percent = 0.0
             return
 
         ordenadas = self._ordenar_por_fecha(ventas, "fecha_venta")
@@ -125,6 +243,9 @@ class SnapshotBuilder:
 
     def _enriquecer_pesajes(self, snapshot: IASnapshot, pesajes: List[Dict[str, object]]) -> None:
         if not pesajes:
+            snapshot.weight_values = []
+            snapshot.weight_volatility = 0.0
+            snapshot.weight_change_rate = 0.0
             return
 
         ordenadas = self._ordenar_por_fecha(pesajes, "fecha_pesaje")
@@ -140,7 +261,7 @@ class SnapshotBuilder:
             snapshot.weight_change_rate = 0.0
 
     def _enriquecer_alertas(self, snapshot: IASnapshot, alertas: List[Dict[str, object]]) -> None:
-        resumen = {"critical": 0, "warning": 0, "info": 0}
+        resumen = _default_alerts()
         for alerta in alertas:
             clave = (alerta.get("tipo_color") or "").lower()
             if "rojo" in clave or "crit" in clave:

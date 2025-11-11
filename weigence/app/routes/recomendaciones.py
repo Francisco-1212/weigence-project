@@ -1,113 +1,44 @@
-"""Routes that expose the IA engine."""
-from __future__ import annotations
-
 import json
-from typing import Any, Mapping
+from typing import Any, Dict
 
-from flask import Response, current_app, request
+from flask import Response, current_app, jsonify, request
 
 from . import bp
-from app.ia import generar_recomendacion_v2
-
-_DEFAULT_PAYLOAD = {
-    "titulo": "Diagnóstico operativo",
-    "mensaje": "Sin mensaje disponible.",
-    "detalle": "Detalle no disponible.",
-    "solucion": "Revisar manualmente el módulo y ejecutar nuevamente el motor.",
-    "severidad": "info",
-    "mensaje_resumen": "Sin resumen disponible.",
-    "mensaje_detallado": "Detalle no disponible.",
-}
-
-_VALID_SEVERITIES = {"info", "warning", "critical"}
+from app.ia import generar_recomendacion
 
 
-def _response(payload: dict, *, status: int = 200) -> Response:
-    return Response(
-        json.dumps(payload, ensure_ascii=False),
-        status=status,
-        mimetype="application/json; charset=utf-8",
-    )
-
-
-def _coerce_text(value: Any, fallback: str) -> str:
-    if isinstance(value, str):
-        value = value.strip()
-        return value or fallback
-    if value is None:
-        return fallback
-    return str(value)
-
-
-def _normalizar_payload(data: Mapping[str, Any] | None) -> dict:
-    if not isinstance(data, Mapping):
-        raise ValueError("El motor IA devolvió un formato inválido.")
-
-    resultado = {**_DEFAULT_PAYLOAD, **dict(data)}
-
-    titulo = _coerce_text(resultado.get("titulo"), _DEFAULT_PAYLOAD["titulo"])
-    mensaje_resumen = _coerce_text(
-        resultado.get("mensaje_resumen"), resultado.get("mensaje", _DEFAULT_PAYLOAD["mensaje"])
-    )
-    mensaje = _coerce_text(resultado.get("mensaje"), mensaje_resumen)
-    detalle = _coerce_text(
-        resultado.get("detalle"),
-        _coerce_text(resultado.get("mensaje_detallado"), mensaje),
-    )
-    solucion = _coerce_text(resultado.get("solucion"), _DEFAULT_PAYLOAD["solucion"])
-    severidad = _coerce_text(resultado.get("severidad"), _DEFAULT_PAYLOAD["severidad"]).lower()
-    if severidad not in _VALID_SEVERITIES:
-        severidad = "info"
-
-    resultado.update(
-        {
-            "titulo": titulo,
-            "mensaje": mensaje,
-            "detalle": detalle,
-            "solucion": solucion,
-            "severidad": severidad,
-            "mensaje_resumen": mensaje_resumen or mensaje,
-            "mensaje_detallado": _coerce_text(
-                resultado.get("mensaje_detallado"), detalle or mensaje
-            ),
-        }
-    )
-    return resultado
-
-
-def _sanitizar_contexto(raw_context: str | None) -> str:
-    contexto = (raw_context or "auditoria").strip().lower()
-    return contexto or "auditoria"
+def _build_success_payload(recomendacion: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "ok": True,
+        "mensaje": recomendacion.get("mensaje", "Recomendación generada."),
+        "data": recomendacion,
+    }
 
 
 @bp.route("/api/ia/auditoria", methods=["GET"])
 def ia_auditoria() -> Response:
     """Return the IA engine recommendation for audit workflows."""
 
-    contexto = _sanitizar_contexto(request.args.get("contexto"))
+    contexto = (request.args.get("contexto") or "auditoria").strip().lower() or "auditoria"
+    raw_data = request.args.get("data")
+    extra_data: Dict[str, Any] = {}
+    if raw_data:
+        try:
+            extra_data = json.loads(raw_data)
+        except json.JSONDecodeError:
+            current_app.logger.warning("[ia_auditoria] payload 'data' inválido", exc_info=False)
+
     try:
-# <<<<<<< HEAD
-        # Obtener datos adicionales del request
-        data = json.loads(request.args.get('data', '{}')) if request.args.get('data') else None
-        
-        recomendacion = generar_recomendacion_v2(
+        recomendacion = generar_recomendacion(
             contexto=contexto,
-            data=data
+            data=extra_data,
+            modo="auditoria",
         )
-        return _response(recomendacion)
-    except Exception as exc:  # pragma: no cover - diagnostic output
-        print("[ia_auditoria]", exc)
-        fallback = {        
-            "titulo": "Diagnóstico no disponible",
-            "mensaje": "No fue posible calcular una recomendación automática en este momento.",
-            "solucion": "Reintentar en unos minutos y validar manualmente los sensores críticos.",
-            "severidad": "warning",
-        }
-        recomendacion = generar_recomendacion_auditoria(contexto=contexto) 
-        payload = _normalizar_payload(recomendacion)
+        return jsonify(_build_success_payload(recomendacion))
     except Exception as exc:  # pragma: no cover - defensive logging
         current_app.logger.exception(
-            "[ia_auditoria] Error al obtener recomendación IA", extra={"contexto": contexto}
+            "[ia_auditoria] Error al obtener recomendación IA",
+            extra={"contexto": contexto},
         )
         error_payload = {
             "message": "No fue posible calcular una recomendación automática en este momento.",
@@ -115,9 +46,7 @@ def ia_auditoria() -> Response:
             "code": "ia_unavailable",
             "detail": str(exc),
         }
-        return _response({"ok": False, "error": error_payload}, status=503)
-
-    return _response({"ok": True, "data": payload})
+        return jsonify({"ok": False, "error": error_payload}), 503
 
 
 @bp.route("/api/ia/preview", methods=["GET"])

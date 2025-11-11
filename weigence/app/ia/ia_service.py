@@ -1,13 +1,14 @@
-"""Public entry point for the IA recommendation engine."""
 from __future__ import annotations
 
 import logging
-from typing import Dict
+from typing import Any, Dict
 
-from .ia_engine import IAEngine, engine
-from .ia_formatter import IAFormatter, formatter
+from .ia_contexts import IAContextBuilder
+from .ia_engine import EngineInsight, IAEngine, engine as default_engine
+from .ia_formatter import IAFormatter
 from .ia_logger import AuditLogger, audit_logger
-from .ia_snapshots import SnapshotBuilder, snapshot_builder
+from .ia_messages import get_header_message
+from .ia_snapshots import IASnapshot, SnapshotBuilder, snapshot_builder
 
 logger = logging.getLogger(__name__)
 
@@ -15,61 +16,91 @@ logger = logging.getLogger(__name__)
 class IAService:
     """Coordinates the different layers of the IA engine."""
 
+    _PROFILE_MAP = {
+        "auditoria": "perfil_operativo",
+        "operaciones": "perfil_operativo",
+        "comercial": "perfil_comercial",
+        "ventas": "perfil_comercial",
+        "inventario": "perfil_inventario",
+    }
+    _VALID_SEVERITIES = {"info", "warning", "critical"}
+
     def __init__(
         self,
         *,
-        engine_: IAEngine | None = None,
-        formatter_: IAFormatter | None = None,
+        engine: IAEngine | None = None,
+        formatter: IAFormatter | None = None,
         builder: SnapshotBuilder | None = None,
-        logger: AuditLogger | None = None,
+        logger_: AuditLogger | None = None,
+        context_builder: IAContextBuilder | None = None,
+        default_profile: str = "perfil_operativo",
     ) -> None:
-        self._engine = engine_ or engine
-        self._formatter = formatter_ or formatter
+        self._engine = engine or default_engine
+        self._formatter = formatter or IAFormatter(self._engine.templates)
         self._builder = builder or snapshot_builder
-        self._logger = logger or audit_logger
+        self._logger = logger_ or audit_logger
+        self._context_builder = context_builder or IAContextBuilder()
+        self._default_profile = default_profile
 
-    def generar_recomendacion_auditoria(self, contexto: str | None = None) -> Dict[str, str]:
-        """Genera y registra una recomendación IA para el módulo solicitado."""
+    def generar_recomendacion(
+        self,
+        contexto: str | None = None,
+        *,
+        perfil: str | None = None,
+        data: Dict[str, Any] | None = None,
+        modo: str = "default",
+    ) -> Dict[str, Any]:
+        """Genera la recomendación IA para el módulo solicitado."""
 
-        logger.debug("[IAService] Iniciando generación de snapshot para contexto %s", contexto)
-        snapshot = self._builder.build(contexto=contexto)
-        logger.debug("[IAService] Snapshot generado con %d totales de ventas", len(snapshot.sales_totals))
+        contexto_key = (contexto or "dashboard").strip().lower() or "dashboard"
+        perfil_ia = self._resolver_perfil(contexto_key, perfil)
 
-        insight = self._engine.evaluate(snapshot)
-        logger.debug("[IAService] Insight calculado: key=%s severity=%s", insight.key, insight.severity)
+        logger.debug(
+            "[IAService] Generando snapshot para contexto=%s perfil=%s", contexto_key, perfil_ia
+        )
 
-        try:
-            resultado = self._formatter.render(insight, snapshot)
-        except Exception as exc:  # pragma: no cover - defensive logging
-            logger.exception("[IAService] Error al renderizar insight IA: %s", exc)
-            raise
+        base_snapshot = self._builder.build(contexto=contexto_key)
+        merged_snapshot = base_snapshot.merge(data)
+        context_data = self._context_builder.get_context_data(contexto_key, merged_snapshot)
+        final_snapshot = merged_snapshot.merge(context_data)
+
+        insight = self._engine.evaluate(final_snapshot, profile=perfil_ia)
+        logger.debug(
+            "[IAService] Insight calculado: key=%s severity=%s score=%.3f",
+            insight.key,
+            insight.severity,
+            insight.score,
+        )
+
+        resultado = self._formatter.render(insight, final_snapshot)
+        resultado.update(
+            {
+                "score": round(float(insight.score), 3),
+                "confianza": round(float(insight.confidence), 3),
+                "insight_key": insight.key,
+                "contexto": contexto_key,
+                "perfil_ia": perfil_ia,
+                "timestamp": base_snapshot.generated_at.isoformat(),
+            }
+        )
 
         resultado = self._normalizar_payload(resultado)
 
-        logger.info(
-            "[IA] Interpretación completada, resultado: %s",
-            resultado.get("titulo", "sin título"),
-        )
+        if modo == "header":
+            header_message = get_header_message(
+                contexto_key,
+                {
+                    "n_alerts": int(final_snapshot.critical_alerts + final_snapshot.warning_alerts),
+                    "mensaje": resultado["mensaje"],
+                },
+            )
+            resultado["mensaje"] = header_message
+            resultado["mensaje_resumen"] = header_message
+            resultado.setdefault("detalle", resultado["mensaje_detallado"])
 
-        metadata = {
-            "trend_percent": float(
-                insight.data_points.get("trend_percent", snapshot.sales_trend_percent) or 0.0
-            ),
-            "weight_volatility": float(
-                insight.data_points.get("weight_volatility", snapshot.weight_volatility) or 0.0
-            ),
-            "weight_change": float(
-                insight.data_points.get("weight_change", snapshot.weight_change_rate) or 0.0
-            ),
-            "signal_strength": float(
-                insight.data_points.get("signal_strength", snapshot.signal_strength) or 0.0
-            ),
-            "inventory_pressure": float(
-                insight.data_points.get("weight_change", snapshot.weight_change_rate) or 0.0
-            ),
-        }
+        metadata = self._construir_metadata(insight, final_snapshot)
         self._logger.registrar_evento(
-            tipo=contexto or "auditoria",
+            tipo=contexto_key,
             severidad=resultado["severidad"],
             titulo=resultado["titulo"],
             mensaje=resultado["mensaje"],
@@ -77,11 +108,15 @@ class IAService:
             metadata=metadata,
             confianza=insight.confidence,
         )
+
         return resultado
 
-    def _normalizar_payload(self, payload: Dict[str, str]) -> Dict[str, str]:
-        """Asegura la presencia de los campos requeridos por el frontend."""
+    def _resolver_perfil(self, contexto: str, perfil: str | None) -> str:
+        if perfil:
+            return perfil
+        return self._PROFILE_MAP.get(contexto, self._default_profile)
 
+    def _normalizar_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         campos = {
             "titulo": "Diagnóstico operativo",
             "mensaje_resumen": "Sin resumen disponible.",
@@ -91,7 +126,6 @@ class IAService:
             "solucion": "Revisar manualmente el módulo y ejecutar nuevamente el motor.",
             "severidad": "info",
         }
-
         datos = dict(payload or {})
 
         def _texto(clave: str, fallback: str) -> str:
@@ -110,28 +144,58 @@ class IAService:
         detalle = _texto("detalle", detalle_detallado or mensaje)
         solucion = _texto("solucion", campos["solucion"])
         severidad = _texto("severidad", campos["severidad"]).lower()
-        if severidad not in {"info", "warning", "critical"}:
+        if severidad not in self._VALID_SEVERITIES:
             severidad = "info"
 
-        normalizado = {
-            **datos,
-            "titulo": titulo,
-            "mensaje_resumen": resumen or mensaje or campos["mensaje_resumen"],
-            "mensaje": mensaje or campos["mensaje"],
-            "mensaje_detallado": detalle_detallado or detalle or campos["mensaje_detallado"],
-            "detalle": detalle or mensaje,
-            "solucion": solucion,
-            "severidad": severidad,
+        datos.update(
+            {
+                "titulo": titulo,
+                "mensaje_resumen": resumen or mensaje or campos["mensaje_resumen"],
+                "mensaje": mensaje or campos["mensaje"],
+                "mensaje_detallado": detalle_detallado or detalle or campos["mensaje_detallado"],
+                "detalle": detalle or mensaje,
+                "solucion": solucion,
+                "severidad": severidad,
+            }
+        )
+
+        datos["score"] = float(datos.get("score", 0.0) or 0.0)
+        datos["confianza"] = float(datos.get("confianza", 0.0) or 0.0)
+        datos.setdefault("insight_key", "stable_outlook")
+        return datos
+
+    def _construir_metadata(self, insight: EngineInsight, snapshot: IASnapshot) -> Dict[str, float]:
+        metadata: Dict[str, float] = {
+            clave: float(valor)
+            for clave, valor in insight.data_points.items()
+            if isinstance(valor, (int, float))
         }
+        metadata.update({
+            "score": float(insight.score),
+            "confidence": float(insight.confidence),
+            "movements_per_hour": float(snapshot.movements_per_hour or 0.0),
+            "inactivity_hours": float(snapshot.inactivity_hours or 0.0),
+            "signal_strength": float(snapshot.signal_strength or 0.0),
+        })
+        return metadata
 
-        return normalizado
 
-
-def generar_recomendacion_auditoria(contexto: str | None = None) -> Dict[str, str]:
+def generar_recomendacion(
+    contexto: str | None = None,
+    *,
+    perfil: str | None = None,
+    data: Dict[str, Any] | None = None,
+    modo: str = "default",
+) -> Dict[str, Any]:
     """Convenience wrapper that uses the default IA service."""
 
     service = IAService()
-    return service.generar_recomendacion_auditoria(contexto=contexto)
+    return service.generar_recomendacion(
+        contexto=contexto,
+        perfil=perfil,
+        data=data,
+        modo=modo,
+    )
 
 
-__all__ = ["IAService", "generar_recomendacion_auditoria"]
+__all__ = ["IAService", "generar_recomendacion"]

@@ -1,10 +1,7 @@
 """IA engine public interface."""
-from .ia_service import IAService, generar_recomendacion_auditoria
-from .ia_service_v2 import IAServiceV2, generar_recomendacion_v2
+from .ia_service import IAService, generar_recomendacion
 
 __all__ = [
     "IAService",
-    "generar_recomendacion_auditoria",
-    "IAServiceV2",
-    "generar_recomendacion_v2",
+    "generar_recomendacion",
 ]
