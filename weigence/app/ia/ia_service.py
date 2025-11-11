@@ -92,14 +92,37 @@ class IAService:
             "severidad": "info",
         }
 
-        normalizado = {**campos, **(payload or {})}
-        normalizado["mensaje"] = normalizado.get("mensaje_resumen") or normalizado.get("mensaje")
-        normalizado["detalle"] = normalizado.get("mensaje_detallado") or normalizado.get("detalle")
+        datos = dict(payload or {})
 
-        for clave in ("titulo", "mensaje", "detalle", "solucion"):
-            valor = normalizado.get(clave)
-            if not valor:
-                normalizado[clave] = campos[clave]
+        def _texto(clave: str, fallback: str) -> str:
+            valor = datos.get(clave)
+            if isinstance(valor, str):
+                valor = valor.strip()
+                return valor or fallback
+            if valor is None:
+                return fallback
+            return str(valor)
+
+        titulo = _texto("titulo", campos["titulo"])
+        resumen = _texto("mensaje_resumen", "")
+        mensaje = _texto("mensaje", resumen or campos["mensaje"])
+        detalle_detallado = _texto("mensaje_detallado", "")
+        detalle = _texto("detalle", detalle_detallado or mensaje)
+        solucion = _texto("solucion", campos["solucion"])
+        severidad = _texto("severidad", campos["severidad"]).lower()
+        if severidad not in {"info", "warning", "critical"}:
+            severidad = "info"
+
+        normalizado = {
+            **datos,
+            "titulo": titulo,
+            "mensaje_resumen": resumen or mensaje or campos["mensaje_resumen"],
+            "mensaje": mensaje or campos["mensaje"],
+            "mensaje_detallado": detalle_detallado or detalle or campos["mensaje_detallado"],
+            "detalle": detalle or mensaje,
+            "solucion": solucion,
+            "severidad": severidad,
+        }
 
         return normalizado
 
