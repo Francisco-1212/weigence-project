@@ -1,7 +1,7 @@
 """IA snapshots common utilities."""
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from typing import Any, Dict, Protocol, Union, runtime_checkable
 
@@ -27,7 +27,11 @@ class SnapshotProtocol(Protocol):
 
 def snapshot_to_dict(snapshot: SnapshotProtocol) -> Dict[str, Any]:
     """Convert any snapshot type to dictionary."""
-    base = asdict(snapshot)
+
+    if is_dataclass(snapshot):
+        base = asdict(snapshot)
+    else:
+        base = dict(getattr(snapshot, "__dict__", {}))
     # Convert datetime objects to ISO format
     for key, value in base.items():
         if isinstance(value, datetime):

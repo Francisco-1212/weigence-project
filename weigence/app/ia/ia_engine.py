@@ -1,241 +1,294 @@
-"""Rule engine that combines heuristics, anomalies and pattern inference."""
+"""Modular IA engine with configurable rules and scoring."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from typing import Dict, List, Optional
+import json
+import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional
 
 from .ia_snapshots import IASnapshot
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MetricRule:
+    """Configuration for a metric-based contribution."""
+
+    name: str
+    threshold: float
+    weight: float = 1.0
+    direction: str = "above"
+    scale: float = 1.0
+    phrase: str | None = None
+    clamp: float = 1.0
+
+
+@dataclass
+class RuleConfig:
+    """Higher level rule definition bound to a template."""
+
+    key: str
+    template: str
+    summary: str
+    metrics: List[MetricRule] = field(default_factory=list)
+    modifiers: List[Dict[str, object]] = field(default_factory=list)
+    severity_thresholds: Dict[str, float] = field(default_factory=dict)
+    minimum_score: float = 0.0
 
 
 @dataclass
 class EngineInsight:
-    """Structured insight produced by the engine prior to formatting."""
+    """Insight result produced by the modular engine."""
 
     key: str
+    template: str
     severity: str
+    profile: str
+    score: float
     confidence: float
     summary: str
     drivers: List[str]
     data_points: Dict[str, float]
+    extra_context: Dict[str, float] = field(default_factory=dict)
+
+
+class ConfigLoader:
+    """Loads rules and templates from JSON files."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+
+    def load(self) -> Dict[str, object]:
+        if not self._path.exists():
+            raise FileNotFoundError(f"No se encontró la configuración IA en {self._path}")
+
+        contenido = self._path.read_text(encoding="utf-8")
+        return json.loads(contenido)
 
 
 class IAEngine:
-    """Combines multiple heuristics to derive a single actionable insight."""
+    """Evaluates configurable rules against IASnapshot metrics."""
 
-    _SEVERITY_SCORE = {"critical": 3, "warning": 2, "info": 1}
-    _KNOWN_KEYS = {
-        "sales_collapse",
-        "inventory_instability",
-        "alert_pressure",
-        "operational_inertia",
-        "positive_outlook",
-        "stable_outlook",
-    }
+    _DEFAULT_THRESHOLDS = {"warning": 0.45, "critical": 0.7}
 
-    def evaluate(self, snapshot: IASnapshot) -> EngineInsight:
-        candidates: List[EngineInsight] = []
-        for generator in (
-            self._regla_colapso_ventas,
-            self._regla_inestabilidad_inventario,
-            self._regla_presion_alertas,
-            self._regla_inactividad_operativa,
-            self._regla_tendencia_positiva,
-        ):
-            insight = generator(snapshot)
-            if insight:
-                candidates.append(insight)
+    def __init__(self, config_path: Optional[Path] = None) -> None:
+        base_path = Path(__file__).resolve().parent / "config" / "ia_engine.json"
+        self._config_path = config_path or base_path
+        raw_config = ConfigLoader(self._config_path).load()
+        self._profiles: Dict[str, dict] = raw_config.get("profiles", {})  # type: ignore[assignment]
+        self._templates: Dict[str, dict] = raw_config.get("templates", {})  # type: ignore[assignment]
+        self._thresholds = {
+            **self._DEFAULT_THRESHOLDS,
+            **raw_config.get("score_thresholds", {}),  # type: ignore[arg-type]
+        }
 
-        if not candidates:
-            return self._sanitizar(self._default(snapshot))
+        if not self._profiles:
+            raise ValueError("La configuración del motor IA no define perfiles.")
 
-        candidates.sort(key=self._prioridad, reverse=True)
-        mejor = candidates[0]
-        return self._sanitizar(mejor)
+    @property
+    def templates(self) -> Dict[str, dict]:
+        return self._templates
+
+    def evaluate(self, snapshot: IASnapshot, *, profile: str) -> EngineInsight:
+        perfil_cfg = self._profiles.get(profile)
+        if not perfil_cfg:
+            logger.warning(
+                "[IAEngine] Perfil '%s' no encontrado, usando perfil_operativo por defecto",
+                profile,
+            )
+            perfil_cfg = self._profiles.get("perfil_operativo", next(iter(self._profiles.values())))
+            profile = "perfil_operativo"
+
+        metricas = self._extraer_metricas(snapshot)
+        reglas = [self._parse_regla(item) for item in perfil_cfg.get("rules", [])]
+
+        mejor: Optional[EngineInsight] = None
+        for regla in reglas:
+            evaluacion = self._evaluar_regla(regla, metricas, snapshot, profile)
+            if not evaluacion:
+                continue
+            if mejor is None or evaluacion.score > mejor.score:
+                mejor = evaluacion
+
+        if mejor is None:
+            return self._fallback(perfil_cfg, metricas, snapshot, profile)
+
+        return mejor
 
     # ------------------------------------------------------------------
-    # Reglas específicas
+    # Regla y métrica
     # ------------------------------------------------------------------
-    def _regla_colapso_ventas(self, snapshot: IASnapshot) -> Optional[EngineInsight]:
-        if snapshot.sales_trend_percent >= -0.18 and snapshot.sales_anomaly_score >= -1.4:
-            return None
+    def _parse_regla(self, data: dict) -> RuleConfig:
+        metricas = [
+            MetricRule(
+                name=str(metric["name"]),
+                threshold=float(metric.get("threshold", 0.0)),
+                weight=float(metric.get("weight", 1.0)),
+                direction=str(metric.get("direction", "above")),
+                scale=float(metric.get("scale", 1.0)),
+                phrase=metric.get("phrase"),
+                clamp=float(metric.get("clamp", 1.0)),
+            )
+            for metric in data.get("metrics", [])
+        ]
 
-        severidad = "critical" if snapshot.sales_trend_percent <= -0.35 or snapshot.critical_alerts else "warning"
+        return RuleConfig(
+            key=str(data.get("key")),
+            template=str(data.get("template")),
+            summary=str(data.get("summary", "")),
+            metrics=metricas,
+            modifiers=list(data.get("modifiers", [])),
+            severity_thresholds=dict(data.get("severity", {})),
+            minimum_score=float(data.get("minimum_score", 0.0)),
+        )
+
+    def _evaluar_regla(
+        self,
+        regla: RuleConfig,
+        metricas: Dict[str, float],
+        snapshot: IASnapshot,
+        profile: str,
+    ) -> Optional[EngineInsight]:
+        contributions: List[float] = []
         drivers: List[str] = []
-        if snapshot.critical_alerts:
-            drivers.append(f"{snapshot.critical_alerts} alertas críticas activas")
-        if snapshot.inactivity_hours >= 2:
-            drivers.append(f"{snapshot.inactivity_hours:.1f}h sin movimientos relevantes")
-        if snapshot.weight_change_rate <= -0.1:
-            drivers.append("descenso de inventario detectado")
 
-        data = {
-            "trend_percent": snapshot.sales_trend_percent,
-            "anomaly_score": snapshot.sales_anomaly_score,
-            "weight_change": snapshot.weight_change_rate,
-            "inactivity_hours": snapshot.inactivity_hours,
-            "movements_per_hour": snapshot.movements_per_hour,
-        }
-        summary = "Caída abrupta del ritmo de ventas"
-        return EngineInsight(
-            key="sales_collapse",
-            severity=severidad,
-            confidence=min(0.98, 0.55 + abs(snapshot.sales_trend_percent) + abs(snapshot.sales_anomaly_score) / 2),
-            summary=summary,
-            drivers=drivers,
-            data_points=data,
-        )
-
-    def _regla_inestabilidad_inventario(self, snapshot: IASnapshot) -> Optional[EngineInsight]:
-        if snapshot.weight_volatility < 0.2 and abs(snapshot.weight_change_rate) < 0.08:
-            return None
-        severidad = "warning"
-        if snapshot.weight_change_rate <= -0.18 or (snapshot.weight_volatility >= 0.3 and snapshot.sales_trend_percent <= -0.1):
-            severidad = "critical"
-        drivers = [
-            f"Variación relativa de peso {snapshot.weight_volatility:.2f}",
-        ]
-        if snapshot.weight_change_rate < 0:
-            drivers.append(f"Consumo acelerado de inventario ({snapshot.weight_change_rate:.2f})")
-        data = {
-            "weight_volatility": snapshot.weight_volatility,
-            "weight_change": snapshot.weight_change_rate,
-            "trend_percent": snapshot.sales_trend_percent,
-            "alerts_warning": snapshot.warning_alerts,
-        }
-        summary = "Inventario con variaciones fuera de lo normal"
-        return EngineInsight(
-            key="inventory_instability",
-            severity=severidad,
-            confidence=min(0.9, 0.4 + snapshot.weight_volatility + abs(snapshot.weight_change_rate)),
-            summary=summary,
-            drivers=drivers,
-            data_points=data,
-        )
-
-    def _regla_presion_alertas(self, snapshot: IASnapshot) -> Optional[EngineInsight]:
-        if snapshot.critical_alerts + snapshot.warning_alerts < 4:
-            return None
-        severidad = "critical" if snapshot.critical_alerts >= 2 else "warning"
-        drivers = [
-            f"{snapshot.critical_alerts} alertas críticas",
-            f"{snapshot.warning_alerts} advertencias técnicas",
-        ]
-        data = {
-            "critical_alerts": snapshot.critical_alerts,
-            "warning_alerts": snapshot.warning_alerts,
-            "signal_strength": snapshot.signal_strength,
-            "trend_percent": snapshot.sales_trend_percent,
-        }
-        summary = "Alta presión de alertas operativas"
-        return EngineInsight(
-            key="alert_pressure",
-            severity=severidad,
-            confidence=min(0.88, 0.45 + snapshot.signal_strength + 0.1 * snapshot.critical_alerts),
-            summary=summary,
-            drivers=drivers,
-            data_points=data,
-        )
-
-    def _regla_inactividad_operativa(self, snapshot: IASnapshot) -> Optional[EngineInsight]:
-        if snapshot.movements_per_hour >= 0.35 and snapshot.inactivity_hours < 3:
-            return None
-        if snapshot.sales_trend_percent > 0:
-            return None
-        severidad = "warning" if snapshot.inactivity_hours < 6 else "critical"
-        drivers = [
-            f"Solo {snapshot.movements_per_hour:.2f} movimientos/hora",
-            f"Última actividad hace {snapshot.inactivity_hours:.1f}h",
-        ]
-        data = {
-            "movements_per_hour": snapshot.movements_per_hour,
-            "inactivity_hours": snapshot.inactivity_hours,
-            "trend_percent": snapshot.sales_trend_percent,
-        }
-        summary = "Actividad operativa irregular"
-        return EngineInsight(
-            key="operational_inertia",
-            severity=severidad,
-            confidence=min(0.85, 0.5 + snapshot.inactivity_hours / 6 + abs(snapshot.sales_trend_percent)),
-            summary=summary,
-            drivers=drivers,
-            data_points=data,
-        )
-
-    def _regla_tendencia_positiva(self, snapshot: IASnapshot) -> Optional[EngineInsight]:
-        if snapshot.sales_trend_percent <= 0.12 and snapshot.weight_change_rate <= 0.02:
-            return None
-        if "sales_drop" in snapshot.pattern_flags:
-            return None
-        drivers = []
-        if snapshot.sales_trend_percent > 0:
-            drivers.append(f"Ventas creciendo {snapshot.sales_trend_percent * 100:.1f}%")
-        if snapshot.weight_change_rate >= 0.05:
-            drivers.append("Inventario recuperándose")
-        data = {
-            "trend_percent": snapshot.sales_trend_percent,
-            "weight_change": snapshot.weight_change_rate,
-            "signal_strength": snapshot.signal_strength,
-        }
-        summary = "Tendencia positiva consolidándose"
-        return EngineInsight(
-            key="positive_outlook",
-            severity="info",
-            confidence=min(0.8, 0.45 + snapshot.signal_strength + snapshot.sales_trend_percent),
-            summary=summary,
-            drivers=drivers,
-            data_points=data,
-        )
-
-    # ------------------------------------------------------------------
-    # Utilidades
-    # ------------------------------------------------------------------
-    def _default(self, snapshot: IASnapshot) -> EngineInsight:
-        data = {
-            "trend_percent": snapshot.sales_trend_percent,
-            "weight_volatility": snapshot.weight_volatility,
-            "alerts_total": sum(snapshot.alerts_summary.values()),
-        }
-        summary = "Comportamiento operativo estable"
-        return EngineInsight(
-            key="stable_outlook",
-            severity="info",
-            confidence=0.45,
-            summary=summary,
-            drivers=["Sin anomalías relevantes detectadas"],
-            data_points=data,
-        )
-
-    def _prioridad(self, insight: EngineInsight) -> float:
-        severidad = self._SEVERITY_SCORE.get(insight.severity, 1)
-        return severidad * 10 + insight.confidence
-
-    def _sanitizar(self, insight: EngineInsight) -> EngineInsight:
-        """Normalize the insight so the formatter receives consistent payloads."""
-
-        key = insight.key if insight.key in self._KNOWN_KEYS else "stable_outlook"
-        severity = insight.severity if insight.severity in self._SEVERITY_SCORE else "info"
-        confidence = min(max(float(insight.confidence or 0.0), 0.0), 1.0)
-        summary = insight.summary or "Sin hallazgos destacados"
-        drivers = [driver for driver in insight.drivers if driver]
-        data_points: Dict[str, float] = {}
-        for clave, valor in insight.data_points.items():
-            try:
-                data_points[clave] = float(valor)
-            except (TypeError, ValueError):
+        for config in regla.metrics:
+            valor = metricas.get(config.name)
+            if valor is None:
                 continue
 
-        if not data_points:
-            data_points = {"trend_percent": 0.0}
+            score = self._calcular_contribucion(valor, config)
+            if score <= 0:
+                continue
 
-        return replace(
-            insight,
-            key=key,
+            contributions.append(score * config.weight)
+            if config.phrase:
+                try:
+                    drivers.append(config.phrase.format(valor=valor))
+                except Exception:  # pragma: no cover - defensa
+                    drivers.append(config.phrase)
+
+        if not contributions:
+            return None
+
+        score_total = sum(contributions)
+        if score_total < regla.minimum_score:
+            return None
+
+        severity = self._clasificar_severidad(score_total, regla.severity_thresholds)
+        confidence = min(1.0, max(0.0, score_total))
+        data_points = {metric.name: metricas.get(metric.name, 0.0) for metric in regla.metrics}
+
+        extra = self._aplicar_modificadores(regla.modifiers, metricas, snapshot)
+        summary = regla.summary.format(**{**metricas, **extra}) if regla.summary else ""
+
+        return EngineInsight(
+            key=regla.key,
+            template=regla.template,
             severity=severity,
+            profile=profile,
+            score=score_total,
             confidence=confidence,
             summary=summary,
             drivers=drivers,
             data_points=data_points,
+            extra_context=extra,
         )
+
+    def _calcular_contribucion(self, valor: float, config: MetricRule) -> float:
+        direction = config.direction.lower()
+        threshold = config.threshold
+        delta = valor - threshold
+
+        if direction == "below":
+            delta = threshold - valor
+        elif direction == "between":
+            rango = abs(threshold - config.scale)
+            if rango == 0:
+                return 0.0
+            delta = max(0.0, 1 - abs(valor - threshold) / rango)
+        else:
+            delta = valor - threshold
+
+        score = max(0.0, delta / max(abs(threshold) or 1.0, 1.0))
+        score = min(score * config.scale, config.clamp)
+        return score
+
+    def _clasificar_severidad(self, score: float, custom: Dict[str, float]) -> str:
+        thresholds = {**self._thresholds, **custom}
+        if score >= thresholds.get("critical", 0.8):
+            return "critical"
+        if score >= thresholds.get("warning", 0.5):
+            return "warning"
+        return "info"
+
+    def _aplicar_modificadores(
+        self,
+        modifiers: Iterable[Dict[str, object]],
+        metricas: Dict[str, float],
+        snapshot: IASnapshot,
+    ) -> Dict[str, float]:
+        extra: Dict[str, float] = {}
+        for modifier in modifiers:
+            tipo = modifier.get("type")
+            if tipo == "add_metric":
+                nombre = modifier.get("name")
+                origen = modifier.get("source")
+                if isinstance(nombre, str) and isinstance(origen, str):
+                    extra[nombre] = float(metricas.get(origen, 0.0))
+            elif tipo == "snapshot_field":
+                nombre = modifier.get("name")
+                campo = modifier.get("field")
+                if isinstance(nombre, str) and isinstance(campo, str):
+                    extra[nombre] = float(getattr(snapshot, campo, 0.0) or 0.0)
+        return extra
+
+    def _fallback(
+        self,
+        perfil_cfg: dict,
+        metricas: Dict[str, float],
+        snapshot: IASnapshot,
+        profile: str,
+    ) -> EngineInsight:
+        template = perfil_cfg.get("fallback_template", "estado_estable")
+        summary = perfil_cfg.get("fallback_summary", "Sin anomalías relevantes detectadas")
+        drivers = perfil_cfg.get("fallback_drivers", [])
+        if not isinstance(drivers, list):
+            drivers = []
+
+        return EngineInsight(
+            key=str(perfil_cfg.get("fallback_key", "stable_outlook")),
+            template=str(template),
+            severity="info",
+            profile=profile,
+            score=metricas.get("signal_strength", 0.1),
+            confidence=0.45,
+            summary=str(summary),
+            drivers=[str(item) for item in drivers if item],
+            data_points=metricas,
+            extra_context={},
+        )
+
+    def _extraer_metricas(self, snapshot: IASnapshot) -> Dict[str, float]:
+        return {
+            "trend_percent": float(snapshot.sales_trend_percent or 0.0),
+            "sales_anomaly_score": float(snapshot.sales_anomaly_score or 0.0),
+            "sales_volatility": float(snapshot.sales_volatility or 0.0),
+            "last_sale_total": float(snapshot.last_sale_total or 0.0),
+            "baseline_sale": float(snapshot.baseline_sale or 0.0),
+            "weight_volatility": float(snapshot.weight_volatility or 0.0),
+            "weight_change_rate": float(snapshot.weight_change_rate or 0.0),
+            "last_weight": float(snapshot.last_weight or 0.0),
+            "critical_alerts": float(snapshot.critical_alerts or 0),
+            "warning_alerts": float(snapshot.warning_alerts or 0),
+            "info_alerts": float(snapshot.info_alerts or 0),
+            "alerts_total": float(sum(snapshot.alerts_summary.values())),
+            "movements_per_hour": float(snapshot.movements_per_hour or 0.0),
+            "inactivity_hours": float(snapshot.inactivity_hours or 0.0),
+            "signal_strength": float(snapshot.signal_strength or 0.0),
+        }
 
 
 engine = IAEngine()

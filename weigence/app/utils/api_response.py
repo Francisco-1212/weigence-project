@@ -1,5 +1,5 @@
 """Utilidades para respuestas JSON consistentes."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from flask import jsonify
 
 class APIResponse:

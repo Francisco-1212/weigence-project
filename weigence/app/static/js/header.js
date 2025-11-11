@@ -77,8 +77,13 @@ class AIRecommendationManager {
       const response = await fetch('/api/recomendacion/header');
       if (!response.ok) throw new Error('Error al obtener recomendación');
       
-      const data = await response.json();
-      this.displayRecommendation(data);
+      const payload = await response.json();
+      if (!payload || typeof payload !== 'object' || payload.ok !== true) {
+        const detalle = payload && payload.error ? payload.error.detail || payload.error.message : null;
+        throw new Error(detalle || 'Servicio de recomendaciones no disponible');
+      }
+
+      this.displayRecommendation(payload.data || {});
     } catch (error) {
       console.error('Error al actualizar recomendación:', error);
       this.displayError();

@@ -179,20 +179,18 @@
         return;
       }
 
-      let contenido = payload;
-      if (contenido && typeof contenido === 'object' && 'ok' in contenido) {
-        if (!contenido.ok) {
-          const mensajeError = asegurarTexto(
-            contenido.error && contenido.error.message,
-            'Servicio de recomendaciones no disponible.'
-          );
-          const error = new Error(mensajeError);
-          error.cause = contenido.error || null;
-          throw error;
-        }
-        contenido = contenido.data;
+      if (!payload || typeof payload !== 'object' || payload.ok !== true) {
+        const detalleError = payload && payload.error ? payload.error.message : null;
+        const mensajeError = asegurarTexto(
+          detalleError,
+          'Servicio de recomendaciones no disponible.'
+        );
+        const error = new Error(mensajeError);
+        error.cause = payload && payload.error ? payload.error : null;
+        throw error;
       }
 
+      const contenido = payload.data || {};
       const normalizado = sanitizarRecomendacion(contenido);
       state.data = normalizado;
       aplicarEstado('ready');

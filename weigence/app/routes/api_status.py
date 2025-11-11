@@ -4,8 +4,6 @@ from api.conexion_supabase import supabase
 from datetime import datetime
 from pathlib import Path
 import json
-from app.ia import generar_recomendacion_v2
-
 from .utils import requiere_login
 
 last_manual_update = datetime.now()
