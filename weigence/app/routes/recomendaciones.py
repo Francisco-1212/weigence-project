@@ -6,7 +6,7 @@ import json
 from flask import Response, request
 
 from . import bp
-from app.ia import generar_recomendacion_auditoria
+from app.ia import generar_recomendacion_v2
 
 
 def _response(payload: dict) -> Response:
@@ -22,7 +22,13 @@ def ia_auditoria() -> Response:
 
     contexto = (request.args.get("contexto") or "auditoria").lower()
     try:
-        recomendacion = generar_recomendacion_auditoria(contexto=contexto)
+        # Obtener datos adicionales del request
+        data = json.loads(request.args.get('data', '{}')) if request.args.get('data') else None
+        
+        recomendacion = generar_recomendacion_v2(
+            contexto=contexto,
+            data=data
+        )
         return _response(recomendacion)
     except Exception as exc:  # pragma: no cover - diagnostic output
         print("[ia_auditoria]", exc)

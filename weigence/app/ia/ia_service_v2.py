@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict
+from typing import Dict, List
 
+from .ia_contexts import IAContextBuilder
 from .ia_engine_v2 import EngineV2Insight, IAEngineV2
 from .ia_formatter_v2 import IAFormatterV2
 from .ia_logger import AuditLogger, audit_logger
 from .ia_snapshots import SnapshotBuilder, snapshot_builder
+from .ia_snapshots_v2 import IASnapshot
+from .ia_snapshot_utils import SnapshotProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +34,33 @@ class IAServiceV2:
         builder: SnapshotBuilder | None = None,
         logger_: AuditLogger | None = None,
         default_profile: str = "perfil_operativo",
+        context_builder: IAContextBuilder | None = None,
     ) -> None:
         self._engine = engine or IAEngineV2()
         self._formatter = formatter or IAFormatterV2(self._engine.templates)
         self._builder = builder or snapshot_builder
         self._logger = logger_ or audit_logger
         self._default_profile = default_profile
+        self._context_builder = context_builder or IAContextBuilder()
 
-    def generar_recomendacion_auditoria(
-        self, contexto: str | None = None, perfil: str | None = None
+    def generar_recomendacion(
+        self, 
+        contexto: str | None = None, 
+        perfil: str | None = None,
+        data: Dict | None = None
     ) -> Dict[str, str]:
-        """Produce la recomendación IA v2 garantizando el contrato del endpoint."""
-
+        """
+        Produce la recomendación IA v2 con contexto específico.
+        
+        Args:
+            contexto: Página o contexto actual (dashboard, inventario, etc)
+            perfil: Perfil de usuario para personalizar recomendaciones
+            data: Datos actuales del sistema para el snapshot
+            
+        Returns:
+            Recomendación formateada según el contexto
+        """
+        # Resolver perfil
         perfil_ia = self._resolver_perfil(contexto, perfil)
         logger.debug(
             "[IAServiceV2] Generando snapshot para contexto=%s perfil=%s",
@@ -50,22 +68,49 @@ class IAServiceV2:
             perfil_ia,
         )
 
-        snapshot = self._builder.build(contexto=contexto)
-        insight = self._engine.evaluate(snapshot, profile=perfil_ia)
+        # Construir snapshot base
+        base_snapshot = self._builder.build(contexto=contexto)
+        
+        # Convertir a diccionario y enriquecer con datos adicionales
+        if isinstance(base_snapshot, SnapshotProtocol):
+            base_dict = base_snapshot.to_dict()
+        else:
+            base_dict = base_snapshot
+            
+        snapshot_data = {**base_dict, **(data or {})}
+        enhanced_snapshot = IASnapshot(snapshot_data)
+        
+        # Obtener contexto específico
+        context_data = self._context_builder.get_context_data(
+            str(contexto or "dashboard"), 
+            enhanced_snapshot
+        )
+        
+        # Crear snapshot final con todo el contexto
+        enhanced_snapshot_dict = enhanced_snapshot.to_dict()
+        final_data = {**base_dict, **enhanced_snapshot_dict, **context_data}
+        final_snapshot = IASnapshot(final_data)
+        
+        # Generar insight
+        insight = self._engine.evaluate(final_snapshot, profile=perfil_ia)
+        
         logger.debug(
-            "[IAServiceV2] Insight v2 calculado key=%s severity=%s score=%.3f",
+            "[IAServiceV2] Insight v2 calculado key=%s severity=%s score=%.3f context=%s",
             insight.key,
             insight.severity,
             insight.score,
+            contexto,
         )
 
-        resultado = self._formatter.render(insight, snapshot)
+        # Formatear resultado
+        resultado = self._formatter.render(insight, final_snapshot)
         resultado.setdefault("mensaje", resultado.get("mensaje_resumen", ""))
         resultado.setdefault("detalle", resultado.get("mensaje_detallado", ""))
         resultado.setdefault("perfil_ia", perfil_ia)
         resultado.setdefault("score", f"{insight.score:.3f}")
         resultado.setdefault("confianza", f"{insight.confidence:.2f}")
         resultado.setdefault("insight_key", insight.key)
+        resultado.setdefault("contexto", contexto)
 
         metadata = self._construir_metadata(insight)
         self._logger.registrar_evento(
@@ -100,11 +145,22 @@ class IAServiceV2:
         return metadata
 
 
-def generar_recomendacion_auditoria_v2(
-    contexto: str | None = None, *, perfil: str | None = None
+def generar_recomendacion_v2(
+    contexto: str | None = None, 
+    *, 
+    perfil: str | None = None,
+    data: Dict | None = None
 ) -> Dict[str, str]:
+    """Función auxiliar para generar recomendaciones."""
     servicio = IAServiceV2()
-    return servicio.generar_recomendacion_auditoria(contexto=contexto, perfil=perfil)
+    return servicio.generar_recomendacion(
+        contexto=contexto, 
+        perfil=perfil, 
+        data=data
+    )
 
 
-__all__ = ["IAServiceV2", "generar_recomendacion_auditoria_v2"]
+__all__ = [
+    "IAServiceV2",
+    "generar_recomendacion_v2"
+]

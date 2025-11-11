@@ -111,6 +111,95 @@
 
 
 
+/* ===== AI MESSAGE STYLES ===== */
+.ia-text-update {
+  animation: text-update 0.5s ease-out;
+}
+
+@keyframes text-update {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ia-header-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  min-height: 40px;
+  background-color: var(--card-bg-light);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dark .ia-header-compact {
+  background-color: var(--card-bg-dark);
+  border-color: var(--border-dark);
+}
+
+
+.ia-header-icon {
+  font-size: 1.15rem;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.ia-header-marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.ia-header-marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 20s linear infinite;
+  font-size: 0.85rem;
+  opacity: 0.95;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Severity colors */
+.ia-header-compact[data-severity="info"] {
+  border-color: var(--primary-600);
+}
+
+.ia-header-compact[data-severity="warning"] {
+  border-color: var(--warning-500);
+}
+
+.ia-header-compact[data-severity="error"] {
+  border-color: var(--danger-500);
+}
+
+.ia-header-compact[data-severity="success"] {
+  border-color: var(--success-500);
+}
+
+.ia-header-expanded {
+  white-space: normal;
+  cursor: pointer;
+}
+
+.ia-header-expanded .ia-header-marquee-text {
+  animation: none;
+  white-space: normal;
+}
+
 /* ===== RESET Y ESTILOS BASE ===== */
 * {
   box-sizing: border-box;

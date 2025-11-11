@@ -4,5 +4,9 @@ from flask import Blueprint
 bp = Blueprint("main", __name__, url_prefix="")
 
 # importa todas tus rutas aquí
-from . import login, dashboard, inventario, ventas, movimientos, alertas, api_status, auditoria, historial, recomendaciones, perfil
+from . import (
+    login, dashboard, inventario, ventas, movimientos, alertas, 
+    api_status, auditoria, historial, recomendaciones, perfil,
+    recomendaciones_ai
+)
 

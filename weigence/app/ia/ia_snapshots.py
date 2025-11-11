@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from statistics import mean, pstdev
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from .ia_repository import IARepository, repository
 
@@ -44,6 +44,11 @@ class IASnapshot:
     @property
     def info_alerts(self) -> int:
         return self.alerts_summary.get("info", 0)
+        
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert snapshot to dictionary."""
+        from .ia_snapshot_utils import snapshot_to_dict
+        return snapshot_to_dict(self)
 
 
 class SnapshotBuilder:

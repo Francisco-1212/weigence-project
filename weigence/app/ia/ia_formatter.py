@@ -44,137 +44,138 @@ class IAFormatter:
     def __init__(self) -> None:
         self._rng = random.SystemRandom()
         self._templates: Dict[str, TemplateGroup] = {
+            # Plantillas actualizadas para una comunicación más humana y empática
             "sales_collapse": TemplateGroup(
                 titles=[
-                    "Ventas en caída libre controlada",
-                    "Pérdida acelerada de tracción comercial",
-                    "Desaceleración abrupta del flujo de ventas",
+                    "⚠️ Momento clave para impulsar ventas",
+                    "🔄 Oportunidad de reactivación comercial",
+                    "📊 Atención: Ventas necesitan impulso",
                 ],
                 summaries=[
-                    "Ventas contrayéndose {trend_percent:.1f}% con señales de estrés inmediato.",
-                    "Contracción pronunciada de ventas y baja actividad operativa.",
+                    "He detectado una disminución del {trend_percent:.1f}% en ventas que podemos abordar juntos.",
+                    "Las ventas muestran una tendencia que requiere nuestra atención inmediata.",
                 ],
                 descriptions=[
-                    "Las métricas de las últimas {sales_window}h muestran una contracción del {trend_percent:.1f}% respecto al comportamiento previo, acompañada de un z-score de {anomaly_score:.2f} que confirma la anomalía estadística.",
-                    "Se detectó una caída significativa en el ritmo de ventas: el promedio reciente se aleja del histórico con un diferencial del {trend_percent:.1f}%. La dispersión actual ({sales_volatility:.2f}) refuerza un escenario de inestabilidad comercial.",
+                    "En las últimas {sales_window}h, he observado un patrón importante: nuestras ventas han disminuido un {trend_percent:.1f}%. El indicador de anomalía ({anomaly_score:.2f}) sugiere que este no es un comportamiento típico y tenemos una clara oportunidad de mejora.",
+                    "El ritmo de ventas actual se ha alejado {trend_percent:.1f}% de nuestro promedio esperado. La variabilidad ({sales_volatility:.2f}) indica que es el momento perfecto para implementar acciones correctivas.",
                 ],
                 causes=[
-                    "Una conjunción de alertas críticas ({critical_alerts}) y {inactivity_hours:.1f}h sin actividad consistente sugiere un freno operativo.",
-                    "La tendencia negativa se explica por la reducción de inventario ({weight_change:.2f}) y la menor interacción operativa ({movements_per_hour:.2f} movimientos/hora).",
+                    "He identificado dos factores clave: tenemos {critical_alerts} alertas pendientes y {inactivity_hours:.1f}h de actividad reducida que están impactando nuestro rendimiento.",
+                    "Los datos sugieren que esto se debe a niveles de inventario más bajos ({weight_change:.2f}) y una disminución en la actividad operativa ({movements_per_hour:.2f} movimientos/hora).",
                 ],
                 solutions=[
-                    "Restablecer el pulso operativo desplegando refuerzos en piso y habilitando un plan de ventas intensivo para las próximas 6h.",
-                    "Coordinar con operaciones una verificación inmediata de inventario y lanzar promociones tácticas para recuperar demanda.",
+                    "💡 Recomiendo activar un plan de respuesta rápida: reforcemos el equipo en piso e implementemos una estrategia de ventas especial para las próximas 6 horas. ¡Podemos revertir esta situación juntos!",
+                    "💡 Sugiero dos acciones inmediatas: realizar una verificación rápida de inventario y considerar promociones estratégicas. El momento es ideal para impulsar la demanda.",
                 ],
             ),
             "inventory_instability": TemplateGroup(
                 titles=[
-                    "Inventario sin equilibrio funcional",
-                    "Oscilaciones de stock fuera de tolerancia",
+                    "📦 Atención al equilibrio de inventario",
+                    "⚖️ Oportunidad de optimización de stock",
                 ],
                 summaries=[
-                    "Inventario mostrando variaciones anormales de peso.",
-                    "Stock con volatilidad fuera de parámetros.",
+                    "He detectado algunas variaciones en el inventario que merecen nuestra atención.",
+                    "El comportamiento del stock muestra patrones que podemos mejorar juntos.",
                 ],
                 descriptions=[
-                    "Los pesajes recientes evidencian una variación relativa de {weight_volatility:.2f} y un cambio neto de {weight_change:.2f}, valores que superan los umbrales habituales del módulo.",
-                    "Se registran fluctuaciones de inventario atípicas: la volatilidad ({weight_volatility:.2f}) combinada con el desbalance de {weight_change:.2f} anticipa quiebres de stock inminentes.",
+                    "Los últimos datos muestran un panorama interesante: tenemos una variación de {weight_volatility:.2f} en los pesajes y un cambio neto de {weight_change:.2f}. Estos valores están fuera de nuestros rangos ideales y representan una oportunidad de mejora.",
+                    "Estoy observando fluctuaciones poco usuales en nuestro inventario: la variabilidad es de {weight_volatility:.2f} y hay un desbalance de {weight_change:.2f}. Es importante que actuemos antes de que esto afecte nuestra disponibilidad.",
                 ],
                 causes=[
-                    "La demanda específica de ítems de alta rotación y las alertas abiertas ({warning_alerts}) presionan la disponibilidad.",
-                    "La reducción acelerada del inventario apunta a una reposición tardía y potenciales errores de pesaje en origen.",
+                    "He identificado dos factores principales: una demanda elevada en productos clave y {warning_alerts} alertas que necesitan nuestra atención.",
+                    "Los datos sugieren que esto se debe a una combinación de reposición no optimizada y posibles discrepancias en los pesajes iniciales.",
                 ],
                 solutions=[
-                    "Iniciar un ciclo de reconteo asistido y reforzar la reposición en los productos de mayor salida detectados.",
-                    "Ajustar los umbrales de alerta y programar verificaciones cada 2h hasta estabilizar el peso promedio.",
+                    "💡 Te sugiero iniciar un proceso de verificación enfocado en los productos más demandados. También sería valioso reforzar el sistema de reposición para estos items.",
+                    "💡 Recomiendo dos acciones: primero, ajustar nuestros parámetros de alerta, y segundo, implementar un ciclo de verificación cada 2 horas hasta que logremos la estabilidad deseada.",
                 ],
             ),
             "alert_pressure": TemplateGroup(
                 titles=[
-                    "Presión operativa por exceso de alertas",
-                    "Panel de alarmas en zona de saturación",
+                    "🚨 Atención: Sistema de alertas necesita revisión",
+                    "⚡ Momento de optimizar nuestras alertas",
                 ],
                 summaries=[
-                    "Acumulación de alertas críticas en curso.",
-                    "Tablero de alarmas saturado, requiere priorización.",
+                    "He detectado un incremento en las alertas que requiere nuestra atención.",
+                    "Tenemos una oportunidad para optimizar la gestión de alertas.",
                 ],
                 descriptions=[
-                    "En las últimas {movement_window}h se acumularon {critical_alerts} alertas críticas y {warning_alerts} advertencias. El indicador compuesto alcanza {signal_strength:.2f}, reflejando estrés sostenido.",
-                    "El tablero supera el umbral saludable: {critical_alerts} incidencias críticas simultáneas y {warning_alerts} avisos activos demandan priorización inmediata.",
+                    "Durante las últimas {movement_window}h, he registrado un panorama que necesita nuestra atención: tenemos {critical_alerts} alertas críticas y {warning_alerts} advertencias activas. El índice de prioridad está en {signal_strength:.2f}, lo que indica que es un buen momento para actuar.",
+                    "Nuestro panel está mostrando más actividad de lo habitual: hay {critical_alerts} situaciones críticas y {warning_alerts} advertencias que podríamos resolver juntos. Es importante que actuemos de manera organizada.",
                 ],
                 causes=[
-                    "La concentración de eventos críticos sugiere procesos correctivos incompletos y escalamiento pendiente.",
-                    "Persisten alarmas vinculadas a la caída del {trend_percent:.1f}% en ventas, lo que indica un problema sistémico de atención.",
+                    "El análisis sugiere que tenemos algunos procesos pendientes de resolución y casos que necesitan escalarse al siguiente nivel.",
+                    "Las alertas persistentes están relacionadas con una disminución del {trend_percent:.1f}% en ventas, lo que indica que podemos mejorar nuestro tiempo de respuesta.",
                 ],
                 solutions=[
-                    "Aplicar un protocolo de depuración priorizando alarmas rojas y definir responsables antes de las próximas 2h.",
-                    "Coordinar una sala de guerra operativa que integre operaciones, logística y TI para cerrar incidencias con dueños claros.",
+                    "💡 Sugiero implementar un plan de acción en dos fases: primero, atender las alertas críticas con un equipo dedicado en las próximas 2 horas, y segundo, asignar responsables claros para el seguimiento.",
+                    "💡 Recomiendo organizar una sesión de coordinación rápida entre los equipos de operaciones, logística y TI. Juntos podemos resolver estas incidencias de manera más efectiva.",
                 ],
             ),
             "operational_inertia": TemplateGroup(
                 titles=[
-                    "Actividad operativa por debajo de lo esperado",
-                    "Piso de operaciones en estado de latencia",
+                    "🔄 Oportunidad para impulsar la actividad",
+                    "📈 Momento de reactivar operaciones",
                 ],
                 summaries=[
-                    "Movimiento operativo insuficiente en la última ventana.",
-                    "Actividad en piso con ritmo muy bajo.",
+                    "He notado que podemos mejorar nuestro ritmo operativo actual.",
+                    "Tenemos espacio para optimizar la actividad en piso.",
                 ],
                 descriptions=[
-                    "Solo se registran {movements_per_hour:.2f} movimientos/hora durante {movement_window}h. La ausencia de flujo se correlaciona con una caída del {trend_percent:.1f}% en ventas.",
-                    "El sistema reporta {inactivity_hours:.1f}h sin interacción relevante y un dinamismo mínimo ({movements_per_hour:.2f} movimientos/hora).",
+                    "Los datos muestran que tenemos {movements_per_hour:.2f} movimientos por hora en un período de {movement_window}h. Este ritmo está relacionado con una variación del {trend_percent:.1f}% en ventas, lo que nos da una clara oportunidad de mejora.",
+                    "En las últimas {inactivity_hours:.1f}h he detectado una actividad más baja de lo usual ({movements_per_hour:.2f} movimientos/hora). Juntos podemos elevar estos números.",
                 ],
                 causes=[
-                    "Se observa un desacople entre operaciones y reposición, posiblemente por turnos reducidos o bloqueos de acceso.",
-                    "Una sobrecarga en tareas administrativas pudo desatender el seguimiento en piso y la reposición clave.",
+                    "El análisis sugiere que podemos mejorar la sincronización entre operaciones y reposición. Esto puede deberse a ajustes en los turnos o temas de acceso.",
+                    "Parece que la carga de tareas administrativas está afectando nuestra capacidad de seguimiento en piso y reposición.",
                 ],
                 solutions=[
-                    "Redistribuir tareas críticas, activar personal de respaldo y auditar accesos para normalizar el flujo en las próximas horas.",
-                    "Implementar un tablero de control horario y micro-reuniones de coordinación hasta recuperar el ritmo base.",
+                    "💡 Te sugiero tres acciones clave: reorganizar las tareas prioritarias, activar el equipo de respaldo y revisar los accesos para optimizar el flujo operativo.",
+                    "💡 Recomiendo implementar un sistema de seguimiento por hora y establecer breves reuniones de coordinación. Esto nos ayudará a recuperar nuestro ritmo óptimo.",
                 ],
             ),
             "positive_outlook": TemplateGroup(
                 titles=[
-                    "Momentum positivo confirmado",
-                    "Recuperación sostenida del negocio",
+                    "🌟 ¡Excelente momento comercial!",
+                    "💫 Resultados muy positivos",
                 ],
                 summaries=[
-                    "Se consolida un repunte comercial y operativo.",
-                    "Indicadores alineados con tendencia positiva.",
+                    "¡Felicitaciones! Estamos viendo resultados muy positivos.",
+                    "¡Genial trabajo! Los indicadores muestran una tendencia favorable.",
                 ],
                 descriptions=[
-                    "El promedio reciente crece {trend_percent:.1f}% respecto al histórico y el inventario se recompone ({weight_change:.2f}). La señal agregada es {signal_strength:.2f}.",
-                    "Los indicadores de las últimas {sales_window}h validan el repunte comercial con variaciones controladas y señal consolidada ({signal_strength:.2f}).",
+                    "¡Excelentes noticias! Nuestros números están mejorando: hemos logrado un crecimiento del {trend_percent:.1f}% y el inventario muestra una recuperación saludable ({weight_change:.2f}). El índice de rendimiento está en {signal_strength:.2f}, ¡lo cual es fantástico!",
+                    "Los datos de las últimas {sales_window}h confirman nuestro buen momento: tenemos un crecimiento sostenido y un índice de rendimiento de {signal_strength:.2f}. ¡El equipo está haciendo un trabajo excepcional!",
                 ],
                 causes=[
-                    "Las acciones de impulso recientes y la reposición ágil están alineando demanda e inventario.",
-                    "El refuerzo de promociones y la optimización logística se traducen en mayor conversión.",
+                    "Este éxito se debe a la excelente ejecución de nuestras estrategias comerciales y a un manejo eficiente del inventario.",
+                    "La combinación de promociones efectivas y mejoras en nuestra logística está dando resultados sobresalientes.",
                 ],
                 solutions=[
-                    "Escalar la estrategia de impulso, documentar aprendizajes y fijar un plan de seguimiento diario para sostener el ritmo.",
-                    "Consolidar este comportamiento replicando los ajustes operativos al resto de turnos y manteniendo medición horaria.",
+                    "💡 Para mantener este impulso, sugiero: expandir las estrategias que están funcionando, documentar las mejores prácticas y establecer un seguimiento diario.",
+                    "💡 Recomiendo compartir estas técnicas exitosas con todos los turnos y mantener nuestro sistema de medición horaria. ¡Sigamos con este excelente ritmo!",
                 ],
             ),
             "stable_outlook": TemplateGroup(
                 titles=[
-                    "Entorno operativo estable",
-                    "Sin anomalías relevantes en la última ventana",
+                    "✨ Todo fluye con normalidad",
+                    "🎯 Operaciones en equilibrio ideal",
                 ],
                 summaries=[
-                    "Operación estable sin alertas destacadas.",
-                    "Sin desvíos relevantes detectados.",
+                    "Las operaciones se mantienen estables y saludables.",
+                    "Todo se desarrolla según lo esperado.",
                 ],
                 descriptions=[
-                    "Las métricas monitoreadas permanecen dentro de parámetros normales. La tendencia es de {trend_percent:.1f}% con volatilidad de {weight_volatility:.2f}.",
-                    "La lectura consolidada no muestra desviaciones severas: tendencia {trend_percent:.1f}%, alertas totales {alerts_total}.",
+                    "¡Buenas noticias! Todos nuestros indicadores están en rangos óptimos. Tenemos una tendencia del {trend_percent:.1f}% y una estabilidad muy buena ({weight_volatility:.2f}).",
+                    "El panorama es positivo: mantenemos una tendencia del {trend_percent:.1f}% y solo {alerts_total} alertas en total. ¡Sigamos así!",
                 ],
                 causes=[
-                    "Se mantiene una ejecución consistente sin eventos que comprometan el desempeño.",
-                    "Las correcciones previas estabilizaron ventas e inventario en el corto plazo.",
+                    "Este equilibrio es resultado de una ejecución consistente y un buen trabajo en equipo.",
+                    "Las mejoras implementadas anteriormente están dando los resultados esperados en ventas e inventario.",
                 ],
                 solutions=[
-                    "Continuar con la rutina de seguimiento y planificar un chequeo extendido en las próximas 12h.",
-                    "Documentar buenas prácticas y mantener la vigilancia sobre posibles desviaciones incipientes.",
+                    "💡 Recomiendo mantener nuestro ritmo actual y programar una revisión más detallada en las próximas 12 horas.",
+                    "💡 Sugiero documentar estas buenas prácticas que nos están funcionando y mantener nuestra atención para detectar cualquier ajuste necesario.",
                 ],
             ),
         }
