@@ -66,7 +66,7 @@
 
       <!-- Tabla de ventas (diseño inventario) -->
       <div class="overflow-x-auto bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-gray-300 dark:border-neutral-700">
-        <div class="max-h-[60vh] overflow-auto"></div>
+        <div class="max-h-[60vh] overflow-auto">
         <table id="ventasTable" class="w-full text-sm text-left text-neutral-700 dark:text-neutral-300">
            <thead class="sticky top-0 z-10 text-xs uppercase bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-b border-gray-300 dark:border-neutral-700">
             <tr>
@@ -131,6 +131,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </div>
 
   <!-- Controles de paginación -->
@@ -170,4 +171,8 @@
       Generar reporte de ventas
     </button>
   </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
 {% endblock %}

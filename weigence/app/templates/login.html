@@ -87,7 +87,7 @@
               <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300" for="remember">Recordarme</label>
             </div>
             <div class="text-sm">
-              <a class="font-medium text-primary hover:text-primary/80 transition-colors duration-200" href="#">¿Olvidaste tu contraseña?</a>
+              <a id="forgot-link" class="font-medium text-primary hover:text-primary/80 transition-colors duration-200 cursor-pointer" href="#">¿Olvidaste tu contraseña?</a>
             </div>
           </div>
           <div class="mt-8">
@@ -107,5 +107,270 @@
       </main>
     </div>
   </div>
+  <!-- Modal de recuperación de contraseña (todo en este archivo) -->
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-4 py-6">
+    <div id="forgot-overlay" class="absolute inset-0 bg-black/50"></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="forgot-title" class="relative z-10 w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-lg ring-1 ring-black/5 dark:ring-white/10">
+      <h3 id="forgot-title" class="text-lg font-semibold text-gray-900 dark:text-white">Recuperar contraseña</h3>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Introduce tu correo electrónico y te enviaremos un enlace para restablecer la contraseña.</p>
+      <form id="forgot-form" class="mt-4 space-y-4" action="#" onsubmit="return false;" data-endpoint="/password-reset">
+        <div>
+          <label for="forgot-email" class="sr-only">Correo electrónico</label>
+          <input id="forgot-email" name="email" type="email" required placeholder="tu@correo.com" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 py-3 px-4 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:ring-primary" />
+        </div>
+        <div class="flex items-center justify-between">
+          <button id="forgot-submit" type="submit" class="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90">Enviar enlace</button>
+          <button id="forgot-cancel" type="button" class="ml-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">Cancelar</button>
+        </div>
+        <p id="forgot-feedback" class="text-sm mt-2"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ========== REMEMBER-ME FUNCTIONALITY ==========
+    function initRememberMe() {
+      const STORAGE_KEY_EMAIL = 'weigence_login_email';
+      const STORAGE_KEY_PASSWORD = 'weigence_login_password';
+      const usuarioEl = document.getElementById('usuario');
+      const passwordEl = document.getElementById('password');
+      const rememberEl = document.getElementById('remember');
+
+      if (!usuarioEl || !passwordEl || !rememberEl) {
+        console.warn('[RememberMe] No se encontraron elementos #usuario, #password o #remember');
+        return;
+      }
+
+      function saveCredentials(email, password) {
+        try {
+          if (email && email.trim()) {
+            localStorage.setItem(STORAGE_KEY_EMAIL, email.trim());
+            console.log('[RememberMe] Email guardado en localStorage:', email.trim());
+          }
+          if (password) {
+            localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+            console.log('[RememberMe] Contraseña guardada en localStorage');
+          }
+        } catch (e) {
+          console.error('[RememberMe] Error guardando credenciales:', e);
+        }
+      }
+
+      function deleteCredentials() {
+        try {
+          localStorage.removeItem(STORAGE_KEY_EMAIL);
+          localStorage.removeItem(STORAGE_KEY_PASSWORD);
+          console.log('[RememberMe] Credenciales eliminadas de localStorage');
+        } catch (e) {
+          console.error('[RememberMe] Error eliminando credenciales:', e);
+        }
+      }
+
+      function getStoredCredentials() {
+        try {
+          const email = localStorage.getItem(STORAGE_KEY_EMAIL);
+          const password = localStorage.getItem(STORAGE_KEY_PASSWORD);
+          console.log('[RememberMe] Credenciales recuperadas de localStorage');
+          return { email, password };
+        } catch (e) {
+          console.error('[RememberMe] Error leyendo localStorage:', e);
+          return { email: null, password: null };
+        }
+      }
+
+      // Cargar credenciales guardadas si existen (al iniciar la página)
+      const { email: storedEmail, password: storedPassword } = getStoredCredentials();
+      if (storedEmail) {
+        console.log('[RememberMe] Restaurando email guardado:', storedEmail);
+        usuarioEl.value = storedEmail;
+        rememberEl.checked = true;
+      }
+      if (storedPassword) {
+        console.log('[RememberMe] Restaurando contraseña guardada');
+        passwordEl.value = storedPassword;
+        rememberEl.checked = true;
+      }
+      if (storedEmail || storedPassword) {
+        console.log('[RememberMe] Credenciales restauradas y checkbox marcado');
+      } else {
+        console.log('[RememberMe] No hay credenciales guardadas');
+      }
+
+      // Escuchar cambios en el checkbox "Recordarme"
+      rememberEl.addEventListener('change', function () {
+        console.log('[RememberMe] Checkbox cambió. Estado:', this.checked);
+        if (this.checked) {
+          if (usuarioEl.value || passwordEl.value) {
+            saveCredentials(usuarioEl.value, passwordEl.value);
+          } else {
+            console.log('[RememberMe] Checkbox marcado pero campos vacíos');
+          }
+        } else {
+          deleteCredentials();
+        }
+      });
+
+      // Escuchar cambios en el input del email para sincronizar en tiempo real
+      usuarioEl.addEventListener('input', function () {
+        console.log('[RememberMe] Usuario escribiendo:', this.value);
+        if (rememberEl.checked) {
+          saveCredentials(this.value, passwordEl.value);
+        }
+      });
+
+      // Escuchar cambios en el input de la contraseña para sincronizar en tiempo real
+      passwordEl.addEventListener('input', function () {
+        console.log('[RememberMe] Contraseña siendo escrita');
+        if (rememberEl.checked) {
+          saveCredentials(usuarioEl.value, this.value);
+        }
+      });
+
+      // Al hacer submit del formulario, guardar/eliminar según el estado del checkbox
+      const loginForm = document.querySelector('form[method="POST"]') || document.querySelector('form');
+      if (loginForm) {
+        loginForm.addEventListener('submit', function (e) {
+          console.log('[RememberMe] Formulario siendo enviado. Checkbox:', rememberEl.checked);
+          if (rememberEl.checked && (usuarioEl.value || passwordEl.value)) {
+            saveCredentials(usuarioEl.value, passwordEl.value);
+            console.log('[RememberMe] Credenciales guardadas antes de enviar formulario');
+          } else {
+            deleteCredentials();
+            console.log('[RememberMe] Credenciales eliminadas antes de enviar formulario');
+          }
+        });
+        console.log('[RememberMe] Formulario encontrado y listeners añadidos');
+      } else {
+        console.warn('[RememberMe] No se encontró el formulario de login');
+      }
+
+      console.log('[RememberMe] Inicialización completada');
+    }
+
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initRememberMe);
+      console.log('[RememberMe] Esperando DOMContentLoaded...');
+    } else {
+      initRememberMe();
+      console.log('[RememberMe] DOM ya estaba listo, ejecutando inmediatamente');
+    }
+
+    // ========== FORGOT PASSWORD MODAL FUNCTIONALITY ==========
+    (function initForgotPassword() {
+      const forgotLink = document.getElementById('forgot-link');
+      const forgotModal = document.getElementById('forgot-modal');
+      const forgotOverlay = document.getElementById('forgot-overlay');
+      const forgotCancel = document.getElementById('forgot-cancel');
+      const forgotForm = document.getElementById('forgot-form');
+      const forgotEmail = document.getElementById('forgot-email');
+      const forgotSubmit = document.getElementById('forgot-submit');
+      const forgotFeedback = document.getElementById('forgot-feedback');
+
+      function openModal() {
+        if (forgotModal) {
+          forgotModal.classList.remove('hidden');
+          forgotModal.classList.add('flex');
+          setTimeout(() => forgotEmail && forgotEmail.focus(), 50);
+          console.log('[ForgotPassword] Modal abierto');
+        }
+      }
+      function closeModal() {
+        if (forgotModal) {
+          forgotModal.classList.add('hidden');
+          forgotModal.classList.remove('flex');
+          if (forgotFeedback) { forgotFeedback.textContent = ''; forgotFeedback.className = 'text-sm mt-2'; }
+          if (forgotForm) forgotForm.reset();
+          console.log('[ForgotPassword] Modal cerrado');
+        }
+      }
+
+      // Abrir modal al hacer clic en "¿Olvidaste tu contraseña?"
+      if (forgotLink) {
+        forgotLink.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          openModal();
+        });
+      }
+
+      // Cerrar modal al hacer clic en el overlay
+      if (forgotOverlay) {
+        forgotOverlay.addEventListener('click', closeModal);
+      }
+
+      // Cerrar modal al hacer clic en "Cancelar"
+      if (forgotCancel) {
+        forgotCancel.addEventListener('click', closeModal);
+      }
+
+      // Cerrar modal al presionar Escape
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && forgotModal && !forgotModal.classList.contains('hidden')) {
+          closeModal();
+        }
+      });
+
+      function isValidEmail(email) {
+        return /\S+@\S+\.\S+/.test(email);
+      }
+
+      // Manejar envío del formulario de recuperación
+      if (forgotForm) {
+        forgotForm.addEventListener('submit', async function (ev) {
+          ev.preventDefault();
+          const email = forgotEmail && forgotEmail.value ? forgotEmail.value.trim() : '';
+
+          // Validar email
+          if (!email || !isValidEmail(email)) {
+            if (forgotFeedback) {
+              forgotFeedback.textContent = 'Por favor introduce un correo válido.';
+              forgotFeedback.className = 'text-sm text-red-600 dark:text-red-400';
+            }
+            return;
+          }
+
+          const endpoint = forgotForm.dataset.endpoint || '/password-reset';
+          if (forgotSubmit) { forgotSubmit.disabled = true; forgotSubmit.textContent = 'Enviando...'; }
+          if (forgotFeedback) forgotFeedback.textContent = '';
+
+          try {
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            });
+
+            if (res.ok) {
+              if (forgotFeedback) {
+                forgotFeedback.textContent = 'Si el correo existe en nuestro sistema, recibirás un enlace para restablecer la contraseña.';
+                forgotFeedback.className = 'text-sm text-green-600 dark:text-green-400';
+              }
+              console.log('[ForgotPassword] Solicitud exitosa para:', email);
+              setTimeout(closeModal, 2500);
+            } else {
+              let txt = 'Ocurrió un error al solicitar el restablecimiento.';
+              try {
+                const j = await res.json();
+                if (j && j.message) txt = j.message;
+              } catch (_) {}
+              if (forgotFeedback) {
+                forgotFeedback.textContent = txt;
+                forgotFeedback.className = 'text-sm text-red-600 dark:text-red-400';
+              }
+              console.error('[ForgotPassword] Error en servidor:', res.status);
+            }
+          } catch (err) {
+            console.warn('[ForgotPassword] Error de conexión:', err);
+            if (forgotFeedback) {
+              forgotFeedback.textContent = 'Error de conexión. Intenta nuevamente.';
+              forgotFeedback.className = 'text-sm text-yellow-700 dark:text-yellow-400';
+            }
+          } finally {
+            if (forgotSubmit) { forgotSubmit.disabled = false; forgotSubmit.textContent = 'Enviar enlace'; }
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
