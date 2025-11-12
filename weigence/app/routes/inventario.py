@@ -470,27 +470,36 @@ def actualizar_estado_alerta(id):
 @requiere_login
 def proyeccion_consumo():
     try:
-        dias = int(request.args.get("dias", 30))
+        dias = int(request.args.get("dias", 14))
         fecha_inicio = (datetime.now() - timedelta(days=dias)).date().isoformat()
 
-        consumo = supabase.table("v_consumo_diario") \
-            .select("*") \
-            .gte("fecha", fecha_inicio) \
-            .execute().data
+        # Une ventas y detalles, agrupando por día
+        query = (
+            supabase.rpc(
+                "custom_query",
+                {
+                    "query": f"""
+                        SELECT
+                            DATE(v.fecha_venta) AS fecha,
+                            SUM(d.cantidad) AS unidades
+                        FROM detalle_ventas d
+                        JOIN ventas v ON v.idventa = d.idventa
+                        WHERE v.fecha_venta >= '{fecha_inicio}'
+                        GROUP BY DATE(v.fecha_venta)
+                        ORDER BY fecha ASC;
+                    """
+                },
+            )
+            .execute()
+        )
 
-        # agrupar por fecha
-        resumen = {}
-        for c in consumo:
-            f = c["fecha"]
-            resumen[f] = resumen.get(f, 0) + float(c["consumo"] or 0)
+        data = query.data or []
+        return jsonify(data)
 
-        serie = [{"fecha": f, "consumo": round(v, 2)} for f, v in sorted(resumen.items())]
-        return jsonify(serie)
     except Exception as e:
-        print("Error en /api/proyeccion_consumo:", e)
-        return jsonify({"error": str(e)}), 500
-
-
+        print("[Error /api/proyeccion_consumo]:", e)
+        return jsonify([])
+    
 def recalcular_estantes():
     # Recalcula peso actual de cada estante
     estantes = supabase.table("estantes").select("id_estante, peso_maximo").execute().data

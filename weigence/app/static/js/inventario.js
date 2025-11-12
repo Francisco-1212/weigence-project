@@ -584,7 +584,126 @@ filterByStatus(status) {
     document.body.appendChild(link); link.click(); link.remove();
   }
 };
+async function actualizarGraficoProyeccion(dias = 90) {
+  try {
+    const res = await fetch(`/api/proyeccion_consumo?dias=${dias}`);
+    const data = await res.json();
 
+    if (!Array.isArray(data) || !data.length) {
+      console.warn("No hay datos de consumo.");
+      return;
+    }
+
+    // --- Normaliza datos: rellena días faltantes con 0
+    const fechas = data.map(d => d.fecha);
+    const unidades = data.map(d => d.unidades);
+    const map = {};
+    data.forEach(d => (map[d.fecha] = d.unidades));
+
+    const start = new Date(fechas[0]);
+    const end = new Date(fechas.at(-1));
+    const fechasContinuas = [];
+    const unidadesContinuas = [];
+
+    for (let f = new Date(start); f <= end; f.setDate(f.getDate() + 1)) {
+      const key = f.toISOString().split("T")[0];
+      fechasContinuas.push(key);
+      unidadesContinuas.push(map[key] || 0);
+    }
+
+    // --- Promedio y proyección (7 días futuros)
+    const promedio =
+      unidadesContinuas.reduce((a, b) => a + b, 0) / unidadesContinuas.length;
+    const ultFecha = new Date(fechasContinuas.at(-1));
+    const futuras = Array.from({ length: 7 }, (_, i) => {
+      const f = new Date(ultFecha);
+      f.setDate(f.getDate() + i + 1);
+      return f.toISOString().split("T")[0];
+    });
+    const proyeccion = Array(7).fill(promedio.toFixed(1));
+
+    // --- Limpia el gráfico anterior
+    const ctx = document.getElementById("chartProyeccion").getContext("2d");
+    if (window.chartProyeccion) window.chartProyeccion.destroy();
+
+    // --- Configura datasets adaptativos
+    const datasets = [
+      {
+        label: "Consumo real",
+        data: unidadesContinuas,
+        borderColor: "#38bdf8",
+        backgroundColor: "rgba(56,189,248,0.08)",
+        tension: 0.35,
+        fill: true,
+        pointRadius: unidadesContinuas.length === 1 ? 6 : 3,
+        pointHoverRadius: 7,
+      },
+    ];
+
+    if (unidadesContinuas.length > 1) {
+      datasets.push({
+        label: "Proyección (7 días)",
+        data: [...Array(unidadesContinuas.length).fill(null), ...proyeccion],
+        borderColor: "#a855f7",
+        borderDash: [6, 4],
+        tension: 0.3,
+        pointRadius: 0,
+      });
+    }
+
+    // --- Render Chart
+    window.chartProyeccion = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [...fechasContinuas, ...futuras],
+        datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: {
+              color: "#9CA3AF",
+              autoSkip: true,
+              maxRotation: 45,
+              callback: function (val, i, ticks) {
+                return i % Math.ceil(ticks.length / 6) === 0
+                  ? this.getLabelForValue(val)
+                  : "";
+              },
+            },
+            grid: { color: "rgba(255,255,255,0.05)" },
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: Math.max(...unidadesContinuas, promedio) + 2,
+            ticks: { color: "#9CA3AF" },
+            grid: { color: "rgba(255,255,255,0.05)" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: "#E5E7EB", boxWidth: 12 } },
+          tooltip: {
+            backgroundColor: "#1E293B",
+            titleColor: "#F9FAFB",
+            bodyColor: "#CBD5E1",
+            callbacks: {
+              label: ctx =>
+                `${ctx.dataset.label}: ${ctx.parsed.y} unidades`,
+            },
+          },
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Error al generar gráfico:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () =>
+  actualizarGraficoProyeccion(90)
+);
 
 // endpoints inventario
 const WeigenceMonitor = {
@@ -727,96 +846,243 @@ WeigenceMonitor.actualizarSVG = async function () {
     const res = await fetch("/api/estantes_estado");
     const data = await res.json();
     const svg = document.getElementById("svg-almacen");
-    if (!svg || !Array.isArray(data)) return;
+    if (!svg) return;
 
+    const estantes = Array.isArray(data) ? data : [];
     svg.innerHTML = "";
 
-    const scaleX = 1; // ajusta el espaciado horizontal
-    const scaleY = 1; // ajusta el espaciado vertical
+    const ns = "http://www.w3.org/2000/svg";
+    const columns = 3;
+    const spacingX = 150;
+    const spacingY = 180;
+    const offsetX = 40;
+    const offsetY = 40;
+    const shelfWidth = 116;
+    const shelfHeight = 150;
+    const accentWidth = 10;
 
-    data.forEach(e => {
-      const color =
-        e.estado === "critico"
-          ? "#ef4444"
-          : e.estado === "advertencia"
-          ? "#f59e0b"
-          : "#22c55e";
+    const total = estantes.length;
+    const effectiveColumns = Math.min(columns, Math.max(1, total)) || 1;
+    const rows = Math.max(1, Math.ceil((total || 1) / columns));
 
-      const posX = (Number(e.coord_x) || 0) * scaleX;
-      const posY = (Number(e.coord_y) || 0) * scaleY;
+    const viewWidth = offsetX * 2 + shelfWidth + spacingX * (effectiveColumns - 1);
+    const viewHeight = offsetY * 2 + shelfHeight + spacingY * (rows - 1);
 
-      // rectángulo
-      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rect.setAttribute("x", posX);
-      rect.setAttribute("y", posY);
-      rect.setAttribute("width", "50");
-      rect.setAttribute("height", "25");
-      rect.setAttribute("rx", "5");
-      rect.setAttribute("ry", "5");
-      rect.setAttribute("fill", color);
-      rect.style.transition = "all 0.3s ease";
-      rect.dataset.id = e.id_estante;
-      rect.dataset.estado = e.estado;
-      rect.dataset.ocupacion = e.ocupacion_pct;
-      svg.appendChild(rect);
+    svg.setAttribute("viewBox", `0 0 ${viewWidth} ${viewHeight}`);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
-      // texto
-      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      text.setAttribute("x", posX + 25);
-      text.setAttribute("y", posY + 17);
-      text.setAttribute("text-anchor", "middle");
-      text.setAttribute("font-size", "8");
-      text.setAttribute("fill", "#fff");
-      text.textContent = `E${e.id_estante}`;
-      svg.appendChild(text);
+    const backdrop = document.createElementNS(ns, "rect");
+    backdrop.setAttribute("x", "0");
+    backdrop.setAttribute("y", "0");
+    backdrop.setAttribute("width", viewWidth);
+    backdrop.setAttribute("height", viewHeight);
+    backdrop.setAttribute("fill", "transparent");
+    svg.appendChild(backdrop);
+
+    const stateColors = {
+      critico: "#ef4444",
+      advertencia: "#f59e0b",
+      estable: "#22c55e",
+    };
+
+    const stateLabels = {
+      critico: "Crítico",
+      advertencia: "Advertencia",
+      estable: "Estable",
+    };
+
+    const modules = [];
+
+    estantes.forEach((shelf, index) => {
+      const rawState = (shelf.estado || "").toString().toLowerCase();
+      const state = stateColors[rawState] ? rawState : "estable";
+      const stateColor = stateColors[state];
+
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const posX = offsetX + col * spacingX;
+      const posY = offsetY + row * spacingY;
+
+      const ocupacion = Math.max(0, Math.min(100, Number(shelf.ocupacion_pct) || 0));
+      const ocupacionTexto = ocupacion % 1 === 0 ? `${ocupacion}` : ocupacion.toFixed(1);
+      const pesoActual = Number(shelf.peso_actual ?? 0);
+      const pesoMaximo = Number(shelf.peso_maximo ?? 0);
+
+      const group = document.createElementNS(ns, "g");
+      group.setAttribute("transform", `translate(${posX}, ${posY})`);
+      group.setAttribute("class", `shelf-module shelf-${state}`);
+      group.setAttribute("tabindex", "0");
+      group.dataset.id = shelf.id_estante || "";
+      group.dataset.estado = state;
+      group.dataset.ocupacion = ocupacionTexto;
+      group.dataset.pesoActual = pesoActual;
+      group.dataset.pesoMaximo = pesoMaximo;
+      group.style.setProperty("--shelf-state", stateColor);
+
+      const frame = document.createElementNS(ns, "rect");
+      frame.setAttribute("x", "0");
+      frame.setAttribute("y", "0");
+      frame.setAttribute("width", shelfWidth);
+      frame.setAttribute("height", shelfHeight);
+      frame.setAttribute("class", "rack-frame");
+      group.appendChild(frame);
+
+      const inner = document.createElementNS(ns, "rect");
+      inner.setAttribute("x", "6");
+      inner.setAttribute("y", "6");
+      inner.setAttribute("width", shelfWidth - 12);
+      inner.setAttribute("height", shelfHeight - 12);
+      inner.setAttribute("class", "rack-inner");
+      group.appendChild(inner);
+
+      const shadow = document.createElementNS(ns, "rect");
+      shadow.setAttribute("x", "6");
+      shadow.setAttribute("y", "6");
+      shadow.setAttribute("width", shelfWidth - accentWidth - 18);
+      shadow.setAttribute("height", shelfHeight - 18);
+      shadow.setAttribute("class", "rack-shadow");
+      group.appendChild(shadow);
+
+      const sideShade = document.createElementNS(ns, "rect");
+      sideShade.setAttribute("x", shelfWidth - 24);
+      sideShade.setAttribute("y", "12");
+      sideShade.setAttribute("width", "12");
+      sideShade.setAttribute("height", shelfHeight - 24);
+      sideShade.setAttribute("class", "rack-side-shade");
+      group.appendChild(sideShade);
+
+      const accentTrack = document.createElementNS(ns, "rect");
+      accentTrack.setAttribute("x", shelfWidth - accentWidth - 6);
+      accentTrack.setAttribute("y", "12");
+      accentTrack.setAttribute("width", accentWidth);
+      accentTrack.setAttribute("height", shelfHeight - 24);
+      accentTrack.setAttribute("class", "rack-accent-track");
+      group.appendChild(accentTrack);
+
+      const accentTrackHeight = shelfHeight - 24;
+      const accentHeight = Math.max(0, (accentTrackHeight * ocupacion) / 100);
+      const accentFillHeight = ocupacion > 0 ? Math.max(4, accentHeight) : 0;
+      const accentFill = document.createElementNS(ns, "rect");
+      accentFill.setAttribute("x", shelfWidth - accentWidth - 6);
+      accentFill.setAttribute("y", 12 + (accentTrackHeight - accentFillHeight));
+      accentFill.setAttribute("width", accentWidth);
+      accentFill.setAttribute("height", accentFillHeight);
+      accentFill.setAttribute("class", "rack-accent-fill");
+      group.appendChild(accentFill);
+
+      const foot = document.createElementNS(ns, "rect");
+      foot.setAttribute("x", "6");
+      foot.setAttribute("y", shelfHeight - 8);
+      foot.setAttribute("width", shelfWidth - 12);
+      foot.setAttribute("height", "6");
+      foot.setAttribute("class", "rack-foot");
+      group.appendChild(foot);
+
+      const levelCount = 3;
+      for (let i = 1; i <= levelCount; i += 1) {
+        const y = 12 + (i * (shelfHeight - 24)) / (levelCount + 1);
+        const level = document.createElementNS(ns, "line");
+        level.setAttribute("x1", "14");
+        level.setAttribute("x2", shelfWidth - accentWidth - 14);
+        level.setAttribute("y1", y);
+        level.setAttribute("y2", y);
+        level.setAttribute("class", "rack-level");
+        group.appendChild(level);
+      }
+
+      const label = document.createElementNS(ns, "text");
+      label.setAttribute("x", "14");
+      label.setAttribute("y", "28");
+      label.setAttribute("class", "rack-label");
+      label.setAttribute("text-anchor", "start");
+      label.textContent = `Estante ${shelf.id_estante || ""}`.trim();
+      group.appendChild(label);
+
+      const meta = document.createElementNS(ns, "text");
+      meta.setAttribute("x", "14");
+      meta.setAttribute("y", shelfHeight - 18);
+      meta.setAttribute("class", "rack-meta");
+      meta.setAttribute("text-anchor", "start");
+      meta.textContent = `${ocupacionTexto}% ocupación`;
+      group.appendChild(meta);
+
+      svg.appendChild(group);
+      modules.push({ node: group, data: shelf });
     });
-    // tooltip
+
+    requestAnimationFrame(() => {
+      modules.forEach(({ node }, index) => {
+        setTimeout(() => node.classList.add("is-visible"), index * 55);
+      });
+    });
+
     let tooltip = document.getElementById("tooltip-estante");
     if (!tooltip) {
       tooltip = document.createElement("div");
       tooltip.id = "tooltip-estante";
-      tooltip.className =
-        "hidden absolute text-xs bg-neutral-800 text-white rounded-md px-2 py-1 shadow-md pointer-events-none z-50";
+      tooltip.className = "hidden absolute z-50 rounded-lg px-3 py-2 pointer-events-none";
       svg.parentElement.appendChild(tooltip);
+    } else {
+      tooltip.classList.add("hidden");
     }
 
-    svg.querySelectorAll("rect").forEach(rect => {
-      rect.addEventListener("mousemove", evt => {
-        tooltip.classList.remove("hidden");
+    const formatNumber = value =>
+      new Intl.NumberFormat("es-CL", { maximumFractionDigits: 1 }).format(Number(value ?? 0));
 
-        // Coordenadas globales del SVG y del mouse
-        const svgRect = svg.getBoundingClientRect();
-        const x = evt.clientX - svgRect.left;
-        const y = evt.clientY - svgRect.top;
+    const showTooltip = (module, evt) => {
+      if (!module) return;
+      tooltip.classList.remove("hidden");
 
-        // Posición base (a la derecha del cursor)
-        tooltip.style.left = `${x + 15}px`;
-        tooltip.style.top = `${y - tooltip.offsetHeight / 2}px`;
+      const svgRect = svg.getBoundingClientRect();
+      let x;
+      let y;
 
-        // Ajustar si se sale del borde derecho
-        const tipRect = tooltip.getBoundingClientRect();
-        if (tipRect.right > window.innerWidth - 10) {
-          tooltip.style.left = `${x - tipRect.width - 15}px`;
+      if (evt && typeof evt.clientX === "number") {
+        x = evt.clientX - svgRect.left;
+        y = evt.clientY - svgRect.top;
+      } else {
+        const bounds = module.getBoundingClientRect();
+        x = bounds.left + bounds.width / 2 - svgRect.left;
+        y = bounds.top + bounds.height / 2 - svgRect.top;
+      }
+
+      tooltip.style.left = `${x + 18}px`;
+      tooltip.style.top = `${y - tooltip.offsetHeight / 2}px`;
+
+      const tipRect = tooltip.getBoundingClientRect();
+      if (tipRect.right > window.innerWidth - 16) {
+        tooltip.style.left = `${x - tipRect.width - 18}px`;
+      }
+      if (tipRect.top < 0) {
+        tooltip.style.top = `${y + 12}px`;
+      }
+
+      tooltip.innerHTML = `
+        <div class="tooltip-line"><span class="tooltip-key">Estante</span><span>${module.dataset.id || "-"}</span></div>
+        <div class="tooltip-line"><span class="tooltip-key">Ocupación</span><span>${module.dataset.ocupacion || 0}%</span></div>
+        <div class="tooltip-line"><span class="tooltip-key">Peso</span><span>${formatNumber(module.dataset.pesoActual)} / ${formatNumber(module.dataset.pesoMaximo)} kg</span></div>
+        <div class="tooltip-line"><span class="tooltip-key">Estado</span><span>${stateLabels[module.dataset.estado] || stateLabels.estable}</span></div>`;
+    };
+
+    const hideTooltip = () => tooltip.classList.add("hidden");
+
+    modules.forEach(({ node, data }) => {
+      node.addEventListener("mousemove", evt => showTooltip(node, evt));
+      node.addEventListener("focus", () => showTooltip(node));
+      node.addEventListener("mouseleave", hideTooltip);
+      node.addEventListener("blur", hideTooltip);
+      node.addEventListener("click", () => WeigenceMonitor.mostrarDetalleEstante?.(data));
+      node.addEventListener("keydown", evt => {
+        if (evt.key === "Enter" || evt.key === " ") {
+          evt.preventDefault();
+          WeigenceMonitor.mostrarDetalleEstante?.(data);
         }
-
-        // Ajustar si se sale por arriba
-        if (tipRect.top < 0) {
-          tooltip.style.top = `${y + 10}px`;
-        }
-
-        tooltip.innerHTML = `
-          <b>Estante ${rect.dataset.id}</b><br>
-          Estado: ${rect.dataset.estado}<br>
-          Ocupación: ${rect.dataset.ocupacion}%`;
       });
-
-      rect.addEventListener("mouseleave", () => tooltip.classList.add("hidden"));
     });
   } catch (err) {
     console.error("Error SVG almacén:", err);
   }
 };
-
 
 // detalle en modal
 WeigenceMonitor.mostrarDetalleEstante = function (estante) {

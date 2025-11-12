@@ -16,6 +16,23 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Weigence - Sistema de Gestión de Inventario y Ventas"/>
+    <script>
+    (function () {
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var shouldUseDark = storedTheme ? storedTheme === 'dark' : prefersDark;
+
+        if (shouldUseDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (error) {
+        console.error('Error applying theme:', error);
+      }
+    })();
+  </script>
   <meta name="author" content="Weigence Team"/>
 </head>
 <body class="!bg-[var(--bg-light)] dark:!bg-[var(--theme-bg-dark)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
