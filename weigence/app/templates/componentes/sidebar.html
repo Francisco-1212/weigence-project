@@ -12,6 +12,7 @@
     <!-- NAV principal -->
     <nav id="sidebar-nav" class="flex flex-col px-3 py-4 space-y-1 text-neutral-700 dark:text-neutral-300">
 
+      <!-- Dashboard (todos) -->
       <a href="{{ url_for('main.dashboard') }}" 
         {% if request.endpoint == 'main.dashboard' %}
           aria-current="page" 
@@ -23,6 +24,8 @@
         <span class="font-medium hidden lg:block">Dashboard</span>
       </a>
 
+      <!-- Inventario -->
+      {% if session.get('usuario_rol') in ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'] %}
       <a href="{{ url_for('main.inventario') }}" 
         {% if request.endpoint == 'main.inventario' %}
           aria-current="page"
@@ -33,7 +36,10 @@
         <span class="material-symbols-outlined text-xl">inventory_2</span>
         <span class="font-medium hidden lg:block">Inventario</span>
       </a>
+      {% endif %}
 
+      <!-- Movimientos -->
+      {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
       <a href="{{ url_for('main.movimientos') }}" 
         {% if request.endpoint == 'main.movimientos' %}
           aria-current="page"
@@ -44,7 +50,10 @@
         <span class="material-symbols-outlined text-xl">conveyor_belt</span>
         <span class="font-medium hidden lg:block">Movimientos</span>
       </a>
+      {% endif %}
 
+      <!-- Ventas -->
+      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
       <a href="{{ url_for('main.ventas') }}" 
         {% if request.endpoint == 'main.ventas' %}
           aria-current="page"
@@ -55,7 +64,10 @@
         <span class="material-symbols-outlined text-xl">receipt_long</span>
         <span class="font-medium hidden lg:block">Ventas</span>
       </a>
+      {% endif %}
 
+      <!-- Alertas -->
+      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
       <a href="{{ url_for('main.alertas') }}" 
         {% if request.endpoint == 'main.alertas' %}
           aria-current="page"
@@ -71,7 +83,10 @@
           </span>
         {% endif %}
       </a>
+      {% endif %}
 
+      <!-- Auditoría -->
+      {% if session.get('usuario_rol') in ['supervisor', 'jefe', 'administrador'] %}
       <a href="{{ url_for('main.auditoria') }}" 
         {% if request.endpoint == 'main.auditoria' %}
           aria-current="page"
@@ -82,6 +97,21 @@
         <span class="material-symbols-outlined text-xl">monitoring</span>
         <span class="font-medium hidden lg:block">Auditoría</span>
       </a>
+      {% endif %}
+
+      <!-- Usuarios -->
+      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      <a href="{{ url_for('main.usuarios') }}" 
+        {% if request.endpoint == 'main.usuarios' %}
+          aria-current="page"
+          class="flex items-center gap-3 px-3 py-3 rounded-lg bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+        {% else %}
+          class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
+        {% endif %}>
+        <span class="material-symbols-outlined text-xl">people</span>
+        <span class="font-medium hidden lg:block">Usuarios</span>
+      </a>
+      {% endif %}
 
     </nav>
 
@@ -108,16 +138,12 @@
 
       <!-- Botón Editar Perfil-->
       <div class="flex flex-col gap-2 mt-4 w-full">
-  <a href="{{ url_for('main.editar') }}" 
-     {% if request.endpoint == 'main.editar' %}
-     class="flex items-center gap-3 px-3 py-2 rounded-lg bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100 transition-colors duration-200"
-     {% else %}
-     class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
-     {% endif %}>
-    <span class="material-symbols-outlined text-xl">edit</span>
-    <span class="font-medium text-sm">Editar Perfil</span>
-  </a>
-</div>
+        <button id="open-edit-modal" type="button"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200 text-neutral-700 dark:text-neutral-300 w-full">
+          <span class="material-symbols-outlined text-xl">edit</span>
+          <span class="font-medium text-sm">Editar Perfil</span>
+        </button>
+      </div>
 
       <!-- Botón Volver -->
       <div class="mt-auto mb-0">

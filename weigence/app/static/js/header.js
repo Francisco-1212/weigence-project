@@ -45,88 +45,68 @@ notificationPanel.addEventListener('click', e => {
 });
 
 // Clase para gestionar las recomendaciones de IA
+// Clase para gestionar las recomendaciones de IA
 class AIRecommendationManager {
   constructor() {
     this.container = document.getElementById('ai-recomendacion-header');
     this.textElement = document.getElementById('ai-recomendacion-text');
     this.iconElement = this.container?.querySelector('[data-ia-icon]');
     this.currentRecommendation = null;
-    this.isUpdating = false;
 
     if (this.container && this.textElement) {
-      this.initialize();
+      this.loadOnce();
     }
   }
 
-  initialize() {
-    // Iniciar la actualización periódica
-    this.updateRecommendation();
-    setInterval(() => this.updateRecommendation(), 60000); // Actualizar cada minuto
-
-    // Agregar evento de clic para expandir/colapsar
-    this.container.addEventListener('click', () => {
-      this.container.classList.toggle('ia-header-expanded');
-    });
-  }
-
-  async updateRecommendation() {
-    if (this.isUpdating) return;
-    this.isUpdating = true;
-
+  async loadOnce() {
     try {
-      const response = await fetch('/api/recomendacion/header');
-      if (!response.ok) throw new Error('Error al obtener recomendación');
-      
-      const payload = await response.json();
-      if (!payload || typeof payload !== 'object' || payload.ok !== true) {
-        const detalle = payload && payload.error ? payload.error.detail || payload.error.message : null;
-        throw new Error(detalle || 'Servicio de recomendaciones no disponible');
-      }
+      const page =
+        document.body.dataset.page ||
+        window.location.pathname.replace("/", "") ||
+        "dashboard";
 
-      this.displayRecommendation(payload.data || {});
+      const response = await fetch(`/api/recomendacion/header?page=${page}`);
+      if (!response.ok) throw new Error("Error al obtener recomendación");
+
+      const payload = await response.json();
+      if (!payload.ok || !payload.data) throw new Error("Respuesta inválida del servicio IA");
+
+      this.displayRecommendation(payload.data);
     } catch (error) {
-      console.error('Error al actualizar recomendación:', error);
+      console.error("Error al cargar recomendación IA:", error);
       this.displayError();
-    } finally {
-      this.isUpdating = false;
     }
   }
 
   displayRecommendation(data) {
-    if (!data || typeof data !== 'object') return;
+    if (!data || typeof data !== "object") return;
 
-    // Actualizar el icono según la severidad
-    if (this.iconElement) {
-      const icon = AI_SEVERITY_ICONS[data.severidad] || AI_SEVERITY_ICONS.info;
-      this.iconElement.textContent = icon;
-    }
+    const icon =
+      AI_SEVERITY_ICONS[data.severidad] || AI_SEVERITY_ICONS.info;
+    if (this.iconElement) this.iconElement.textContent = icon;
 
-    // Actualizar la severidad del panel
-    this.container.dataset.severity = data.severidad || 'info';
+    this.container.dataset.severity = data.severidad || "info";
+    this.textElement.textContent =
+      data.mensaje || "No hay recomendaciones disponibles";
+    this.textElement.title =
+      data.detalle || data.mensaje || "";
 
-    // Actualizar el texto
-    this.textElement.textContent = data.mensaje || 'No hay recomendaciones disponibles';
-    this.textElement.title = data.detalle || data.mensaje || '';
-
-    // Animar si el mensaje cambió
-    if (this.currentRecommendation !== data.mensaje) {
-      this.textElement.classList.add('ia-text-update');
-      setTimeout(() => this.textElement.classList.remove('ia-text-update'), 500);
-      this.currentRecommendation = data.mensaje;
-    }
+    this.textElement.classList.add("visible");
+    this.currentRecommendation = data.mensaje;
   }
 
   displayError() {
-    if (this.iconElement) {
+    if (this.iconElement)
       this.iconElement.textContent = AI_SEVERITY_ICONS.error;
-    }
-    this.container.dataset.severity = 'error';
-    this.textElement.textContent = 'No se pudo obtener la recomendación';
-    this.textElement.title = 'Error al conectar con el servicio de IA';
+    this.container.dataset.severity = "error";
+    this.textElement.textContent =
+      "No se pudo obtener la recomendación";
+    this.textElement.title = "Error al conectar con el servicio de IA";
   }
 }
 
-// Inicializar el gestor de recomendaciones de IA
-document.addEventListener('DOMContentLoaded', () => {
+
+document.addEventListener("DOMContentLoaded", () => {
   new AIRecommendationManager();
 });
+

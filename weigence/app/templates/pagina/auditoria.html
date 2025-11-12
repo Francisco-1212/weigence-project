@@ -144,4 +144,8 @@
 
 </div>
 
+  {% if request.endpoint == 'main.auditoria' %}
+    <script src="{{ url_for('static', filename='js/ia-recommendation.js') }}"></script>
+  {% endif %}
+
 {% endblock %}

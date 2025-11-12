@@ -1,7 +1,8 @@
 // Inicializa el contexto de la IA para el dashboard
 document.addEventListener('DOMContentLoaded', () => {
   // Obtener todas las tarjetas IA del dashboard
-  const dashboardCards = document.querySelectorAll('[data-ia-card]');
+  const dashboardCards = document.querySelectorAll('#dashboard [data-ia-card]');
+
   
   // Función para obtener datos de gráficos
   const getChartData = () => {

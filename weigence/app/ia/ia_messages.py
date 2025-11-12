@@ -1,74 +1,75 @@
-"""Mensajes predefinidos para recomendaciones IA."""
-from typing import Dict, List
+# app/ia/ia_messages.py
+from typing import Dict, Any
+import random
+from app.ia.config import templates_v2
 
-HEADER_MESSAGES = {
+# --- Mensajes cortos (HEADER) ---
+_HEADER_MESSAGES = {
     "dashboard": [
-        "El estado general del sistema se mantiene estable",
-        "Los indicadores principales muestran un comportamiento normal",
-        "Se detectan {n_alerts} alertas que requieren atención",
-        "La actividad del sistema muestra patrones regulares",
-        "Las métricas clave están dentro de rangos esperados"
+        "Estabilidad general. {n_alerts} alertas activas.",
+        "Indicadores en rango normal. {n_alerts} alertas en seguimiento.",
+        "Sin incidencias críticas. Operación estable."
     ],
     "inventario": [
-        "El inventario muestra variaciones normales de peso",
-        "Se mantiene un ritmo constante de movimientos",
-        "La rotación de productos sigue patrones esperados",
-        "Los niveles de stock se mantienen estables",
-        "No se detectan anomalías significativas en pesajes"
+        "Inventario estable. Críticas: {critical_alerts}, advertencias: {warning_alerts}.",
+        "Variación de peso {weight_change_rate:.2%} vs. día anterior.",
+        "Flujo de reposición regular en estantes."
     ],
     "ventas": [
-        "Las ventas mantienen un ritmo constante",
-        "Se observa una tendencia positiva en transacciones",
-        "El flujo comercial se desarrolla con normalidad",
-        "Los indicadores de venta están en rangos óptimos",
-        "La actividad comercial sigue patrones regulares"
+        "Tendencia de ventas {sales_trend_percent:.1%} vs. histórico.",
+        "Volatilidad controlada ({sales_volatility:.2f}).",
+        "Desempeño comercial dentro del rango esperado."
     ],
     "movimientos": [
-        "Los movimientos de inventario son consistentes",
-        "Se registra actividad normal en el sistema",
-        "El flujo de operaciones se mantiene estable",
-        "Las operaciones siguen el ritmo esperado",
-        "No se detectan anomalías en movimientos"
+        "{movements_per_hour:.2f} movimientos/h. Inactividad {inactivity_hours:.1f} h.",
+        "Flujo operativo regular y sin bloqueos.",
+        "Actividad consistente. Sin inactividad extendida."
+    ],
+    "alertas": [
+        "{critical_alerts} críticas y {warning_alerts} advertencias activas.",
+        "Monitoreo constante. Sin nuevas incidencias graves.",
+        "Condición general bajo control."
     ],
     "auditoria": [
-        "Los controles operativos funcionan correctamente",
-        "Se mantiene la integridad de los registros",
-        "Los sistemas de monitoreo operan normalmente",
-        "No se detectan desviaciones significativas",
-        "Las validaciones del sistema son satisfactorias"
+        "Auditoría estable. Sin hallazgos críticos.",
+        "Registros coherentes y controles validados.",
+        "Sistema consistente tras verificación."
     ],
     "default": [
-        "El sistema opera con normalidad",
-        "Los procesos se ejecutan según lo esperado",
-        "Se mantiene la estabilidad operativa",
-        "No se detectan anomalías significativas",
-        "Los indicadores muestran comportamiento regular"
-    ]
+        "Sistema en operación normal.",
+        "Sin anomalías detectadas en el módulo.",
+        "Procesos según lo esperado."
+    ],
 }
 
-def get_header_message(page: str, context: Dict = None) -> str:
-    """
-    Selecciona un mensaje apropiado para el header según la página y contexto.
-    
-    Args:
-        page: Página actual
-        context: Datos de contexto para personalizar el mensaje
-        
-    Returns:
-        Mensaje seleccionado y formateado
-    """
-    # Obtener lista de mensajes para la página
-    messages = HEADER_MESSAGES.get(page, HEADER_MESSAGES["default"])
-    
-    # TODO: Implementar lógica de selección basada en contexto
-    # Por ahora retorna el primer mensaje
-    message = messages[0]
-    
-    # Si hay contexto, formatea el mensaje
-    if context:
+def get_header_message(page: str, context: Dict[str, Any] | None = None) -> str:
+    mensajes = _HEADER_MESSAGES.get(page, _HEADER_MESSAGES["default"])
+    msg = random.choice(mensajes)
+    try:
+        return msg.format(**(context or {}))
+    except Exception:
+        return msg
+
+# --- Mensajes largos (AUDITORÍA u otros bloques extensos) ---
+def get_detailed_message(page: str, context: Dict[str, Any] | None = None) -> Dict[str, str]:
+    ctx = context or {}
+    catalogo = {
+        "dashboard":   templates_v2.DASHBOARD_TEMPLATES,
+        "inventario":  templates_v2.INVENTORY_TEMPLATES,
+        "ventas":      templates_v2.SALES_TEMPLATES,
+        "movimientos": templates_v2.MOVEMENTS_TEMPLATES,
+        "alertas":     templates_v2.ALERTS_TEMPLATES,
+        "auditoria":   templates_v2.AUDIT_TEMPLATES,
+    }.get(page, templates_v2.AUDIT_TEMPLATES)
+
+    clave = random.choice(list(catalogo.keys()))
+    tpl = catalogo[clave]
+
+    out = {}
+    for k, v in tpl.items():
         try:
-            message = message.format(**context)
-        except KeyError:
-            pass
-            
-    return message
+            out[k] = v.format(**ctx)
+        except Exception:
+            out[k] = v
+    out["plantilla_usada"] = clave
+    return out

@@ -75,10 +75,14 @@
                      id="usuario" name="usuario" placeholder="Email o usuario" autocomplete="username" required type="text"/>
               <span class="material-symbols-outlined"> mail </span>
             </div>
-            <div class="form-input-group">
-              <input class="form-input w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 py-3 pl-12 pr-4 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
+            <div class="form-input-group relative flex items-center">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none z-10">password</span>
+              <input class="form-input w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 py-3 pl-12 pr-10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
                      id="password" name="password" placeholder="Contraseña" autocomplete="current-password" required type="password"/>
-              <span class="material-symbols-outlined"> password </span>
+              <button id="toggle-password" type="button" class="absolute right-2 text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none hidden z-20"
+                      aria-label="Mostrar/ocultar contraseña" tabindex="-1" style="pointer-events: auto;">
+                <span class="material-symbols-outlined text-lg">visibility</span>
+              </button>
             </div>
           </div>
           <div class="mt-6 flex items-center justify-between">
@@ -319,6 +323,64 @@
           }
         });
       }
+    })();
+
+    // ========== TOGGLE PASSWORD VISIBILITY ==========
+    (function initTogglePassword() {
+      const passwordInput = document.getElementById('password');
+      const toggleBtn = document.getElementById('toggle-password');
+      const toggleIcon = toggleBtn.querySelector('.material-symbols-outlined');
+
+      if (!passwordInput || !toggleBtn) {
+        console.warn('[TogglePassword] No se encontraron elementos necesarios');
+        return;
+      }
+
+      // Estado inicial
+      let isPasswordVisible = false;
+
+      // Función para mostrar/ocultar el botón según hay texto
+      function updateButtonVisibility() {
+        if (passwordInput.value.trim() === '') {
+          toggleBtn.classList.add('hidden');
+          console.log('[TogglePassword] Botón oculto (campo vacío)');
+        } else {
+          toggleBtn.classList.remove('hidden');
+          console.log('[TogglePassword] Botón visible (hay texto)');
+        }
+      }
+
+      // Escuchar cambios en el input
+      passwordInput.addEventListener('input', updateButtonVisibility);
+      passwordInput.addEventListener('change', updateButtonVisibility);
+
+      // Escuchar el toggle del botón
+      toggleBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        // Toggle entre password y text
+        if (isPasswordVisible) {
+          passwordInput.type = 'password';
+          toggleIcon.textContent = 'visibility';
+          toggleIcon.classList.remove('text-primary');
+          isPasswordVisible = false;
+          console.log('[TogglePassword] Contraseña oculta');
+        } else {
+          passwordInput.type = 'text';
+          toggleIcon.textContent = 'visibility_off';
+          toggleIcon.classList.add('text-primary');
+          isPasswordVisible = true;
+          console.log('[TogglePassword] Contraseña visible');
+        }
+        
+        // Mantener el foco en el input
+        passwordInput.focus();
+      });
+
+      // Verificar estado inicial
+      updateButtonVisibility();
+
+      console.log('[TogglePassword] Inicialización completada');
     })();
   </script>
 </body>

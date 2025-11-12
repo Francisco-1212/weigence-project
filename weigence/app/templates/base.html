@@ -63,7 +63,10 @@
     <!-- Script de Auditoría -->
     <script src="{{ url_for('static', filename='js/auditoria.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ia-icons.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ia-recommendation.js') }}"></script>
+    
+
+  <!-- Modal de edición de perfil -->
+  {% include 'componentes/edit_profile_modal.html' %}
 
 </body>
 </html>

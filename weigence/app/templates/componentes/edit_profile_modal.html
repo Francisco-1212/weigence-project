@@ -1,0 +1,293 @@
+<!-- MODAL PARA EDITAR PERFIL -->
+<div id="edit-profile-modal" class="fixed inset-0 bg-black/50 dark:bg-black/70 hidden z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-neutral-200 dark:border-neutral-700">
+    
+    <!-- Encabezado del modal -->
+    <div class="sticky top-0 flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+      <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">Editar Perfil</h2>
+      <button id="close-edit-modal" type="button" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Contenido del modal -->
+    <form id="edit-profile-form" class="p-6 space-y-4">
+      
+      <!-- Nombre -->
+      <div>
+        <label for="modal-nombre" class="block text-sm font-semibold mb-2 text-neutral-900 dark:text-neutral-100">
+          Nombre completo
+          <span class="text-red-500">*</span>
+        </label>
+        <input type="text" 
+               id="modal-nombre"
+               name="nombre" 
+               value="{{ session.get('usuario_nombre', '') }}"
+               placeholder="Tu nombre"
+               required
+               class="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
+      </div>
+
+      <!-- Correo -->
+      <div>
+        <label for="modal-email" class="block text-sm font-semibold mb-2 text-neutral-900 dark:text-neutral-100">
+          Correo electrónico
+          <span class="text-gray-400 font-normal text-xs">(opcional)</span>
+        </label>
+        <input type="email" 
+               id="modal-email"
+               name="email" 
+               value="{{ session.get('usuario_correo', '') }}"
+               placeholder="tu.correo@ejemplo.com"
+               class="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
+        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">Formato: ejemplo@dominio.com</p>
+        <div id="modal-email-error" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></div>
+      </div>
+
+      <!-- Teléfono -->
+      <div>
+        <label for="modal-numero_celular" class="block text-sm font-semibold mb-2 text-neutral-900 dark:text-neutral-100">
+          Número de celular
+          <span class="text-gray-400 font-normal text-xs">(opcional)</span>
+        </label>
+        <input type="tel" 
+               id="modal-numero_celular"
+               name="numero_celular" 
+               value="{{ session.get('usuario_numero_celular', '') }}"
+               placeholder="+56 9 1234 5678"
+               class="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+               inputmode="tel">
+        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">Formato: +56 9 1234 5678 o +56 22 1234 5678</p>
+        <div id="modal-telefono-error" class="text-xs text-red-600 dark:text-red-400 mt-1 hidden"></div>
+      </div>
+
+      <!-- Mensaje de estado -->
+      <div id="modal-status-message" class="hidden p-3 rounded-lg text-sm font-medium"></div>
+
+    </form>
+
+    <!-- Botones de acción -->
+    <div class="flex gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50">
+      <button type="button" id="submit-edit-modal" 
+              class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined">save</span>
+        Guardar
+      </button>
+      <button type="button" id="cancel-edit-modal" 
+              class="flex-1 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-900 dark:text-neutral-100 font-semibold py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined">close</span>
+        Cancelar
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Script para manejar el modal de edición -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('edit-profile-modal');
+    const openBtn = document.getElementById('open-edit-modal');
+    const closeBtn = document.getElementById('close-edit-modal');
+    const cancelBtn = document.getElementById('cancel-edit-modal');
+    const submitBtn = document.getElementById('submit-edit-modal');
+    const form = document.getElementById('edit-profile-form');
+
+    const emailInput = document.getElementById('modal-email');
+    const emailError = document.getElementById('modal-email-error');
+    const numerocelularInput = document.getElementById('modal-numero_celular');
+    const telefonoError = document.getElementById('modal-telefono-error');
+    const statusMessage = document.getElementById('modal-status-message');
+
+    // Funciones de validación
+    function validarEmail(email) {
+      const patron = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return patron.test(email);
+    }
+
+    function validarNumeroCelular(numero) {
+      const patron = /^(\+?)[\d\s\-\(\)]+$/;
+      return patron.test(numero);
+    }
+
+    function mostrarStatus(mensaje, tipo) {
+      statusMessage.textContent = mensaje;
+      statusMessage.className = `text-xs p-3 rounded-lg font-medium ${
+        tipo === 'success' 
+          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+          : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+      }`;
+      statusMessage.classList.remove('hidden');
+    }
+
+    // Abrir modal
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      });
+    }
+
+    // Cerrar modal
+    function cerrarModal() {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      statusMessage.classList.add('hidden');
+      emailError.classList.add('hidden');
+      telefonoError.classList.add('hidden');
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', cerrarModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', cerrarModal);
+
+    // Validación en tiempo real
+    emailInput.addEventListener('blur', function() {
+      const email = this.value.trim();
+      if (email && !validarEmail(email)) {
+        emailError.textContent = '❌ Por favor ingresa un correo válido';
+        emailError.classList.remove('hidden');
+        this.classList.add('border-red-500');
+      } else {
+        emailError.classList.add('hidden');
+        this.classList.remove('border-red-500');
+      }
+    });
+
+    numerocelularInput.addEventListener('input', function() {
+      const numero = this.value;
+      // Permitir solo: dígitos, espacios, guiones, paréntesis y +
+      if (numero && !validarNumeroCelular(numero)) {
+        this.value = numero.replace(/[^\d\s\-\+\(\)]/g, '');
+      }
+    });
+
+    numerocelularInput.addEventListener('blur', function() {
+      const numero = this.value.trim();
+      if (numero && !validarNumeroCelular(numero)) {
+        telefonoError.textContent = '❌ Formato inválido. Use: +56 9 1234 5678';
+        telefonoError.classList.remove('hidden');
+        this.classList.add('border-red-500');
+      } else {
+        telefonoError.classList.add('hidden');
+        this.classList.remove('border-red-500');
+      }
+    });
+
+    // Guardar cambios
+    submitBtn.addEventListener('click', async () => {
+      const nombre = document.getElementById('modal-nombre').value.trim();
+      const email = emailInput.value.trim();
+      const numero_celular = numerocelularInput.value.trim();
+
+      // Validaciones
+      if (!nombre) {
+        mostrarStatus('❌ El nombre es requerido', 'error');
+        return;
+      }
+
+      if (email && !validarEmail(email)) {
+        mostrarStatus('❌ El correo no tiene un formato válido', 'error');
+        return;
+      }
+
+      if (numero_celular && !validarNumeroCelular(numero_celular)) {
+        mostrarStatus('❌ El número de celular tiene un formato inválido', 'error');
+        return;
+      }
+
+      // Enviar datos
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Verificando sesión...';
+
+        // Primero verificar que la sesión está activa
+        console.log('[MODAL] Verificando sesión...');
+        const testResponse = await fetch('/api/test');
+        const testData = await testResponse.json();
+        console.log('[MODAL] Test response:', testData);
+
+        if (!testData.usuario_logueado) {
+          mostrarStatus('❌ Sesión expirada. Por favor recarga la página.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '💾 Guardar cambios';
+          return;
+        }
+
+        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Guardando...';
+
+        console.log('[MODAL] Enviando datos:', { nombre, email, numero_celular });
+
+        const response = await fetch('/api/editar-perfil', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            nombre,
+            email,
+            numero_celular
+          })
+        });
+
+        console.log('[MODAL] Response status:', response.status);
+        console.log('[MODAL] Response headers:', response.headers);
+        
+        const responseText = await response.text();
+        console.log('[MODAL] Response text:', responseText.substring(0, 500));
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('[MODAL] Error parsing JSON:', e);
+          console.error('[MODAL] Response was:', responseText);
+          mostrarStatus('❌ Error del servidor (respuesta no es JSON)', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '💾 Guardar cambios';
+          return;
+        }
+
+        if (response.ok && data.success) {
+          mostrarStatus('✅ Perfil actualizado correctamente', 'success');
+          
+          // Actualizar la información en el sidebar
+          const profilePanel = document.querySelector('[id="sidebar-profile"]')?.querySelector('p');
+          if (profilePanel) {
+            profilePanel.textContent = nombre;
+          }
+
+          // Cerrar modal después de 2 segundos
+          setTimeout(() => {
+            cerrarModal();
+            location.reload(); // Recargar para mostrar cambios en toda la interfaz
+          }, 2000);
+        } else {
+          mostrarStatus(`❌ ${data.error || 'Error al actualizar el perfil'}`, 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '💾 Guardar cambios';
+        }
+      } catch (error) {
+        console.error('[MODAL] Error en fetch:', error);
+        mostrarStatus(`❌ Error de conexión: ${error.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '💾 Guardar cambios';
+      }
+    });
+
+    // Cerrar modal al hacer clic fuera
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        cerrarModal();
+      }
+    });
+
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        cerrarModal();
+      }
+    });
+  });
+</script>
