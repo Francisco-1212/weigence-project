@@ -172,19 +172,14 @@ body {
 .badge-notif{ display:inline-flex; align-items:center; justify-content:center; min-width:1.5rem; height:1.5rem; border-radius:9999px; background:#dc2626; color:#fff; font-size:.75rem; font-weight:600; margin-left:.5rem }
 
 /* ======================= Visor de estantes ======================= */
-#svg-almacen {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
 
 .almacen-map {
-  background: #181c21;
-  border: 1px solid rgba(66, 71, 80, 0.6);
+  /* Use theme-aware tokens so the map matches card background in light/dark modes */
+  background: var(--card-bg-light);
+  border: 1px solid var(--shelf-panel-border);
   border-radius: 18px;
   padding: 1.5rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 48px -32px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 1px 0 var(--shelf-shine), 0 24px 48px -32px rgba(0, 0, 0, 0.16);
 }
 
 .almacen-map::before {
@@ -192,10 +187,10 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-image: linear-gradient(var(--grid-light) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-light) 1px, transparent 1px);
   background-size: 80px 80px, 80px 80px;
-  opacity: 0.5;
+  opacity: 0.45;
   pointer-events: none;
 }
 

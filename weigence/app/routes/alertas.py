@@ -3,9 +3,10 @@ from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime   
 from .utils import requiere_login
+from .decorators import requiere_rol
 
 @bp.route("/alertas")
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def alertas():
     from .utils import obtener_notificaciones
     try:

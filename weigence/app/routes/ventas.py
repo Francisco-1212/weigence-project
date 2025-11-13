@@ -3,12 +3,13 @@ from .utils import requiere_login
 from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
+from .decorators import requiere_rol
 
 
 @bp.route("/ventas")
-@requiere_login
+@requiere_rol('jefe', 'administrador')
 def ventas():
-    ventas = supabase.table("ventas").select("*").execute().data
+    ventas = supabase.table("ventas").select("*").order("fecha_venta", desc=True).execute().data
     detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data
     productos = supabase.table("productos").select("*").execute().data
     usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data
@@ -183,12 +184,14 @@ def crear_nueva_venta():
             idproducto = producto["idproducto"]
             cantidad = producto["cantidad"]
             precio_unitario = producto["precio_unitario"]
-            subtotal = cantidad * precio_unitario
+            
+            print(f"📦 Procesando producto ID {idproducto}: {cantidad} unidades a ${precio_unitario}")
             
             # Obtener información del producto para el estante
             producto_info = supabase.table("productos").select("id_estante, stock").eq("idproducto", idproducto).execute()
             
             if not producto_info.data:
+                print(f"⚠️ Producto ID {idproducto} no encontrado")
                 continue
             
             stock_actual = producto_info.data[0].get("stock", 0)
@@ -201,17 +204,18 @@ def crear_nueva_venta():
                     "error": f"Stock insuficiente para el producto ID {idproducto}. Disponible: {stock_actual}, Solicitado: {cantidad}"
                 }), 400
             
-            # Detalle de venta
-            detalles_venta.append({
+            # Detalle de venta (sin subtotal, es columna generada automáticamente)
+            detalle = {
                 "idventa": id_venta,
                 "idproducto": idproducto,
                 "cantidad": cantidad,
-                "precio_unitario": precio_unitario,
-                "subtotal": subtotal
-            })
+                "precio_unitario": precio_unitario
+            }
+            detalles_venta.append(detalle)
+            print(f"✅ Detalle agregado: {detalle}")
             
             # Movimiento de inventario (Retiro)
-            movimientos_inventario.append({
+            movimiento = {
                 "tipo_evento": "Retirar",
                 "idproducto": idproducto,
                 "id_estante": id_estante,
@@ -219,7 +223,9 @@ def crear_nueva_venta():
                 "rut_usuario": rut_usuario,
                 "timestamp": datetime.now().isoformat(),
                 "observacion": f"Venta #{id_venta} - Retiro automático por venta"
-            })
+            }
+            movimientos_inventario.append(movimiento)
+            print(f"✅ Movimiento agregado: {movimiento}")
             
             # Actualizar stock del producto
             nuevo_stock = stock_actual - cantidad
@@ -233,13 +239,28 @@ def crear_nueva_venta():
         
         # 3. Insertar detalles de venta
         if detalles_venta:
-            supabase.table("detalle_ventas").insert(detalles_venta).execute()
-            print(f"✅ {len(detalles_venta)} detalles de venta insertados")
+            try:
+                print(f"📝 Insertando {len(detalles_venta)} detalles de venta...")
+                detalle_response = supabase.table("detalle_ventas").insert(detalles_venta).execute()
+                if not detalle_response.data:
+                    print(f"❌ Error: La respuesta de detalles está vacía")
+                    return jsonify({"success": False, "error": "Error al registrar detalles de venta"}), 500
+                print(f"✅ {len(detalle_response.data)} detalles de venta insertados correctamente")
+            except Exception as e:
+                print(f"❌ Excepción al insertar detalles: {e}")
+                return jsonify({"success": False, "error": f"Error al insertar detalles: {str(e)}"}), 500
         
         # 4. Insertar movimientos de inventario
         if movimientos_inventario:
-            supabase.table("movimientos_inventario").insert(movimientos_inventario).execute()
-            print(f"✅ {len(movimientos_inventario)} movimientos de inventario registrados")
+            try:
+                print(f"📦 Insertando {len(movimientos_inventario)} movimientos de inventario...")
+                movimiento_response = supabase.table("movimientos_inventario").insert(movimientos_inventario).execute()
+                if not movimiento_response.data:
+                    print(f"⚠️ Advertencia: No se pudieron registrar los movimientos de inventario")
+                else:
+                    print(f"✅ {len(movimiento_response.data)} movimientos de inventario registrados correctamente")
+            except Exception as e:
+                print(f"⚠️ Error al insertar movimientos (no crítico): {e}")
         
         return jsonify({
             "success": True,
@@ -264,3 +285,46 @@ def productos_disponibles():
     except Exception as e:
         print(f"❌ Error al obtener productos: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/api/promedio_consumo")
+@requiere_login
+def api_promedio_consumo():
+    """Devuelve promedio de cantidad vendida por producto y promedio total.
+    Útil como fallback cuando no hay series temporales de consumo.
+    """
+    try:
+        detalle = supabase.table("detalle_ventas").select("idproducto, cantidad").execute().data
+        productos = supabase.table("productos").select("idproducto, nombre").execute().data
+
+        if not detalle:
+            return jsonify({"promedio_total": 0, "promedio_por_producto": []})
+
+        # map id->nombre
+        prod_map = {p['idproducto']: p.get('nombre', f'Producto {p["idproducto"]}') for p in (productos or [])}
+
+        sums = {}
+        counts = {}
+        for d in detalle:
+            pid = d.get('idproducto')
+            qty = d.get('cantidad') or 0
+            sums[pid] = sums.get(pid, 0) + qty
+            counts[pid] = counts.get(pid, 0) + 1
+
+        promedio_por_producto = []
+        total_sum = 0
+        total_count = 0
+        for pid, s in sums.items():
+            c = counts.get(pid, 1)
+            avg = s / c if c else 0
+            nombre = prod_map.get(pid, f'Producto {pid}')
+            promedio_por_producto.append({"idproducto": pid, "nombre": nombre, "promedio": round(avg, 2)})
+            total_sum += s
+            total_count += c
+
+        promedio_total = (total_sum / total_count) if total_count else 0
+
+        return jsonify({"promedio_total": round(promedio_total, 2), "promedio_por_producto": promedio_por_producto})
+    except Exception as e:
+        print(f"❌ Error en api_promedio_consumo: {e}")
+        return jsonify({"promedio_total": 0, "promedio_por_producto": []})

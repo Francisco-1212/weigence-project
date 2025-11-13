@@ -17,9 +17,9 @@ ROLES_DISPONIBLES = ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'adminis
 # Permisos por rol (define qué secciones ve cada rol)
 PERMISOS_POR_ROL = {
     'farmaceutico': ['dashboard', 'inventario', 'perfil'],
-    'bodeguera': ['dashboard', 'inventario', 'movimientos', 'perfil'],
-    'supervisor': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'perfil'],
-    'jefe': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'perfil'],
+    'bodeguera': ['dashboard', 'inventario', 'movimientos', 'alertas', 'perfil'],
+    'supervisor': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'alertas', 'perfil'],
+    'jefe': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'historial', 'recomendaciones', 'perfil'],
     'administrador': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'historial', 'recomendaciones', 'perfil']
 }
 
@@ -150,16 +150,21 @@ def api_crear_usuario():
         if not data:
             return jsonify({'success': False, 'error': 'No se pudo procesar el JSON'}), 400
         
-        # Obtener y validar datos
+        print(f"[API-CREAR-USUARIO] Datos recibidos: {data.keys()}")
+        
+        # Obtener y validar datos (flexible con mayúsculas/minúsculas)
         rut = data.get('rut_usuario', '').strip()
         nombre = data.get('nombre', '').strip()
         correo = data.get('correo', '').strip()
         rol = data.get('rol', '').strip()
-        numero_celular = data.get('numero_celular', '').strip()
-        contraseña = data.get('contraseña', '').strip()
+        numero_celular = data.get('numero_celular', data.get('numero celular', '')).strip()
+        contraseña = data.get('contraseña', data.get('Contraseña', '')).strip()
+        
+        print(f"[API-CREAR-USUARIO] RUT: {rut}, Nombre: {nombre}, Correo: {correo}, Rol: {rol}, Contraseña: {'***' if contraseña else 'vacía'}")
         
         # Validaciones
         if not rut or not nombre or not correo or not rol or not contraseña:
+            print(f"[API-CREAR-USUARIO] ❌ Campos faltantes - rut: {bool(rut)}, nombre: {bool(nombre)}, correo: {bool(correo)}, rol: {bool(rol)}, contraseña: {bool(contraseña)}")
             return jsonify({
                 'success': False,
                 'error': 'Todos los campos son requeridos'
@@ -270,11 +275,17 @@ def api_editar_usuario(rut):
                 }), 400
             update_data['rol'] = data['rol'].strip()
         
+        # Flexible con nombre del campo de teléfono
         if 'numero_celular' in data:
             update_data['numero celular'] = data['numero_celular'].strip() if data['numero_celular'] else None
+        elif 'numero celular' in data:
+            update_data['numero celular'] = data['numero celular'].strip() if data['numero celular'] else None
         
+        # Flexible con nombre del campo de contraseña
         if 'contraseña' in data and data['contraseña']:
             update_data['Contraseña'] = data['contraseña'].strip()
+        elif 'Contraseña' in data and data['Contraseña']:
+            update_data['Contraseña'] = data['Contraseña'].strip()
         
         if not update_data:
             return jsonify({
@@ -282,7 +293,7 @@ def api_editar_usuario(rut):
                 'error': 'No hay datos para actualizar'
             }), 400
         
-        print(f"[API-EDITAR-USUARIO] Actualizando usuario: {rut}")
+        print(f"[API-EDITAR-USUARIO] Actualizando usuario: {rut} con datos: {update_data.keys()}")
         response = supabase.table("usuarios").update(update_data).eq("rut_usuario", rut).execute()
         
         if hasattr(response, 'data') and response.data:

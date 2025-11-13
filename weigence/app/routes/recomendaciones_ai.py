@@ -1,9 +1,10 @@
 """Rutas para recomendaciones IA y notificaciones (versión corregida)."""
 import logging
 from typing import Any, Dict
-from flask import jsonify, request
+from flask import jsonify, request, render_template
 from . import bp
 from .utils import obtener_notificaciones
+from .decorators import requiere_rol
 
 from app.ia.ia_service import generar_recomendacion
 
@@ -40,6 +41,7 @@ def _error_response(message: str, *, status: int = 500, detail: str | None = Non
 # ============================================================
 
 @bp.route('/api/recomendacion/<contexto>', methods=['GET', 'POST'])
+@requiere_rol('jefe', 'administrador')
 def api_recomendacion(contexto: str):
     """Endpoint general para obtener recomendaciones IA según el contexto."""
     try:
@@ -105,3 +107,13 @@ def api_notificaciones():
     except Exception as exc:
         logger.exception("[Notificaciones] Error: %s", str(exc))
         return _error_response("No se pudieron recuperar las notificaciones", detail=str(exc))
+
+
+# ============================================================
+# === PÁGINA DE RECOMENDACIONES (GET) ===
+# ============================================================
+@bp.route('/recomendaciones', methods=['GET'])
+@requiere_rol('jefe', 'administrador')
+def recomendaciones():
+    """Página con interfaz de recomendaciones IA"""
+    return render_template('pagina/recomendaciones.html')

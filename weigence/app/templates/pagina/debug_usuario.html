@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}DEBUG: Verificar Usuario Actual{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="p-6">
+  <h1 class="text-3xl font-bold mb-6 text-red-600">⚠️ DEBUG: Información del Usuario Actual</h1>
+  
+  <div class="bg-red-100 border-2 border-red-400 text-red-800 px-6 py-4 rounded mb-6">
+    <p class="font-bold text-lg mb-3">Datos de la Sesión Actual:</p>
+    <div class="bg-white p-4 rounded font-mono text-sm space-y-2">
+      <p><span class="font-bold">usuario_logueado:</span> {{ session.get('usuario_logueado') }}</p>
+      <p><span class="font-bold">usuario_nombre:</span> <span class="text-blue-600">{{ session.get('usuario_nombre') }}</span></p>
+      <p><span class="font-bold">usuario_rol:</span> <span class="text-green-600">"{{ session.get('usuario_rol') }}"</span></p>
+      <p><span class="font-bold">usuario_id (RUT):</span> <span class="text-purple-600">{{ session.get('usuario_id') }}</span></p>
+      <p><span class="font-bold">usuario_correo:</span> {{ session.get('usuario_correo') }}</p>
+    </div>
+  </div>
+
+  <div class="bg-yellow-100 border-2 border-yellow-400 text-yellow-800 px-6 py-4 rounded mb-6">
+    <p class="font-bold text-lg mb-3">✓ Esto es lo que deberías ver:</p>
+    <ul class="space-y-2">
+      <li>✓ Si iniciaste como <strong>farmacéutico</strong>:</li>
+      <ul class="ml-4 space-y-1">
+        <li>→ usuario_rol debe ser: <code class="bg-white px-2 py-1 rounded">farmaceutico</code></li>
+        <li>→ Sidebar debe mostrar: Dashboard, Inventario, Perfil</li>
+      </ul>
+      <li>✓ Si iniciaste como <strong>jefe</strong>:</li>
+      <ul class="ml-4 space-y-1">
+        <li>→ usuario_rol debe ser: <code class="bg-white px-2 py-1 rounded">jefe</code></li>
+        <li>→ Sidebar debe mostrar: Todas las opciones</li>
+      </ul>
+      <li>✓ Si iniciaste como <strong>administrador</strong>:</li>
+      <ul class="ml-4 space-y-1">
+        <li>→ usuario_rol debe ser: <code class="bg-white px-2 py-1 rounded">administrador</code></li>
+        <li>→ Sidebar debe mostrar: Todas las opciones</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="bg-blue-100 border-2 border-blue-400 text-blue-800 px-6 py-4 rounded">
+    <p class="font-bold text-lg mb-3">Si ves el perfil equivocado:</p>
+    <ol class="space-y-2 ml-4">
+      <li>1. Copia exactamente el nombre de usuario que iniciaste: <code class="bg-white px-2 py-1 rounded">{{ session.get('usuario_nombre') }}</code></li>
+      <li>2. Copia el rol que ves: <code class="bg-white px-2 py-1 rounded">{{ session.get('usuario_rol') }}</code></li>
+      <li>3. Comparte esta información</li>
+      <li>4. También verifica que en Supabase ese usuario tenga el rol correcto</li>
+    </ol>
+  </div>
+
+  <div class="mt-8 p-4 bg-gray-100 rounded">
+    <p class="font-mono text-sm">
+      URL: <code>http://localhost:5000/debug-usuario</code>
+    </p>
+  </div>
+</div>
+{% endblock %}

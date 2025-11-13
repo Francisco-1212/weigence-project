@@ -3,6 +3,7 @@ from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
 from .utils import requiere_login, safe_int, safe_float, asignar_estante, formatear_estante_codigo
+from .decorators import requiere_rol, requiere_autenticacion
 
 
 def obtener_catalogo_estantes():
@@ -44,7 +45,7 @@ def construir_mapa_categorias(productos):
 
 
 @bp.route("/inventario")
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def inventario():
     try:
         # === 1. Cargar productos y categorías ===
@@ -245,7 +246,7 @@ def inventario():
 
 
 @bp.route("/api/productos/agregar", methods=["POST"])
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def agregar_producto():
     try:
         data = request.json
@@ -288,7 +289,7 @@ def agregar_producto():
 
 
 @bp.route("/api/productos/<int:id>", methods=["DELETE"])
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def eliminar_producto(id):
     try:
         result = supabase.table("productos").delete().eq("idproducto", id).execute()
@@ -298,7 +299,7 @@ def eliminar_producto(id):
 
 
 @bp.route("/api/productos/filtrar", methods=["GET"])
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def filtrar_productos():
     try:
         search = request.args.get('search', '').lower()
@@ -349,7 +350,7 @@ def filtrar_productos():
 
 
 @bp.route("/api/productos/<int:id>/stock", methods=["PUT"])
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def actualizar_stock(id):
     try:
         data = request.json
@@ -408,7 +409,7 @@ def actualizar_stock(id):
 # api inventario
 
 @bp.route("/api/estantes_estado")
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def estantes_estado():
     try:
         data = supabase.table("v_estantes_estado").select("*").execute().data
@@ -422,7 +423,7 @@ def estantes_estado():
 # 2) Alertas activas (pendientes)
 # ------------------------------------------------------------
 @bp.route("/api/alertas_activas")
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def alertas_activas():
     try:
         alertas = (
@@ -444,7 +445,7 @@ def alertas_activas():
 # 3) Actualizar estado de una alerta (resuelta o ignorada)
 # ------------------------------------------------------------
 @bp.route("/api/alertas/<int:id>/estado", methods=["PUT"])
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def actualizar_estado_alerta(id):
     try:
         nuevo_estado = request.json.get("estado")
@@ -467,7 +468,7 @@ def actualizar_estado_alerta(id):
 # 4) Proyección de consumo (últimos 30 días)
 # ------------------------------------------------------------
 @bp.route("/api/proyeccion_consumo")
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def proyeccion_consumo():
     try:
         dias = int(request.args.get("dias", 14))

@@ -2,7 +2,15 @@
 
 {% block title %}Gestión de Usuarios - Weigence{% endblock %}
 
-{% block content %}
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
@@ -93,16 +101,32 @@
         </div>
 
         <!-- Nombre -->
-        <div>
-          <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            Nombre <span class="text-red-500">*</span>
-          </label>
-          <input 
-            type="text" 
-            id="usuario-nombre" 
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span class="text-xs text-red-500 hidden" id="error-nombre"></span>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Nombre <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="usuario-nombre" 
+              placeholder="Juan"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span class="text-xs text-red-500 hidden" id="error-nombre"></span>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Apellido <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="usuario-apellido" 
+              placeholder="Pérez"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span class="text-xs text-red-500 hidden" id="error-apellido"></span>
+          </div>
         </div>
 
         <!-- Correo -->
@@ -188,235 +212,9 @@
 </div>
 
 <script>
-const API_BASE = '/api';
-const modal = document.getElementById('usuario-modal');
-const form = document.getElementById('usuario-form');
-const tabla = document.getElementById('usuarios-tabla');
-const btnCrear = document.getElementById('btn-crear-usuario');
-const btnCancelar = document.getElementById('btn-cancelar');
-const btnGuardar = document.getElementById('btn-guardar');
-const btnCerrar = document.getElementById('cerrar-modal');
-const statusDiv = document.getElementById('modal-status');
-
-// Cerrar modal
-const cerrarModal = () => {
-  modal.classList.add('hidden');
-  form.reset();
-  document.querySelectorAll('[id^="error-"]').forEach(el => el.classList.add('hidden'));
-};
-
-btnCancelar.addEventListener('click', cerrarModal);
-btnCerrar.addEventListener('click', cerrarModal);
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) cerrarModal();
-});
-
-// Abrir modal para crear
-btnCrear.addEventListener('click', () => {
-  document.getElementById('modal-titulo').textContent = 'Nuevo Usuario';
-  document.getElementById('usuario-rut').disabled = false;
-  document.getElementById('requerida-contrasena').style.display = 'inline';
-  form.reset();
-  document.getElementById('usuario-rut-original').value = '';
-  modal.classList.remove('hidden');
-});
-
-// Mostrar estado
-const mostrarStatus = (mensaje, tipo) => {
-  statusDiv.textContent = mensaje;
-  statusDiv.className = `p-3 rounded ${tipo === 'error' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'}`;
-  statusDiv.classList.remove('hidden');
-};
-
-// Cargar usuarios
-const cargarUsuarios = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/usuarios`);
-    const data = await response.json();
-    
-    if (!data.success) {
-      tabla.innerHTML = `<tr><td colspan="7" class="py-8 text-red-500">Error: ${data.error}</td></tr>`;
-      return;
-    }
-    
-    if (data.data.length === 0) {
-      tabla.innerHTML = `<tr><td colspan="7" class="py-8 text-gray-500 dark:text-gray-400">No hay usuarios</td></tr>`;
-      return;
-    }
-    
-    tabla.innerHTML = data.data.map(u => `
-      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-        <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${u.rut_usuario}</td>
-        <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${u.nombre}</td>
-        <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${u.correo}</td>
-        <td class="px-6 py-4 text-sm">
-          <span class="px-3 py-1 rounded-full text-xs font-medium ${
-            u.rol === 'administrador' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' :
-            u.rol === 'jefe' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
-            u.rol === 'supervisor' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
-            'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-          }">
-            ${u.rol}
-          </span>
-        </td>
-        <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${u['numero celular'] || '-'}</td>
-        <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${new Date(u.fecha_registro).toLocaleDateString()}</td>
-        <td class="px-6 py-4 text-right text-sm flex justify-end gap-2">
-          <button 
-            onclick="editarUsuario('${u.rut_usuario}')"
-            class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition"
-            title="Editar"
-          >
-            <span class="material-symbols-outlined">edit</span>
-          </button>
-          <button 
-            onclick="eliminarUsuario('${u.rut_usuario}')"
-            class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
-            title="Eliminar"
-          >
-            <span class="material-symbols-outlined">delete</span>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-    
-  } catch (error) {
-    console.error('Error:', error);
-    tabla.innerHTML = `<tr><td colspan="7" class="py-8 text-red-500">Error al cargar usuarios</td></tr>`;
-  }
-};
-
-// Editar usuario
-const editarUsuario = async (rut) => {
-  try {
-    const response = await fetch(`${API_BASE}/usuarios/${rut}`);
-    const data = await response.json();
-    
-    if (!data.success) {
-      alert('Error: ' + data.error);
-      return;
-    }
-    
-    const usuario = data.data;
-    document.getElementById('modal-titulo').textContent = 'Editar Usuario';
-    document.getElementById('usuario-rut').disabled = true;
-    document.getElementById('usuario-rut').value = usuario.rut_usuario;
-    document.getElementById('usuario-rut-original').value = usuario.rut_usuario;
-    document.getElementById('usuario-nombre').value = usuario.nombre;
-    document.getElementById('usuario-correo').value = usuario.correo;
-    document.getElementById('usuario-rol').value = usuario.rol;
-    document.getElementById('usuario-telefono').value = usuario['numero celular'] || '';
-    document.getElementById('usuario-contraseña').value = '';
-    document.getElementById('requerida-contrasena').style.display = 'none';
-    
-    modal.classList.remove('hidden');
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error al cargar usuario');
-  }
-};
-
-// Eliminar usuario
-const eliminarUsuario = async (rut) => {
-  if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
-  
-  try {
-    const response = await fetch(`${API_BASE}/usuarios/${rut}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      alert('Usuario eliminado correctamente');
-      cargarUsuarios();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error al eliminar usuario');
-  }
-};
-
-// Guardar usuario
-btnGuardar.addEventListener('click', async () => {
-  const rut = document.getElementById('usuario-rut').value.trim();
-  const nombre = document.getElementById('usuario-nombre').value.trim();
-  const correo = document.getElementById('usuario-correo').value.trim();
-  const rol = document.getElementById('usuario-rol').value.trim();
-  const contraseña = document.getElementById('usuario-contraseña').value.trim();
-  const telefono = document.getElementById('usuario-telefono').value.trim();
-  const rutOriginal = document.getElementById('usuario-rut-original').value;
-  
-  // Validaciones
-  if (!rut || !nombre || !correo || !rol) {
-    mostrarStatus('Todos los campos son requeridos', 'error');
-    return;
-  }
-  
-  if (!rutOriginal && !contraseña) {
-    mostrarStatus('La contraseña es requerida para nuevos usuarios', 'error');
-    return;
-  }
-  
-  try {
-    btnGuardar.disabled = true;
-    btnGuardar.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Guardando...';
-    
-    const payload = {
-      nombre,
-      correo,
-      rol,
-      numero_celular: telefono
-    };
-    
-    if (contraseña) {
-      payload.contraseña = contraseña;
-    }
-    
-    let response;
-    if (rutOriginal) {
-      // Editar
-      response = await fetch(`${API_BASE}/usuarios/${rutOriginal}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } else {
-      // Crear
-      payload.rut_usuario = rut;
-      payload.contraseña = contraseña;
-      response = await fetch(`${API_BASE}/usuarios`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      mostrarStatus('✅ ' + data.message, 'success');
-      setTimeout(() => {
-        cerrarModal();
-        cargarUsuarios();
-      }, 1000);
-    } else {
-      mostrarStatus('❌ ' + data.error, 'error');
-    }
-    
-  } catch (error) {
-    console.error('Error:', error);
-    mostrarStatus('Error al guardar usuario', 'error');
-  } finally {
-    btnGuardar.disabled = false;
-    btnGuardar.innerHTML = 'Guardar';
-  }
-});
-
-// Cargar usuarios al abrir la página
-cargarUsuarios();
+// Script será cargado desde usuarios.js
+console.log('[USUARIOS.HTML] Página usuarios cargada');
 </script>
+
+<script src="{{ url_for('static', filename='js/usuarios_simple.js') }}"></script>
 {% endblock %}

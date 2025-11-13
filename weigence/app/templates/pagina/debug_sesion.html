@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Debug de Sesión{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="p-6">
+  <h1 class="text-3xl font-bold mb-6">DEBUG: Variables de Sesión</h1>
+  
+  <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6">
+    <p class="font-bold">Información de la Sesión Actual:</p>
+    <pre class="mt-2">usuario_logueado: {{ session.get('usuario_logueado') }}
+usuario_nombre: {{ session.get('usuario_nombre') }}
+usuario_rol: "{{ session.get('usuario_rol') }}"
+usuario_rol (type): {{ session.get('usuario_rol').__class__.__name__ }}
+usuario_id: {{ session.get('usuario_id') }}
+usuario_correo: {{ session.get('usuario_correo') }}</pre>
+  </div>
+
+  <div class="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded mb-6">
+    <p class="font-bold">Comparaciones de Rol:</p>
+    <pre>
+'jefe' en lista: {{ 'jefe' in ['jefe', 'administrador'] }}
+session.get('usuario_rol') == 'jefe': {{ session.get('usuario_rol') == 'jefe' }}
+session.get('usuario_rol') in ['jefe', 'administrador']: {{ session.get('usuario_rol') in ['jefe', 'administrador'] }}
+session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador']: {{ session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] }}
+    </pre>
+  </div>
+
+  <div class="bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded mb-6">
+    <p class="font-bold">Secciones que deberías ver:</p>
+    {% if session.get('usuario_rol') in ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      <p>✓ Inventario</p>
+    {% endif %}
+    {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      <p>✓ Movimientos</p>
+    {% endif %}
+    {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      <p>✓ Ventas</p>
+    {% endif %}
+    {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      <p>✓ Alertas</p>
+    {% endif %}
+    {% if session.get('usuario_rol') in ['supervisor', 'jefe', 'administrador'] %}
+      <p>✓ Auditoría</p>
+    {% endif %}
+    {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      <p>✓ Historial</p>
+      <p>✓ Usuarios</p>
+      <p>✓ Recomendaciones</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

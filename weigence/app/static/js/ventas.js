@@ -10,7 +10,15 @@ const Ventas = {
     rows: [],
     filteredRows: [],
     detallesVentas: {},
-    productosDict: {}
+    productosDict: {},
+    filtrosActivos: {
+      producto: '',
+      vendedor: '',
+      fechaDesde: '',
+      fechaHasta: '',
+      totalMin: '',
+      totalMax: ''
+    }
   },
 
   init() {
@@ -18,6 +26,7 @@ const Ventas = {
     this.cargarDatosIniciales();
     this.refreshRows();
     this.bindEvents();
+    this.bindFiltros();
     // Aplicar paginación inicial
     this.applyPagination();
     console.info("✅ Ventas: paginación inicializada correctamente");
@@ -31,6 +40,19 @@ const Ventas = {
     this.table = document.getElementById('ventasTable');
     this.modal = document.getElementById('detalleVentaModal');
     this.modalContent = document.getElementById('modalDetalleContent');
+    this.ventasCounter = document.getElementById('ventas-counter');
+    
+    // Elementos de filtros
+    this.filtroProducto = document.getElementById('filtro-producto');
+    this.filtroVendedor = document.getElementById('filtro-vendedor');
+    this.filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+    this.filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+    this.filtroTotalMin = document.getElementById('filtro-total-min');
+    this.filtroTotalMax = document.getElementById('filtro-total-max');
+    this.btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
+    this.btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros');
+    this.filtrosActivosContainer = document.getElementById('filtros-activos');
+    this.filtrosActivosChips = document.getElementById('filtros-activos-chips');
   },
 
   cargarDatosIniciales() {
@@ -118,10 +140,248 @@ const Ventas = {
     });
   },
 
+  bindFiltros() {
+    // Aplicar filtros al presionar el botón
+    this.btnAplicarFiltros?.addEventListener('click', () => {
+      this.aplicarFiltros();
+    });
+
+    // Limpiar filtros
+    this.btnLimpiarFiltros?.addEventListener('click', () => {
+      this.limpiarFiltros();
+    });
+
+    // Aplicar filtros al presionar Enter en los inputs
+    [this.filtroTotalMin, this.filtroTotalMax, this.filtroFechaDesde, this.filtroFechaHasta].forEach(input => {
+      input?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.aplicarFiltros();
+        }
+      });
+    });
+
+    // Aplicar filtros al cambiar select
+    [this.filtroProducto, this.filtroVendedor].forEach(select => {
+      select?.addEventListener('change', () => {
+        this.aplicarFiltros();
+      });
+    });
+  },
+
+  aplicarFiltros() {
+    // Guardar valores de filtros
+    this.state.filtrosActivos = {
+      producto: this.filtroProducto?.value || '',
+      vendedor: this.filtroVendedor?.value || '',
+      fechaDesde: this.filtroFechaDesde?.value || '',
+      fechaHasta: this.filtroFechaHasta?.value || '',
+      totalMin: this.filtroTotalMin?.value || '',
+      totalMax: this.filtroTotalMax?.value || ''
+    };
+
+    console.log('🔍 Aplicando filtros:', this.state.filtrosActivos);
+
+    // Filtrar filas
+    this.state.filteredRows = this.state.rows.filter(row => {
+      // Filtro por producto
+      if (this.state.filtrosActivos.producto) {
+        const detalles = this.state.detallesVentas[row.dataset.idventa];
+        if (!detalles || !detalles.items) return false;
+        
+        const tieneProducto = detalles.items.some(item => 
+          item.idproducto == this.state.filtrosActivos.producto
+        );
+        if (!tieneProducto) return false;
+      }
+
+      // Filtro por vendedor
+      if (this.state.filtrosActivos.vendedor) {
+        if (row.dataset.vendedorRut !== this.state.filtrosActivos.vendedor) {
+          return false;
+        }
+      }
+
+      // Filtro por fecha desde
+      if (this.state.filtrosActivos.fechaDesde) {
+        const fechaVenta = row.dataset.fecha.split('T')[0];
+        if (fechaVenta < this.state.filtrosActivos.fechaDesde) {
+          return false;
+        }
+      }
+
+      // Filtro por fecha hasta
+      if (this.state.filtrosActivos.fechaHasta) {
+        const fechaVenta = row.dataset.fecha.split('T')[0];
+        if (fechaVenta > this.state.filtrosActivos.fechaHasta) {
+          return false;
+        }
+      }
+
+      // Filtro por total mínimo
+      if (this.state.filtrosActivos.totalMin) {
+        const total = parseFloat(row.dataset.total);
+        if (total < parseFloat(this.state.filtrosActivos.totalMin)) {
+          return false;
+        }
+      }
+
+      // Filtro por total máximo
+      if (this.state.filtrosActivos.totalMax) {
+        const total = parseFloat(row.dataset.total);
+        if (total > parseFloat(this.state.filtrosActivos.totalMax)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Actualizar contador de ventas
+    this.actualizarContadorVentas();
+
+    // Mostrar chips de filtros activos
+    this.mostrarFiltrosActivos();
+
+    // Resetear a primera página
+    this.state.page = 1;
+    this.applyPagination();
+
+    console.log(`✅ Filtros aplicados: ${this.state.filteredRows.length} de ${this.state.rows.length} ventas`);
+  },
+
+  limpiarFiltros() {
+    // Limpiar inputs
+    if (this.filtroProducto) this.filtroProducto.value = '';
+    if (this.filtroVendedor) this.filtroVendedor.value = '';
+    if (this.filtroFechaDesde) this.filtroFechaDesde.value = '';
+    if (this.filtroFechaHasta) this.filtroFechaHasta.value = '';
+    if (this.filtroTotalMin) this.filtroTotalMin.value = '';
+    if (this.filtroTotalMax) this.filtroTotalMax.value = '';
+
+    // Resetear estado
+    this.state.filtrosActivos = {
+      producto: '',
+      vendedor: '',
+      fechaDesde: '',
+      fechaHasta: '',
+      totalMin: '',
+      totalMax: ''
+    };
+
+    // Mostrar todas las filas
+    this.state.filteredRows = [...this.state.rows];
+
+    // Ocultar chips de filtros activos
+    if (this.filtrosActivosContainer) {
+      this.filtrosActivosContainer.classList.add('hidden');
+    }
+
+    // Actualizar contador
+    this.actualizarContadorVentas();
+
+    // Resetear a primera página
+    this.state.page = 1;
+    this.applyPagination();
+
+    console.log('🧹 Filtros limpiados');
+  },
+
+  mostrarFiltrosActivos() {
+    if (!this.filtrosActivosChips || !this.filtrosActivosContainer) return;
+
+    const chips = [];
+    const filtros = this.state.filtrosActivos;
+
+    // Chip de producto
+    if (filtros.producto) {
+      const nombreProducto = this.state.productosDict[filtros.producto] || `Producto ID ${filtros.producto}`;
+      chips.push(`
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+          <span class="material-symbols-outlined text-sm">inventory_2</span>
+          ${nombreProducto}
+        </span>
+      `);
+    }
+
+    // Chip de vendedor
+    if (filtros.vendedor) {
+      const nombreVendedor = this.filtroVendedor.options[this.filtroVendedor.selectedIndex].text;
+      chips.push(`
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+          <span class="material-symbols-outlined text-sm">person</span>
+          ${nombreVendedor}
+        </span>
+      `);
+    }
+
+    // Chip de fecha
+    if (filtros.fechaDesde || filtros.fechaHasta) {
+      let textoFecha = '';
+      if (filtros.fechaDesde && filtros.fechaHasta) {
+        textoFecha = `${filtros.fechaDesde} al ${filtros.fechaHasta}`;
+      } else if (filtros.fechaDesde) {
+        textoFecha = `Desde ${filtros.fechaDesde}`;
+      } else {
+        textoFecha = `Hasta ${filtros.fechaHasta}`;
+      }
+      chips.push(`
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+          <span class="material-symbols-outlined text-sm">calendar_today</span>
+          ${textoFecha}
+        </span>
+      `);
+    }
+
+    // Chip de total
+    if (filtros.totalMin || filtros.totalMax) {
+      let textoTotal = '';
+      if (filtros.totalMin && filtros.totalMax) {
+        textoTotal = `$${parseFloat(filtros.totalMin).toLocaleString('es-CL')} - $${parseFloat(filtros.totalMax).toLocaleString('es-CL')}`;
+      } else if (filtros.totalMin) {
+        textoTotal = `Mín: $${parseFloat(filtros.totalMin).toLocaleString('es-CL')}`;
+      } else {
+        textoTotal = `Máx: $${parseFloat(filtros.totalMax).toLocaleString('es-CL')}`;
+      }
+      chips.push(`
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">
+          <span class="material-symbols-outlined text-sm">attach_money</span>
+          ${textoTotal}
+        </span>
+      `);
+    }
+
+    if (chips.length > 0) {
+      this.filtrosActivosChips.innerHTML = chips.join('');
+      this.filtrosActivosContainer.classList.remove('hidden');
+    } else {
+      this.filtrosActivosContainer.classList.add('hidden');
+    }
+  },
+
+  actualizarContadorVentas() {
+    if (!this.ventasCounter) return;
+
+    const total = this.state.filteredRows.length;
+    const totalOriginal = this.state.rows.length;
+
+    if (total === totalOriginal) {
+      this.ventasCounter.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400 mr-2 animate-pulse"></span>
+        ${total} ventas
+      `;
+    } else {
+      this.ventasCounter.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 mr-2 animate-pulse"></span>
+        ${total} de ${totalOriginal} ventas
+      `;
+    }
+  },
+
   refreshRows() {
     // Actualiza la lista de filas desde el DOM
     this.state.rows = Array.from(document.querySelectorAll('.venta-row'));
     this.state.filteredRows = [...this.state.rows];
+    this.actualizarContadorVentas();
     console.log(`📊 Total de ventas cargadas: ${this.state.rows.length}`);
   },
 
@@ -143,10 +403,41 @@ const Ventas = {
       row.style.display = 'none';
     });
 
-    // Mostrar solo las filas de la página actual
-    for (let i = start; i < end; i++) {
-      if (this.state.filteredRows[i]) {
-        this.state.filteredRows[i].style.display = '';
+    // Manejar fila de "No hay ventas"
+    const noVentasRow = document.getElementById('noVentasRow');
+    
+    if (total === 0) {
+      // Mostrar mensaje de no hay resultados
+      if (noVentasRow) {
+        noVentasRow.style.display = '';
+        // Cambiar mensaje si hay filtros activos
+        const hayFiltros = Object.values(this.state.filtrosActivos).some(v => v !== '');
+        if (hayFiltros) {
+          const cell = noVentasRow.querySelector('td');
+          if (cell) {
+            cell.innerHTML = `
+              <div class="flex flex-col items-center justify-center gap-3 py-8">
+                <div class="p-4 rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <span class="material-symbols-outlined text-5xl text-neutral-400">search_off</span>
+                </div>
+                <p class="text-neutral-600 dark:text-neutral-400 font-medium">No se encontraron ventas con los filtros aplicados</p>
+                <p class="text-sm text-neutral-500 dark:text-neutral-500">Intenta ajustar los criterios de búsqueda</p>
+              </div>
+            `;
+          }
+        }
+      }
+    } else {
+      // Ocultar mensaje de no hay ventas
+      if (noVentasRow) {
+        noVentasRow.style.display = 'none';
+      }
+      
+      // Mostrar solo las filas de la página actual
+      for (let i = start; i < end; i++) {
+        if (this.state.filteredRows[i]) {
+          this.state.filteredRows[i].style.display = '';
+        }
       }
     }
 
@@ -157,18 +448,18 @@ const Ventas = {
 
     // Actualizar estado de botones de navegación
     if (this.pagePrev) {
-      this.pagePrev.disabled = this.state.page === 1;
-      this.pagePrev.style.opacity = this.state.page === 1 ? '0.5' : '1';
-      this.pagePrev.style.cursor = this.state.page === 1 ? 'not-allowed' : 'pointer';
+      this.pagePrev.disabled = this.state.page === 1 || total === 0;
+      this.pagePrev.style.opacity = (this.state.page === 1 || total === 0) ? '0.5' : '1';
+      this.pagePrev.style.cursor = (this.state.page === 1 || total === 0) ? 'not-allowed' : 'pointer';
     }
 
     if (this.pageNext) {
-      this.pageNext.disabled = this.state.page >= pages;
-      this.pageNext.style.opacity = this.state.page >= pages ? '0.5' : '1';
-      this.pageNext.style.cursor = this.state.page >= pages ? 'not-allowed' : 'pointer';
+      this.pageNext.disabled = this.state.page >= pages || total === 0;
+      this.pageNext.style.opacity = (this.state.page >= pages || total === 0) ? '0.5' : '1';
+      this.pageNext.style.cursor = (this.state.page >= pages || total === 0) ? 'not-allowed' : 'pointer';
     }
 
-    console.log(`📄 Página ${this.state.page}/${pages} - Mostrando ${start + 1} a ${end} de ${total}`);
+    console.log(`📄 Página ${this.state.page}/${pages} - Mostrando ${total > 0 ? start + 1 : 0} a ${end} de ${total}`);
   },
 
   mostrarDetalleVenta(idVenta) {

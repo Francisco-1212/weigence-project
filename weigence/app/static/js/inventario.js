@@ -584,126 +584,7 @@ filterByStatus(status) {
     document.body.appendChild(link); link.click(); link.remove();
   }
 };
-async function actualizarGraficoProyeccion(dias = 90) {
-  try {
-    const res = await fetch(`/api/proyeccion_consumo?dias=${dias}`);
-    const data = await res.json();
 
-    if (!Array.isArray(data) || !data.length) {
-      console.warn("No hay datos de consumo.");
-      return;
-    }
-
-    // --- Normaliza datos: rellena días faltantes con 0
-    const fechas = data.map(d => d.fecha);
-    const unidades = data.map(d => d.unidades);
-    const map = {};
-    data.forEach(d => (map[d.fecha] = d.unidades));
-
-    const start = new Date(fechas[0]);
-    const end = new Date(fechas.at(-1));
-    const fechasContinuas = [];
-    const unidadesContinuas = [];
-
-    for (let f = new Date(start); f <= end; f.setDate(f.getDate() + 1)) {
-      const key = f.toISOString().split("T")[0];
-      fechasContinuas.push(key);
-      unidadesContinuas.push(map[key] || 0);
-    }
-
-    // --- Promedio y proyección (7 días futuros)
-    const promedio =
-      unidadesContinuas.reduce((a, b) => a + b, 0) / unidadesContinuas.length;
-    const ultFecha = new Date(fechasContinuas.at(-1));
-    const futuras = Array.from({ length: 7 }, (_, i) => {
-      const f = new Date(ultFecha);
-      f.setDate(f.getDate() + i + 1);
-      return f.toISOString().split("T")[0];
-    });
-    const proyeccion = Array(7).fill(promedio.toFixed(1));
-
-    // --- Limpia el gráfico anterior
-    const ctx = document.getElementById("chartProyeccion").getContext("2d");
-    if (window.chartProyeccion) window.chartProyeccion.destroy();
-
-    // --- Configura datasets adaptativos
-    const datasets = [
-      {
-        label: "Consumo real",
-        data: unidadesContinuas,
-        borderColor: "#38bdf8",
-        backgroundColor: "rgba(56,189,248,0.08)",
-        tension: 0.35,
-        fill: true,
-        pointRadius: unidadesContinuas.length === 1 ? 6 : 3,
-        pointHoverRadius: 7,
-      },
-    ];
-
-    if (unidadesContinuas.length > 1) {
-      datasets.push({
-        label: "Proyección (7 días)",
-        data: [...Array(unidadesContinuas.length).fill(null), ...proyeccion],
-        borderColor: "#a855f7",
-        borderDash: [6, 4],
-        tension: 0.3,
-        pointRadius: 0,
-      });
-    }
-
-    // --- Render Chart
-    window.chartProyeccion = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: [...fechasContinuas, ...futuras],
-        datasets,
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            ticks: {
-              color: "#9CA3AF",
-              autoSkip: true,
-              maxRotation: 45,
-              callback: function (val, i, ticks) {
-                return i % Math.ceil(ticks.length / 6) === 0
-                  ? this.getLabelForValue(val)
-                  : "";
-              },
-            },
-            grid: { color: "rgba(255,255,255,0.05)" },
-          },
-          y: {
-            beginAtZero: true,
-            suggestedMax: Math.max(...unidadesContinuas, promedio) + 2,
-            ticks: { color: "#9CA3AF" },
-            grid: { color: "rgba(255,255,255,0.05)" },
-          },
-        },
-        plugins: {
-          legend: { labels: { color: "#E5E7EB", boxWidth: 12 } },
-          tooltip: {
-            backgroundColor: "#1E293B",
-            titleColor: "#F9FAFB",
-            bodyColor: "#CBD5E1",
-            callbacks: {
-              label: ctx =>
-                `${ctx.dataset.label}: ${ctx.parsed.y} unidades`,
-            },
-          },
-        },
-      },
-    });
-  } catch (err) {
-    console.error("Error al generar gráfico:", err);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () =>
-  actualizarGraficoProyeccion(90)
-);
 
 // endpoints inventario
 const WeigenceMonitor = {
@@ -818,271 +699,496 @@ const WeigenceMonitor = {
     try {
       const res = await fetch("/api/proyeccion_consumo");
       const data = await res.json();
-      if (!Array.isArray(data) || !data.length) {
-        console.warn("Sin datos de consumo.");
+      if (!Array.isArray(data)) {
+        console.warn("Sin datos de consumo (respuesta no es array).");
         return;
       }
 
-      const svg = document.querySelector("#grafico-proyeccion");
-      if (!svg) return;
+      // Si la API devuelve un array vacío, crear una serie placeholder
+      // para que el gráfico muestre una línea cero y la proyección a 7 días.
+      let usePlaceholder = false;
+      if (Array.isArray(data) && data.length === 0) {
+        usePlaceholder = true;
+      }
 
-      const max = Math.max(...data.map(d => Number(d.consumo) || 0)) || 1; // evita división por 0
-      const puntos = data
-        .map((d, i) => {
-          const x = 30 + i * 25;
-          const y = 170 - (Number(d.consumo) / max) * 120;
-          return `${x},${y}`;
-        })
-        .join(" L ");
+      const canvas = document.getElementById("chartProyeccion");
+      if (!canvas) return;
 
-      svg.querySelector("path#linea")?.setAttribute("d", `M ${puntos}`);
+      // Normalizar y ordenar por fecha si existe
+      let series = [];
+      if (usePlaceholder) {
+        const today = new Date();
+        const iso = today.toISOString().split('T')[0];
+        series = [{ label: iso, consumo: 0 }];
+      } else {
+        series = data
+          .map(d => ({ label: d.fecha || d.label || '', consumo: Number(d.consumo) || 0 }))
+          .sort((a, b) => (a.label && b.label) ? new Date(a.label) - new Date(b.label) : 0);
+      }
+
+      // Detectar si los labels son categóricos (productos) -> contienen letras
+      const isCategorical = series.length && series.every(s => /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(String(s.label)));
+
+      const actualLabels = series.map(s => s.label || '');
+      const actualValues = series.map(s => s.consumo);
+
+      // Generar proyección simple: extrapolación lineal basada en últimas 2 medidas
+      const futurePoints = 7;
+      let projValues = [];
+      let projLabels = [];
+      // Detectar si los labels son fechas válidas (time-series)
+      const isDateLike = actualLabels.length > 0 && actualLabels.every(l => {
+        try { const d = new Date(l); return !isNaN(d); } catch (e) { return false; }
+      });
+
+      if (actualValues.length >= 2 && !isDateLike) {
+        // Si no es time-series (pero tiene números), seguir con extrapolación por índice
+        const last = actualValues[actualValues.length - 1];
+        const prev = actualValues[actualValues.length - 2];
+        const slope = last - prev; // cambio por paso de índice
+        for (let i = 1; i <= futurePoints; i++) {
+          projLabels.push(`+${i}`);
+          projValues.push(Math.max(0, Math.round((last + slope * i) * 100) / 100));
+        }
+      } else if (actualValues.length === 1 && !isDateLike) {
+        for (let i = 1; i <= futurePoints; i++) {
+          projLabels.push(`+${i}`);
+          projValues.push(actualValues[0]);
+        }
+      } else if (isDateLike) {
+        // Si son fechas, generar etiquetas de fecha para los próximos días
+        const lastDate = new Date(actualLabels[actualLabels.length - 1] || new Date());
+        for (let i = 1; i <= futurePoints; i++) {
+          const d = new Date(lastDate);
+          d.setDate(lastDate.getDate() + i);
+          projLabels.push(d.toISOString().split('T')[0]);
+        }
+
+        // Extrapolar: si hay al menos 2 puntos usar slope por día; si no, rellenar con último valor
+        if (actualValues.length >= 2) {
+          const last = actualValues[actualValues.length - 1];
+          const prev = actualValues[actualValues.length - 2];
+          const slope = last - prev;
+          for (let i = 1; i <= futurePoints; i++) {
+            projValues.push(Math.max(0, Math.round((last + slope * i) * 100) / 100));
+          }
+        } else if (actualValues.length === 1) {
+          for (let i = 1; i <= futurePoints; i++) projValues.push(actualValues[0]);
+        }
+
+        // Si en los últimos 7 días no hubo ventas, usar histórico/promedio como proyección
+        try {
+          const last7 = actualValues.slice(-7);
+          const last7Sum = last7.reduce((a, b) => a + (Number(b) || 0), 0);
+          if (last7Sum === 0) {
+            try {
+              const resp = await fetch('/api/promedio_consumo');
+              const pv = await resp.json();
+              const histAvg = Number(pv.promedio_total) || 0;
+              if (histAvg > 0) {
+                projValues = new Array(futurePoints).fill(Math.round(histAvg * 100) / 100);
+                // marcar que usamos fallback histórico
+                this._proyeccionUsaHistorico = true;
+              }
+            } catch (e) {
+              console.warn('Fallo al obtener promedio_consumo para histórico:', e);
+            }
+          }
+        } catch (e) { /* noop */ }
+      }
+
+      // X labels: combinar reales y proyección
+      const labels = actualLabels.concat(projLabels);
+      const actualData = actualValues.concat(new Array(projLabels.length).fill(null));
+      const projectionData = new Array(actualValues.length).fill(null).concat(projValues);
+
+      // Si los datos son categóricos (productos), usar gráfico de barras y fallback a promedios
+      if (isCategorical) {
+        // Si todos los valores son 0, intentar obtener promedio desde backend
+        const allZero = actualValues.every(v => v === 0);
+        if (allZero) {
+          try {
+            const resp = await fetch('/api/promedio_consumo');
+            const pv = await resp.json();
+            const mapa = {};
+            (pv.promedio_por_producto || []).forEach(p => { mapa[String(p.nombre).toLowerCase()] = p.promedio; });
+            const defaultAvg = pv.promedio_total || 0;
+            // Reemplazar actualValues por promedios cuando existan, sino por promedio total
+            for (let i = 0; i < actualValues.length; i++) {
+              const key = String(actualLabels[i] || '').toLowerCase();
+              actualData[i] = mapa[key] != null ? mapa[key] : defaultAvg;
+            }
+          } catch (e) {
+            console.warn('No se pudo obtener promedio_consumo:', e);
+          }
+        }
+
+        // Dibujar/actualizar gráfico de barras
+        const canvas = document.getElementById('chartProyeccion');
+        if (!canvas) return;
+        const ChartLib = (typeof Chart !== 'undefined') ? Chart : (window && window.Chart ? window.Chart : null);
+        if (!ChartLib) {
+          console.warn('Chart.js no está disponible.');
+          return;
+        }
+        if (this.chartProyeccion && typeof this.chartProyeccion.destroy === 'function') try { this.chartProyeccion.destroy(); } catch(e){}
+        try {
+          const ctx = canvas.getContext('2d');
+          this.chartProyeccion = new ChartLib(ctx, {
+            type: 'bar',
+            data: { labels: actualLabels, datasets: [{ label: 'Consumo (promedio)', data: actualData, backgroundColor: '#60a5fa' }] },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{beginAtZero:true}} }
+          });
+        } catch (e) { console.error('Error inicializando gráfico de barras:', e); }
+
+        return; // no continuar con la lógica de líneas/proyección
+      }
+
+      // Verificar Chart.js disponible y usarlo de forma robusta
+      const ChartLib = (typeof Chart !== 'undefined') ? Chart : (window && window.Chart ? window.Chart : null);
+      if (!ChartLib) {
+        console.warn('Chart.js no está disponible. Asegúrate de que esté cargado en la plantilla.');
+        return;
+      }
+
+      // Destruir instancia previa si existe (evita problemas al recargar datos)
+      if (this.chartProyeccion && typeof this.chartProyeccion.destroy === 'function') {
+        try { this.chartProyeccion.destroy(); } catch (e) { /* noop */ }
+        this.chartProyeccion = null;
+      }
+
+      try {
+        const ctx = canvas.getContext('2d');
+        const allValues = actualValues.concat(projValues);
+        const maxVal = allValues.length ? Math.max(...allValues) : 1;
+        const suggestedMax = Math.ceil(maxVal * 1.2) || 5;
+
+        this.chartProyeccion = new ChartLib(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Consumo',
+                data: actualData,
+                borderColor: '#60a5fa',
+                backgroundColor: 'rgba(96,165,250,0.06)',
+                tension: 0.35,
+                pointRadius: 3,
+                borderWidth: 2,
+                fill: true,
+                spanGaps: true
+              },
+              {
+                label: 'Proyección',
+                data: projectionData,
+                borderColor: '#93c5fd',
+                borderDash: [6, 4],
+                backgroundColor: 'rgba(147,197,253,0.03)',
+                tension: 0.2,
+                pointRadius: 0,
+                borderWidth: 1,
+                fill: false,
+                spanGaps: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: true, grid: { display: false } },
+              y: { beginAtZero: true, suggestedMax: suggestedMax }
+            },
+            elements: { line: { capBezierPoints: true } }
+          }
+        });
+      } catch (e) {
+        console.error('Error inicializando/actualizando Chart.js:', e);
+      }
     } catch (err) {
       console.error("Error proyección:", err);
     }
   }
-};
-WeigenceMonitor.actualizarSVG = async function () {
-  try {
-    const res = await fetch("/api/estantes_estado");
-    const data = await res.json();
+  };
+  WeigenceMonitor.actualizarSVG = async function () {
     const svg = document.getElementById("svg-almacen");
-    if (!svg) return;
-
-    const estantes = Array.isArray(data) ? data : [];
-    svg.innerHTML = "";
-
-    const ns = "http://www.w3.org/2000/svg";
-    const columns = 3;
-    const spacingX = 150;
-    const spacingY = 180;
-    const offsetX = 40;
-    const offsetY = 40;
-    const shelfWidth = 116;
-    const shelfHeight = 150;
-    const accentWidth = 10;
-
-    const total = estantes.length;
-    const effectiveColumns = Math.min(columns, Math.max(1, total)) || 1;
-    const rows = Math.max(1, Math.ceil((total || 1) / columns));
-
-    const viewWidth = offsetX * 2 + shelfWidth + spacingX * (effectiveColumns - 1);
-    const viewHeight = offsetY * 2 + shelfHeight + spacingY * (rows - 1);
-
-    svg.setAttribute("viewBox", `0 0 ${viewWidth} ${viewHeight}`);
-    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-    const backdrop = document.createElementNS(ns, "rect");
-    backdrop.setAttribute("x", "0");
-    backdrop.setAttribute("y", "0");
-    backdrop.setAttribute("width", viewWidth);
-    backdrop.setAttribute("height", viewHeight);
-    backdrop.setAttribute("fill", "transparent");
-    svg.appendChild(backdrop);
-
-    const stateColors = {
-      critico: "#ef4444",
-      advertencia: "#f59e0b",
-      estable: "#22c55e",
-    };
-
-    const stateLabels = {
-      critico: "Crítico",
-      advertencia: "Advertencia",
-      estable: "Estable",
-    };
-
-    const modules = [];
-
-    estantes.forEach((shelf, index) => {
-      const rawState = (shelf.estado || "").toString().toLowerCase();
-      const state = stateColors[rawState] ? rawState : "estable";
-      const stateColor = stateColors[state];
-
-      const col = index % columns;
-      const row = Math.floor(index / columns);
-      const posX = offsetX + col * spacingX;
-      const posY = offsetY + row * spacingY;
-
-      const ocupacion = Math.max(0, Math.min(100, Number(shelf.ocupacion_pct) || 0));
-      const ocupacionTexto = ocupacion % 1 === 0 ? `${ocupacion}` : ocupacion.toFixed(1);
-      const pesoActual = Number(shelf.peso_actual ?? 0);
-      const pesoMaximo = Number(shelf.peso_maximo ?? 0);
-
-      const group = document.createElementNS(ns, "g");
-      group.setAttribute("transform", `translate(${posX}, ${posY})`);
-      group.setAttribute("class", `shelf-module shelf-${state}`);
-      group.setAttribute("tabindex", "0");
-      group.dataset.id = shelf.id_estante || "";
-      group.dataset.estado = state;
-      group.dataset.ocupacion = ocupacionTexto;
-      group.dataset.pesoActual = pesoActual;
-      group.dataset.pesoMaximo = pesoMaximo;
-      group.style.setProperty("--shelf-state", stateColor);
-
-      const frame = document.createElementNS(ns, "rect");
-      frame.setAttribute("x", "0");
-      frame.setAttribute("y", "0");
-      frame.setAttribute("width", shelfWidth);
-      frame.setAttribute("height", shelfHeight);
-      frame.setAttribute("class", "rack-frame");
-      group.appendChild(frame);
-
-      const inner = document.createElementNS(ns, "rect");
-      inner.setAttribute("x", "6");
-      inner.setAttribute("y", "6");
-      inner.setAttribute("width", shelfWidth - 12);
-      inner.setAttribute("height", shelfHeight - 12);
-      inner.setAttribute("class", "rack-inner");
-      group.appendChild(inner);
-
-      const shadow = document.createElementNS(ns, "rect");
-      shadow.setAttribute("x", "6");
-      shadow.setAttribute("y", "6");
-      shadow.setAttribute("width", shelfWidth - accentWidth - 18);
-      shadow.setAttribute("height", shelfHeight - 18);
-      shadow.setAttribute("class", "rack-shadow");
-      group.appendChild(shadow);
-
-      const sideShade = document.createElementNS(ns, "rect");
-      sideShade.setAttribute("x", shelfWidth - 24);
-      sideShade.setAttribute("y", "12");
-      sideShade.setAttribute("width", "12");
-      sideShade.setAttribute("height", shelfHeight - 24);
-      sideShade.setAttribute("class", "rack-side-shade");
-      group.appendChild(sideShade);
-
-      const accentTrack = document.createElementNS(ns, "rect");
-      accentTrack.setAttribute("x", shelfWidth - accentWidth - 6);
-      accentTrack.setAttribute("y", "12");
-      accentTrack.setAttribute("width", accentWidth);
-      accentTrack.setAttribute("height", shelfHeight - 24);
-      accentTrack.setAttribute("class", "rack-accent-track");
-      group.appendChild(accentTrack);
-
-      const accentTrackHeight = shelfHeight - 24;
-      const accentHeight = Math.max(0, (accentTrackHeight * ocupacion) / 100);
-      const accentFillHeight = ocupacion > 0 ? Math.max(4, accentHeight) : 0;
-      const accentFill = document.createElementNS(ns, "rect");
-      accentFill.setAttribute("x", shelfWidth - accentWidth - 6);
-      accentFill.setAttribute("y", 12 + (accentTrackHeight - accentFillHeight));
-      accentFill.setAttribute("width", accentWidth);
-      accentFill.setAttribute("height", accentFillHeight);
-      accentFill.setAttribute("class", "rack-accent-fill");
-      group.appendChild(accentFill);
-
-      const foot = document.createElementNS(ns, "rect");
-      foot.setAttribute("x", "6");
-      foot.setAttribute("y", shelfHeight - 8);
-      foot.setAttribute("width", shelfWidth - 12);
-      foot.setAttribute("height", "6");
-      foot.setAttribute("class", "rack-foot");
-      group.appendChild(foot);
-
-      const levelCount = 3;
-      for (let i = 1; i <= levelCount; i += 1) {
-        const y = 12 + (i * (shelfHeight - 24)) / (levelCount + 1);
-        const level = document.createElementNS(ns, "line");
-        level.setAttribute("x1", "14");
-        level.setAttribute("x2", shelfWidth - accentWidth - 14);
-        level.setAttribute("y1", y);
-        level.setAttribute("y2", y);
-        level.setAttribute("class", "rack-level");
-        group.appendChild(level);
+      if (!svg) {
+        console.warn("SVG del almacén no encontrado en el DOM todavía");
+        return;
       }
 
-      const label = document.createElementNS(ns, "text");
-      label.setAttribute("x", "14");
-      label.setAttribute("y", "28");
-      label.setAttribute("class", "rack-label");
-      label.setAttribute("text-anchor", "start");
-      label.textContent = `Estante ${shelf.id_estante || ""}`.trim();
-      group.appendChild(label);
+    try {
+      const res = await fetch("/api/estantes_estado");
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn("No hay datos de estantes disponibles para renderizar.");
+        return;
+      }
+      const svg = document.getElementById("svg-almacen");
+      if (!svg || !Array.isArray(data)) return;
 
-      const meta = document.createElementNS(ns, "text");
-      meta.setAttribute("x", "14");
-      meta.setAttribute("y", shelfHeight - 18);
-      meta.setAttribute("class", "rack-meta");
-      meta.setAttribute("text-anchor", "start");
-      meta.textContent = `${ocupacionTexto}% ocupación`;
-      group.appendChild(meta);
+      // Limpia el SVG
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      svg.appendChild(group);
-      modules.push({ node: group, data: shelf });
-    });
+      // Layout en cuadrícula centrada
+      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : { width: 400, height: 200 };
+      const svgW = vb.width || svg.clientWidth || 400;
+      const svgH = vb.height || svg.clientHeight || 200;
+      const padding = 12;
 
-    requestAnimationFrame(() => {
-      modules.forEach(({ node }, index) => {
-        setTimeout(() => node.classList.add("is-visible"), index * 55);
-      });
-    });
+      const n = data.length;
+      if (n === 0) return;
 
-    let tooltip = document.getElementById("tooltip-estante");
-    if (!tooltip) {
-      tooltip = document.createElement("div");
-      tooltip.id = "tooltip-estante";
-      tooltip.className = "hidden absolute z-50 rounded-lg px-3 py-2 pointer-events-none";
-      svg.parentElement.appendChild(tooltip);
-    } else {
-      tooltip.classList.add("hidden");
+      // Calcular columnas según aspecto y número de elementos
+      const cols = Math.max(1, Math.round(Math.sqrt(n * (svgW / svgH))));
+      const rows = Math.ceil(n / cols);
+
+      const cellW = (svgW - padding * 2) / cols;
+      const cellH = (svgH - padding * 2) / rows;
+      const rectW = Math.max(36, Math.min(100, cellW * 0.75));
+      const rectH = Math.max(22, Math.min(48, cellH * 0.55));
+
+      // Crear <defs> con gradientes y sombra si no existen (se reutilizan)
+      if (!svg.querySelector('defs')) {
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+        const makeGradient = (id, base) => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+          g.setAttribute('id', id);
+          g.setAttribute('x1', '0%'); g.setAttribute('y1', '0%'); g.setAttribute('x2', '0%'); g.setAttribute('y2', '100%');
+          const s1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          s1.setAttribute('offset', '0%'); s1.setAttribute('stop-color', base); s1.setAttribute('stop-opacity', '0.95');
+          const s2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          s2.setAttribute('offset', '60%'); s2.setAttribute('stop-color', base); s2.setAttribute('stop-opacity', '0.75');
+          const s3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          s3.setAttribute('offset', '100%'); s3.setAttribute('stop-color', '#000'); s3.setAttribute('stop-opacity', '0.06');
+          g.appendChild(s1); g.appendChild(s2); g.appendChild(s3);
+          return g;
+        };
+
+        defs.appendChild(makeGradient('grad-critico', '#ef4444'));
+        defs.appendChild(makeGradient('grad-advertencia', '#f59e0b'));
+        defs.appendChild(makeGradient('grad-estable', '#22c55e'));
+
+        // Sombra suave (drop shadow)
+        const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        filter.setAttribute('id', 'shelfShadow');
+        filter.setAttribute('x', '-20%'); filter.setAttribute('y', '-20%'); filter.setAttribute('width', '140%'); filter.setAttribute('height', '140%');
+        const feDrop = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
+        feDrop.setAttribute('dx', '0'); feDrop.setAttribute('dy', '2'); feDrop.setAttribute('stdDeviation', '3'); feDrop.setAttribute('flood-color', '#000'); feDrop.setAttribute('flood-opacity', '0.25');
+        filter.appendChild(feDrop);
+        defs.appendChild(filter);
+
+        svg.appendChild(defs);
+      }
+
+    // Fondo adaptable a modo claro/oscuro (sin overlay blanco)
+    try {
+      const darkMode =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark");
+
+      svg.style.background = darkMode
+        ? "rgba(15, 23, 42, 0)" // totalmente transparente en dark
+        : "rgba(255, 255, 255, 0)"; // totalmente transparente en light
+
+      svg.style.borderRadius = "8px";
+      svg.style.pointerEvents = "auto";
+    } catch (e) {
+      console.warn("No se pudo aplicar fondo SVG:", e);
     }
 
-    const formatNumber = value =>
-      new Intl.NumberFormat("es-CL", { maximumFractionDigits: 1 }).format(Number(value ?? 0));
 
-    const showTooltip = (module, evt) => {
-      if (!module) return;
-      tooltip.classList.remove("hidden");
 
-      const svgRect = svg.getBoundingClientRect();
-      let x;
-      let y;
 
-      if (evt && typeof evt.clientX === "number") {
-        x = evt.clientX - svgRect.left;
-        y = evt.clientY - svgRect.top;
-      } else {
-        const bounds = module.getBoundingClientRect();
-        x = bounds.left + bounds.width / 2 - svgRect.left;
-        y = bounds.top + bounds.height / 2 - svgRect.top;
-      }
+    data.forEach((e, idx) => {
+        const baseColor = e.estado === 'critico' ? '#ef4444' : e.estado === 'advertencia' ? '#f59e0b' : '#22c55e';
+        const gradId = e.estado === 'critico' ? 'grad-critico' : e.estado === 'advertencia' ? 'grad-advertencia' : 'grad-estable';
 
-      tooltip.style.left = `${x + 18}px`;
-      tooltip.style.top = `${y - tooltip.offsetHeight / 2}px`;
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
 
-      const tipRect = tooltip.getBoundingClientRect();
-      if (tipRect.right > window.innerWidth - 16) {
-        tooltip.style.left = `${x - tipRect.width - 18}px`;
-      }
-      if (tipRect.top < 0) {
-        tooltip.style.top = `${y + 12}px`;
-      }
+        const cellX = padding + col * cellW;
+        const cellY = padding + row * cellH;
 
-      tooltip.innerHTML = `
-        <div class="tooltip-line"><span class="tooltip-key">Estante</span><span>${module.dataset.id || "-"}</span></div>
-        <div class="tooltip-line"><span class="tooltip-key">Ocupación</span><span>${module.dataset.ocupacion || 0}%</span></div>
-        <div class="tooltip-line"><span class="tooltip-key">Peso</span><span>${formatNumber(module.dataset.pesoActual)} / ${formatNumber(module.dataset.pesoMaximo)} kg</span></div>
-        <div class="tooltip-line"><span class="tooltip-key">Estado</span><span>${stateLabels[module.dataset.estado] || stateLabels.estable}</span></div>`;
-    };
+        const posX = cellX + (cellW - rectW) / 2;
+        const posY = cellY + (cellH - rectH) / 2;
 
-    const hideTooltip = () => tooltip.classList.add("hidden");
+    // Grupo principal del estante (minimalista: líneas + subrayado de color)
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(${posX},${posY})`);
+    g.style.cursor = 'pointer';
 
-    modules.forEach(({ node, data }) => {
-      node.addEventListener("mousemove", evt => showTooltip(node, evt));
-      node.addEventListener("focus", () => showTooltip(node));
-      node.addEventListener("mouseleave", hideTooltip);
-      node.addEventListener("blur", hideTooltip);
-      node.addEventListener("click", () => WeigenceMonitor.mostrarDetalleEstante?.(data));
-      node.addEventListener("keydown", evt => {
-        if (evt.key === "Enter" || evt.key === " ") {
-          evt.preventDefault();
-          WeigenceMonitor.mostrarDetalleEstante?.(data);
+    // Hit area transparente para mantener la interactividad (clic/hover) sin cambiar la apariencia
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    hit.setAttribute('x', 0);
+    hit.setAttribute('y', 0);
+    hit.setAttribute('width', rectW);
+    hit.setAttribute('height', rectH);
+    hit.setAttribute('fill', 'transparent');
+    hit.setAttribute('pointer-events', 'all');
+    // poner dataset para depuración
+    hit.dataset.id = e.id_estante;
+    g.appendChild(hit);
+
+  // Detectar modo oscuro y obtener color de texto calculado del contenedor padre
+  const darkMode = (document.documentElement.classList && document.documentElement.classList.contains('dark')) || (document.body.classList && document.body.classList.contains('dark'));
+      const parent = svg.parentElement || document.body;
+      // Buscar hacia arriba el primer ancestro que tenga un background no transparente
+      const findAncestorWithBg = (el) => {
+        let cur = el;
+        while (cur && cur !== document.documentElement) {
+          try {
+            const s = window.getComputedStyle(cur);
+            const bg = s && (s.backgroundColor || s.backgroundImage || s.background);
+            if (bg && bg !== 'transparent' && !/rgba?\(0,\s*0,\s*0,\s*0\)/i.test(bg)) return { bg: s.backgroundColor || bg, radius: s.borderRadius };
+          } catch (e) { /* noop */ }
+          cur = cur.parentElement;
         }
+        return null;
+      };
+      const anc = findAncestorWithBg(parent);
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      const cssVarCard = (rootStyle && rootStyle.getPropertyValue) ? rootStyle.getPropertyValue('--card-bg-light').trim() : '';
+      const parentBg = anc && anc.bg ? anc.bg : (cssVarCard || 'transparent');
+      // Forzar fondo siempre transparente (evita que tape leyendas)
+      svg.style.background = "transparent";
+      try { svg.style.borderRadius = (anc && anc.radius) || (parent && window.getComputedStyle(parent).borderRadius) || '8px'; } catch (err) { /* noop */ }
+
+      // Determinar color de texto accesible en base al fondo (luminancia)
+      const parseRgb = str => {
+        if (!str) return null;
+        const m = String(str).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
+        const hex = String(str).replace('#','').trim();
+        if (hex.length === 3) return [parseInt(hex[0]+hex[0],16), parseInt(hex[1]+hex[1],16), parseInt(hex[2]+hex[2],16)];
+        if (hex.length === 6) return [parseInt(hex.substring(0,2),16), parseInt(hex.substring(2,4),16), parseInt(hex.substring(4,6),16)];
+        return null;
+      };
+  let rgb = parseRgb(parentBg);
+  let luminance = rgb ? ( (0.2126 * (rgb[0]/255)) + (0.7152 * (rgb[1]/255)) + (0.0722 * (rgb[2]/255)) ) : (darkMode ? 0.1 : 0.9);
+      // Si no estamos en modo oscuro pero el fondo detectado es muy oscuro o transparente, forzar el fondo claro de la tarjeta
+      const cssVarCardCheck = cssVarCard || '';
+      if (!darkMode && (parentBg === 'transparent' || parentBg === '' || luminance < 0.18)) {
+        const forced = cssVarCardCheck || '#f1f5f9';
+        try { svg.style.background = forced; } catch (err) { /* noop */ }
+        rgb = parseRgb(forced);
+        luminance = rgb ? ( (0.2126 * (rgb[0]/255)) + (0.7152 * (rgb[1]/255)) + (0.0722 * (rgb[2]/255)) ) : 0.95;
+      }
+  const computedTextColor = luminance < 0.5 ? '#e5e7eb' : '#0f172a';
+
+      // Usamos currentColor para que textos/contornos hereden el color calculado
+      const neutralStroke = 'currentColor';
+
+      // Aplicar color al grupo (currentColor heredará de aquí)
+      g.style.color = computedTextColor;
+
+      // Contorno leve (sombra muy sutil, mantiene separación con fondo) - sin relleno
+  const outline = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      outline.setAttribute('x', 0);
+      outline.setAttribute('y', 0);
+      outline.setAttribute('width', rectW);
+      outline.setAttribute('height', rectH);
+      outline.setAttribute('rx', Math.min(6, rectH / 4));
+      outline.setAttribute('ry', Math.min(6, rectH / 4));
+  outline.setAttribute('fill', 'none');
+  outline.setAttribute('stroke', neutralStroke);
+  outline.setAttribute('stroke-width', '1');
+  outline.setAttribute('stroke-opacity', darkMode ? '0.06' : '0.06');
+      outline.setAttribute('pointer-events', 'none');
+      g.appendChild(outline);
+
+      // Líneas que simulan estantes: dos líneas finas horizontales
+      const shelfLine = (yFrac, color, width, opacity) => {
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const y = Math.round(rectH * yFrac);
+        ln.setAttribute('x1', 6);
+        ln.setAttribute('y1', y);
+        ln.setAttribute('x2', rectW - 6);
+        ln.setAttribute('y2', y);
+        ln.setAttribute('stroke', color);
+        ln.setAttribute('stroke-width', String(width));
+        ln.setAttribute('stroke-linecap', 'round');
+        ln.setAttribute('opacity', String(opacity));
+        ln.setAttribute('pointer-events', 'none');
+        return ln;
+      };
+
+      // líneas neutras (estructura)
+      g.appendChild(shelfLine(0.44, darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(2,6,23,0.04)', 1, 1));
+      g.appendChild(shelfLine(0.72, darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(2,6,23,0.03)', 1, 1));
+
+      // Subrayado de color (accent): una línea en la base con color según estado
+      const accent = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      const accentY = Math.round(rectH - Math.max(4, rectH * 0.12));
+      accent.setAttribute('x1', 6);
+      accent.setAttribute('y1', accentY);
+      accent.setAttribute('x2', rectW - 6);
+      accent.setAttribute('y2', accentY);
+      accent.setAttribute('stroke', baseColor);
+      accent.setAttribute('stroke-width', Math.max(2, Math.round(rectH * 0.12)));
+      accent.setAttribute('stroke-linecap', 'round');
+      accent.setAttribute('opacity', '0.92');
+      accent.setAttribute('pointer-events', 'none');
+      g.appendChild(accent);
+
+      // leve brillo interior sobre el subrayado (más sutil)
+      const accentGlow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      accentGlow.setAttribute('x1', 6);
+      accentGlow.setAttribute('y1', accentY - 2);
+      accentGlow.setAttribute('x2', rectW - 6);
+      accentGlow.setAttribute('y2', accentY - 2);
+      accentGlow.setAttribute('stroke', '#ffffff');
+      accentGlow.setAttribute('stroke-width', '1');
+      accentGlow.setAttribute('opacity', darkMode ? '0.06' : '0.04');
+      accentGlow.setAttribute('pointer-events', 'none');
+      g.appendChild(accentGlow);
+
+      // Texto (nombre completo) centrado. Añadimos un pequeño bloque (labelBox) detrás del texto
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', rectW / 2);
+      text.setAttribute('y', Math.round(rectH * 0.45) + 4);
+      text.setAttribute('text-anchor', 'middle');
+      const fontSize = Math.max(8, Math.min(12, Math.floor(rectH * 0.34)));
+      text.setAttribute('font-size', String(fontSize));
+      text.setAttribute('fill', 'currentColor');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = `Estante ${e.id_estante}`;
+      // Añadir texto (sin labelBox) y posicionarlo en centro del área del estante
+      text.setAttribute('y', Math.round(rectH * 0.45) + 4);
+      g.appendChild(text);
+
+  svg.appendChild(g);
+
+      // Mantener eventos existentes sobre el grupo
+      const attachEventsTarget = g;
+      attachEventsTarget.addEventListener('click', () => WeigenceMonitor.mostrarDetalleEstante(e));
+      attachEventsTarget.addEventListener('mouseenter', evt => {
+        const tooltip = document.getElementById('tooltip-estante');
+        if (!tooltip) return;
+        tooltip.classList.remove('hidden');
+        const svgRect = svg.getBoundingClientRect();
+        const x = evt.clientX - svgRect.left;
+        const y = evt.clientY - svgRect.top;
+        tooltip.style.left = `${x + 12}px`;
+        tooltip.style.top = `${y - tooltip.offsetHeight / 2}px`;
+        const tipRect = tooltip.getBoundingClientRect();
+        if (tipRect.right > window.innerWidth - 10) tooltip.style.left = `${x - tipRect.width - 12}px`;
+        if (tipRect.top < 0) tooltip.style.top = `${y + 10}px`;
+        tooltip.innerHTML = `<b>Estante ${e.id_estante}</b><br>Estado: ${e.estado}<br>Ocupación: ${e.ocupacion_pct || 0}%`;
+      });
+      attachEventsTarget.addEventListener('mouseleave', () => {
+        const tooltip = document.getElementById('tooltip-estante');
+        if (tooltip) tooltip.classList.add('hidden');
       });
     });
   } catch (err) {
     console.error("Error SVG almacén:", err);
   }
 };
+
 
 // detalle en modal
 WeigenceMonitor.mostrarDetalleEstante = function (estante) {
@@ -1162,11 +1268,31 @@ async function cargarAlertas() {
     console.error("Error cargando alertas:", err);
   }
 }
+// --- Sincroniza el mapa SVG con el modo claro/oscuro dinámicamente ---
+const observer = new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    if (m.attributeName === "class") {
+      const isDark = document.documentElement.classList.contains("dark");
 
-// Ejecutar al cargar la página
-document.addEventListener("DOMContentLoaded", cargarAlertas);
-// Refrescar cada 20 segundos
-setInterval(cargarAlertas, 20000);
+      // Si existe el SVG, actualiza fondo y texto
+      const svg = document.getElementById("svg-almacen");
+      if (svg) {
+        svg.style.background = "transparent"; // siempre limpio
+        svg.querySelectorAll("text").forEach(t => {
+          t.setAttribute("fill", isDark ? "#E5E7EB" : "#0F172A");
+        });
+      }
+
+      // Si quieres que recalcule todo el diseño del mapa:
+      if (typeof WeigenceMonitor.actualizarSVG === "function") {
+        WeigenceMonitor.actualizarSVG();
+      }
+    }
+  }
+});
+
+// Observa cambios en la clase del <html> (Tailwind usa esto para modo dark)
+observer.observe(document.documentElement, { attributes: true });
 
 
 // integrar con el resto
@@ -1176,10 +1302,15 @@ WeigenceMonitor.actualizarTodo = async function () {
   this.actualizarSVG();
 };
 
-// Activar al cargar
-document.addEventListener("DOMContentLoaded", () => WeigenceMonitor.init());
+document.addEventListener("DOMContentLoaded", async () => {
+  await WeigenceMonitor.init();
+  await WeigenceMonitor.actualizarSVG();
+  await cargarAlertas();
+  Inventario.init();
+  console.info("Weigence Inventory System listo.");
+});
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', ()=>Inventario.init());
+// Refrescar alertas cada 20 segundos
+setInterval(cargarAlertas, 20000);
 
 

@@ -67,7 +67,7 @@
       {% endif %}
 
       <!-- Alertas -->
-      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
       <a href="{{ url_for('main.alertas') }}" 
         {% if request.endpoint == 'main.alertas' %}
           aria-current="page"
@@ -95,7 +95,7 @@
           class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
         {% endif %}>
         <span class="material-symbols-outlined text-xl">monitoring</span>
-        <span class="font-medium hidden lg:block">Auditoría</span>
+        <span class="font-medium hidden lg:block">AuditorIA</span>
       </a>
       {% endif %}
 
@@ -113,14 +113,12 @@
       </a>
       {% endif %}
 
-    </nav>
-
 
     <!-- PANEL PERFIL -->
     <div id="sidebar-profile" class="hidden flex flex-col flex-1 px-3 mt-4">
 
       <!-- Contenido principal del perfil arriba -->
-      <div class="flex flex-col items-center text-center px-3 py-5 bg-neutral-100 dark:bg-neutral-800 rounded-xl shadow-sm">
+      <div class="bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] text-[var(--text-light)] flex flex-col items-center text-center px-3 py-5 rounded-xl shadow-sm">
         <div class="w-20 h-20 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center mb-3">
           <span class="material-symbols-outlined text-6xl text-primary-600 dark:text-primary-400">account_circle</span>
         </div>

@@ -39,13 +39,25 @@ def login():
         )
 
         if usuario_encontrado:
+            # DEBUG: Mostrar qué usuario se encontró
+            print(f"[LOGIN DEBUG] Usuario encontrado:")
+            print(f"  - Nombre: {usuario_encontrado.get('nombre')}")
+            print(f"  - Rol en BD: {usuario_encontrado.get('rol')}")
+            print(f"  - Rol minúsculas: {str(usuario_encontrado.get('rol', '')).lower()}")
+            
             if usuario_encontrado.get("Contraseña") == password_input:
                 # Crear sesión
                 session["usuario_logueado"] = True
                 session["usuario_nombre"] = usuario_encontrado.get("nombre")
-                session["usuario_rol"] = usuario_encontrado.get("rol")
+                session["usuario_rol"] = str(usuario_encontrado.get("rol", "")).lower()  # Convertir a minúsculas
                 session["usuario_id"] = usuario_encontrado.get("rut_usuario")
                 session["usuario_correo"] = usuario_encontrado.get("correo")
+                
+                # DEBUG: Mostrar sesión creada
+                print(f"[LOGIN DEBUG] Sesión creada:")
+                print(f"  - usuario_nombre: {session['usuario_nombre']}")
+                print(f"  - usuario_rol: {session['usuario_rol']}")
+                print(f"  - usuario_id: {session['usuario_id']}")
                 
                 # Guardar el estado de "Recordarme"
                 if recordarme == "on":

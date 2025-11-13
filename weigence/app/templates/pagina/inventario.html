@@ -74,7 +74,8 @@
           <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
             Visión General del Almacén
           </h3>
-          <div class="relative w-full aspect-[2/1] rounded-xl overflow-visible almacen-map">
+          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] relative w-full aspect-[2/1] rounded-xl overflow-visible almacen-map bg-transparent">
+
             <svg id="svg-almacen" class="relative overflow-visible" viewBox="0 0 400 200">
               <!-- Se rellena dinámicamente desde JS -->
             </svg>
@@ -85,7 +86,7 @@
             </div>
 
             <!-- Leyenda -->
-            <div class="absolute bottom-4 right-6 flex items-center gap-6 almacen-legend">
+            <div class="text-neutral-600 dark:text-neutral-400 absolute bottom-4 right-6 flex items-center gap-6 almacen-legend">
               <div class="almacen-legend-item"><span class="almacen-legend-swatch estable"></span>Estable</div>
               <div class="almacen-legend-item"><span class="almacen-legend-swatch advertencia"></span>Advertencia</div>
               <div class="almacen-legend-item"><span class="almacen-legend-swatch critico"></span>Crítico</div>
@@ -104,9 +105,9 @@
             Alertas y Acciones Sugeridas
           </h3>
 
-          <div class="flex flex-col gap-3">
+          <div id="alertas-sugeridas" class="flex flex-col gap-3">
             {% for alerta in alertas_sugeridas[:3] %}
-              <div class="flex items-start gap-3 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 
+              <div class="flex items-start gap-3 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3
                           bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
                 <span class="material-symbols-outlined 
                             {% if alerta.color == 'rojo' %}text-red-500{% elif alerta.color == 'amarilla' %}text-yellow-500{% else %}text-green-500{% endif %} 
@@ -124,30 +125,14 @@
 
         <!-- Proyección -->
         <div class="panel bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
-            Proyección de Consumo
-          </h3>
-          <canvas id="chartProyeccion" height="220"></canvas>
-          <div class="w-full h-48">
-            <svg id="grafico-proyeccion" class="text-sm" height="100%" width="100%">
-              <defs>
-                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.4"></stop>
-                  <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0"></stop>
-                </linearGradient>
-              </defs>
-              <g stroke="var(--border-dark)" stroke-dasharray="2,2">
-                <line x1="30" x2="30" y1="5" y2="170"></line>
-                <line x1="30" x2="100%" y1="170" y2="170"></line>
-              </g>
-              <g fill="var(--text-dark-secondary)" font-size="10px">
-                <text x="0" y="15">100</text>
-                <text x="0" y="90">50</text>
-                <text x="0" y="170">0</text>
-              </g>
-              <path id="linea" d="" fill="none" stroke="var(--primary-color)" stroke-width="2"></path>
-              <path id="relleno" d="" fill="url(#gradient)"></path>
-            </svg>
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
+              Proyección de Consumo
+            </h3>
+            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Actualización dinámica</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chartProyeccion" class="absolute inset-0 w-full h-full"></canvas>
           </div>
         </div>
       </div>

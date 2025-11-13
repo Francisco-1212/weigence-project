@@ -5,9 +5,10 @@ from datetime import datetime, timedelta
 from collections import Counter
 from jinja2 import Undefined
 from .utils import requiere_login, agrupar_notificaciones_por_fecha
+from .decorators import requiere_rol
 
 @bp.route("/dashboard")
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def dashboard():
     productos = supabase.table("productos").select("*").execute().data
     pesajes = supabase.table("pesajes").select("*").execute().data
@@ -64,7 +65,7 @@ def dashboard():
 
 
 @bp.route('/api/dashboard_filtrado')
-@requiere_login
+@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def api_dashboard_filtrado():
     rango = request.args.get('rango', 'hoy')
     mes = request.args.get('mes', type=int)

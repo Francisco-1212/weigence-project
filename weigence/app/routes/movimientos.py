@@ -4,9 +4,10 @@ from . import bp
 from api.conexion_supabase import supabase
 from flask import request, jsonify, session
 from datetime import datetime
+from .decorators import requiere_rol
 
 @bp.route("/movimientos")
-@requiere_login
+@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def movimientos():
     try:
         #print("Realizando consulta a Supabase...")

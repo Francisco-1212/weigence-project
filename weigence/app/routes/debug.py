@@ -3,7 +3,7 @@ Endpoint de debug para verificar qué hay en la sesión
 Accede a: http://localhost:5000/debug-sesion
 """
 
-from flask import Blueprint, jsonify, session
+from flask import Blueprint, jsonify, session, render_template
 
 debug_bp = Blueprint('debug', __name__)
 
@@ -21,6 +21,16 @@ def debug_sesion():
         },
         "mensaje": "Si ves todo vacío/None, significa que no hay sesión activa. Inicia sesión primero."
     })
+
+@debug_bp.route('/debug-sesion-visual')
+def debug_sesion_visual():
+    """Versión visual del debug de sesión"""
+    return render_template('pagina/debug_sesion.html')
+
+@debug_bp.route('/debug-usuario')
+def debug_usuario():
+    """Debug detallado del usuario actual"""
+    return render_template('pagina/debug_usuario.html')
 
 # Exportar para usar en app/__init__.py
 debug_blueprint = debug_bp
