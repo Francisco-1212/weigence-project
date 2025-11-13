@@ -10,142 +10,192 @@
 {% endblock %}
 
 {% block contenido %}
-<div class="w-full flex flex-col gap-10 pb-10 px-4 xl:px-6 2xl:px-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap');
+    .font-roboto-mono {
+      font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .blinking-cursor {
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      from,
+      to {
+        color: transparent;
+      }
+      50% {
+        color: #e5e7eb;
+      }
+    }
+  </style>
 
-  <!-- CABECERA -->
-  <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
-    <div>
-      <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl">monitoring</span>
-        Consola de Auditoría Inteligente
-      </h1>
-    </div>
-    <button id="btn-refresh-auditoria" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 text-white px-4 py-2 text-sm font-medium hover:bg-primary-500 transition">
-      <span class="material-symbols-outlined text-[18px]">refresh</span> Actualizar
-    </button>
-  </section>
-
-  <!-- ESTADO DEL SISTEMA -->
-  <section>
-    <h2 class="text-lg font-semibold mb-3 text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">health_and_safety</span>
-      Estado general del sistema
-    </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {% set estados = [
-        ('Sensores activos','120/120','sensors','text-green-500'),
-        ('Advertencias (24h)','3','warning','text-yellow-500'),
-        ('Errores críticos','1','error','text-red-500'),
-        ('Sincronización','OK','sync','text-primary-500')
-      ] %}
-      {% for label, value, icon, color in estados %}
-      <div class="p-4 rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] flex items-center justify-between hover:border-primary-400/40 transition-all">
-        <div>
-          <p class="text-[12px] text-neutral-500 dark:text-neutral-400">{{ label }}</p>
-          <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{{ value }}</p>
-        </div>
-        <span class="material-symbols-outlined {{ color }} text-[28px]">{{ icon }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <!-- INCIDENCIAS Y RECOMENDACIONES -->
-  <section class="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6">
-
-    <!-- Incidencias recientes -->
-    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5 shadow-sm">
-      <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined text-yellow-500">bug_report</span>
-        Incidencias recientes
-      </h3>
-      <div class="space-y-2">
-        {% set incidencias = [
-          ('dangerous','red-500','Acceso no autorizado en Zona B','12:10 • Alta severidad'),
-          ('warning','yellow-500','Discrepancia de peso en Item #X456','10:45 • Media severidad'),
-          ('build','blue-500','Sensor #12 sin lectura por 10s','14:25 • Baja severidad')
-        ] %}
-        {% for icono, color, texto, detalle in incidencias %}
-        <div class="flex items-start gap-3 bg-neutral-100/70 dark:bg-[var(--card-sub-bg-dark)] rounded-md p-3 border border-transparent hover:border-[var(--border-dark)]/80 transition">
-          <span class="material-symbols-outlined text-{{ color }} text-base mt-0.5">{{ icono }}</span>
-          <div class="flex-1 text-xs">
-            <p class="text-neutral-800 dark:text-neutral-200 font-medium">{{ texto }}</p>
-            <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">{{ detalle }}</p>
+  <div class="w-full flex flex-col gap-10 pb-12 px-4 xl:px-6 2xl:px-8">
+    <section class="space-y-6">
+      <div class="space-y-1">
+        <div class="flex items-center gap-3 text-neutral-900 dark:text-neutral-100">
+          <span class="material-symbols-outlined text-primary-500 text-3xl">shield_person</span>
+          <div>
+            <h1 class="text-3xl font-semibold leading-tight">Centro Forense de Auditoría</h1>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">Supervisa eventos críticos en tiempo real y ejecuta investigaciones con precisión quirúrgica.</p>
           </div>
-          <button class="text-[11px] px-2 py-1 rounded border border-neutral-300 dark:border-[var(--border-dark)] hover:bg-neutral-200/50 dark:hover:bg-[var(--card-sub-bg-dark)]">Ver</button>
         </div>
-        {% endfor %}
       </div>
-    </div>
 
-    <!-- Recomendación AI -->
-    <article
-      id="ai-recomendacion-auditoria"
-      class="ia-recommendation"
-      data-ia-card
-      data-severity="info"
-      data-ia-status="idle"
-      aria-live="polite"
-      aria-busy="false"
-    >
-      <div class="ia-recommendation__halo" aria-hidden="true"></div>
-      <div class="ia-recommendation__body">
-        <div class="ia-recommendation__meta">
-          <span class="material-symbols-outlined text-primary-500 text-lg" data-ia-icon>auto_awesome</span>
-          <span data-ia-severity>Analizando entorno</span>
-        </div>
-        <h4 class="ia-recommendation__title" data-ia-title>
-          Generando recomendación estratégica...
-        </h4>
-        <p class="ia-recommendation__message" data-ia-message>
-          El motor IA está consolidando métricas recientes para producir un diagnóstico único con contexto operativo.
-        </p>
-        <div class="ia-recommendation__solution">
-          <span class="ia-recommendation__label">Plan sugerido</span>
-          <p class="ia-recommendation__solution-text" data-ia-solution>
-            El sistema propondrá una intervención prioritaria una vez completado el análisis.
+      <article
+        id="ai-recomendacion-auditoria"
+        class="ia-recommendation"
+        data-ia-card
+        data-severity="info"
+        data-ia-status="idle"
+        aria-live="polite"
+        aria-busy="false"
+      >
+        <div class="ia-recommendation__halo" aria-hidden="true"></div>
+        <div class="ia-recommendation__body">
+          <div class="ia-recommendation__meta">
+            <span class="material-symbols-outlined text-primary-500 text-lg" data-ia-icon>auto_awesome</span>
+            <span data-ia-severity>Analizando entorno</span>
+          </div>
+          <h4 class="ia-recommendation__title" data-ia-title>
+            Generando recomendación estratégica...
+          </h4>
+          <p class="ia-recommendation__message" data-ia-message>
+            El motor IA está consolidando métricas recientes para producir un diagnóstico único con contexto operativo.
           </p>
+          <div class="ia-recommendation__solution">
+            <span class="ia-recommendation__label">Plan sugerido</span>
+            <p class="ia-recommendation__solution-text" data-ia-solution>
+              El sistema propondrá una intervención prioritaria una vez completado el análisis.
+            </p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="space-y-6">
+      <div class="rounded-2xl border border-neutral-200/70 dark:border-white/10 bg-white/90 dark:bg-[#111721]/80 backdrop-blur-sm shadow-soft">
+        <div class="px-6 pt-6 pb-4 border-b border-neutral-200/70 dark:border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div class="space-y-2">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-white tracking-tight flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary-500">terminal</span>
+              Terminal de Investigación
+            </h2>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">Consulta, filtra y correlaciona eventos de inventario, accesos, sensores y acciones IA desde un único flujo operacional.</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-green-500"></span> Integridad de datos</span>
+            <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-primary-500"></span> Sesiones activas</span>
+          </div>
+        </div>
+
+        <div class="px-6 pb-6 space-y-5">
+          <div class="flex flex-col lg:flex-row gap-4">
+            <div class="relative flex-1">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">travel_explore</span>
+              <input
+                id="audit-log-search"
+                type="text"
+                class="w-full h-12 rounded-lg border border-neutral-200 dark:border-white/10 bg-neutral-50/80 dark:bg-[#0c121d]/80 px-11 pr-4 text-sm text-neutral-800 dark:text-neutral-100 font-roboto-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Filtrar por usuario:jperez producto:prod-001 tipo_evento:anomalía fecha:2024-09-21..."
+                autocomplete="off"
+              >
+            </div>
+            <button
+              id="audit-run-query"
+              type="button"
+              class="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-primary-600 text-white text-sm font-semibold shadow-sm transition hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-400"
+            >
+              <span class="material-symbols-outlined text-base">play_arrow</span>
+              Ejecutar consulta
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+              <span>Filtros activos:</span>
+              <div id="audit-active-filters" class="flex flex-wrap gap-2"></div>
+              <button id="audit-clear-filters" class="text-primary-600 dark:text-primary-400 font-medium hover:underline hidden">Limpiar filtros</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="audit-export-zip" class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-white/70 dark:bg-white/10 border border-neutral-200/80 dark:border-white/10 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-white/90 dark:hover:bg-white/15 transition">
+                <span class="material-symbols-outlined text-base">download</span>
+                Exportar evidencia (.zip)
+              </button>
+              <button id="audit-export-pdf" class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-white/70 dark:bg-white/10 border border-neutral-200/80 dark:border-white/10 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-white/90 dark:hover:bg-white/15 transition">
+                <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                Generar informe PDF
+              </button>
+              <button id="audit-recalibrate" class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-white/70 dark:bg-white/10 border border-neutral-200/80 dark:border-white/10 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-white/90 dark:hover:bg-white/15 transition">
+                <span class="material-symbols-outlined text-base">sensors</span>
+                Recalibrar sensores
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </article>
 
-  </section>
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6">
+        <div class="bg-[#161c28] dark:bg-[#0b101a] border border-white/10 rounded-2xl h-full flex flex-col shadow-soft">
+          <div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-white/10">
+            <div class="flex items-center gap-3">
+              <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Live Audit Trail</h3>
+              <span class="inline-flex items-center gap-2 text-xs text-slate-400" id="audit-stream-status">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                STREAMING
+              </span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+              <span id="audit-last-updated">Sincronizando...</span>
+            </div>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <div
+              id="audit-log-stream"
+              class="h-full overflow-y-auto px-6 py-5 space-y-3 font-roboto-mono text-sm text-slate-200"
+              role="log"
+              aria-live="polite"
+              data-scrollable
+            >
+              <div id="audit-log-empty" class="text-slate-500 text-xs italic">Esperando eventos del sistema...</div>
+            </div>
+          </div>
+          <div class="px-6 py-3 border-t border-white/10 text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-slate-400">
+            <div class="flex items-center gap-4 font-roboto-mono">
+              <span>MEM: <span id="audit-mem-usage">--</span></span>
+              <span>CPU: <span id="audit-cpu-usage">--</span></span>
+              <span>LATENCY: <span id="audit-latency">--</span></span>
+            </div>
+            <button id="audit-export-csv" class="inline-flex items-center gap-2 uppercase tracking-[0.2em] text-[11px] text-slate-300 hover:text-white transition">
+              <span class="material-symbols-outlined text-sm">download</span>
+              Export logs (.csv)
+            </button>
+          </div>
+        </div>
 
-  <!-- SYSTEM INSIGHTS -->
-  <section>
-    <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">insights</span>
-      System Insights
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-
-      <!-- Chart 1 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Distribución de tipos de evento</p>
-        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
-
+        <aside class="rounded-2xl border border-neutral-200/70 dark:border-white/10 bg-white/90 dark:bg-[#111721]/80 backdrop-blur-sm shadow-soft flex flex-col">
+          <header class="px-6 pt-5 pb-4 border-b border-neutral-200/60 dark:border-white/10">
+            <h3 class="text-sm font-semibold text-neutral-800 dark:text-white uppercase tracking-[0.18em]">Resumen operativo</h3>
+          </header>
+          <div class="flex-1 px-6 py-5 space-y-5 text-sm text-neutral-700 dark:text-neutral-200">
+            <div class="space-y-1">
+              <p class="text-xs uppercase tracking-[0.3em] text-neutral-500 dark:text-neutral-400">Contexto IA</p>
+              <p id="audit-context-summary" class="text-sm leading-relaxed">Correlaciona accesos, pesajes y eventos IA en vivo para priorizar intervenciones y reducir riesgos de fraude.</p>
+            </div>
+            <div class="space-y-2">
+              <p class="text-xs uppercase tracking-[0.3em] text-neutral-500 dark:text-neutral-400">Eventos detectados</p>
+              <ul id="audit-event-counts" class="space-y-1 text-sm"></ul>
+            </div>
+            <div class="space-y-2">
+              <p class="text-xs uppercase tracking-[0.3em] text-neutral-500 dark:text-neutral-400">Última alerta crítica</p>
+              <p id="audit-last-critical" class="text-sm text-red-400">Sin registros críticos recientes.</p>
+            </div>
+          </div>
+        </aside>
       </div>
-
-      <!-- Chart 2 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Incidencias (últimos 7 días)</p>
-        <canvas id="chartIncidencias" class="h-[250px] w-full !p-2"></canvas>
-      </div>
-
-      <!-- Chart 3 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Mapa de actividad (24h)</p>
-        <canvas id="chartActividad" class="h-[250px] w-full !p-2"></canvas>
-
-      </div>
-
-    </div>
-  </section>
-
-</div>
+    </section>
+  </div>
 
   {% if request.endpoint == 'main.auditoria' %}
     <script src="{{ url_for('static', filename='js/ia-recommendation.js') }}"></script>
   {% endif %}
-
 {% endblock %}
