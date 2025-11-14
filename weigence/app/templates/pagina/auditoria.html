@@ -1,151 +1,168 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Auditoría Inteligente - Weigence{% endblock %}
 
-{% block top %}
-  {% include "componentes/header.html" %}
-{% endblock %}
-
-{% block sidebar %}
-  {% include "componentes/sidebar.html" %}
-{% endblock %}
+{% block top %}{% include "componentes/header.html" %}{% endblock %}
+{% block sidebar %}{% include "componentes/sidebar.html" %}{% endblock %}
 
 {% block contenido %}
-<div class="w-full flex flex-col gap-10 pb-10 px-4 xl:px-6 2xl:px-8">
 
-  <!-- CABECERA -->
-  <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
-    <div>
-      <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl">monitoring</span>
-        Consola de Auditoría Inteligente
-      </h1>
-    </div>
-    <button id="btn-refresh-auditoria" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 text-white px-4 py-2 text-sm font-medium hover:bg-primary-500 transition">
-      <span class="material-symbols-outlined text-[18px]">refresh</span> Actualizar
-    </button>
-  </section>
+<div class="w-full space-y-8 font-roboto-mono text-[#EAEAEA]">
 
-  <!-- ESTADO DEL SISTEMA -->
-  <section>
-    <h2 class="text-lg font-semibold mb-3 text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">health_and_safety</span>
-      Estado general del sistema
-    </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {% set estados = [
-        ('Sensores activos','120/120','sensors','text-green-500'),
-        ('Advertencias (24h)','3','warning','text-yellow-500'),
-        ('Errores críticos','1','error','text-red-500'),
-        ('Sincronización','OK','sync','text-primary-500')
-      ] %}
-      {% for label, value, icon, color in estados %}
-      <div class="p-4 rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] flex items-center justify-between hover:border-primary-400/40 transition-all">
-        <div>
-          <p class="text-[12px] text-neutral-500 dark:text-neutral-400">{{ label }}</p>
-          <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{{ value }}</p>
-        </div>
-        <span class="material-symbols-outlined {{ color }} text-[28px]">{{ icon }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
+  <!-- TARJETA SUPERIOR: BUSCADOR / FILTROS / BOTONES -->
+  <section class="rounded-2xl border border-white/10 bg-[#0F1014]/70 shadow-soft backdrop-blur">
+    <div class="p-6 space-y-6">
 
-  <!-- INCIDENCIAS Y RECOMENDACIONES -->
-  <section class="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6">
-
-    <!-- Incidencias recientes -->
-    <div class="rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5 shadow-sm">
-      <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined text-yellow-500">bug_report</span>
-        Incidencias recientes
-      </h3>
-      <div class="space-y-2">
-        {% set incidencias = [
-          ('dangerous','red-500','Acceso no autorizado en Zona B','12:10 • Alta severidad'),
-          ('warning','yellow-500','Discrepancia de peso en Item #X456','10:45 • Media severidad'),
-          ('build','blue-500','Sensor #12 sin lectura por 10s','14:25 • Baja severidad')
-        ] %}
-        {% for icono, color, texto, detalle in incidencias %}
-        <div class="flex items-start gap-3 bg-neutral-100/70 dark:bg-[var(--card-sub-bg-dark)] rounded-md p-3 border border-transparent hover:border-[var(--border-dark)]/80 transition">
-          <span class="material-symbols-outlined text-{{ color }} text-base mt-0.5">{{ icono }}</span>
-          <div class="flex-1 text-xs">
-            <p class="text-neutral-800 dark:text-neutral-200 font-medium">{{ texto }}</p>
-            <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">{{ detalle }}</p>
-          </div>
-          <button class="text-[11px] px-2 py-1 rounded border border-neutral-300 dark:border-[var(--border-dark)] hover:bg-neutral-200/50 dark:hover:bg-[var(--card-sub-bg-dark)]">Ver</button>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Recomendación AI -->
-    <article
-      id="ai-recomendacion-auditoria"
-      class="ia-recommendation"
-      data-ia-card
-      data-severity="info"
-      data-ia-status="idle"
-      aria-live="polite"
-      aria-busy="false"
-    >
-      <div class="ia-recommendation__halo" aria-hidden="true"></div>
-      <div class="ia-recommendation__body">
-        <div class="ia-recommendation__meta">
-          <span class="material-symbols-outlined text-primary-500 text-lg" data-ia-icon>auto_awesome</span>
-          <span data-ia-severity>Analizando entorno</span>
-        </div>
-        <h4 class="ia-recommendation__title" data-ia-title>
-          Generando recomendación estratégica...
-        </h4>
-        <p class="ia-recommendation__message" data-ia-message>
-          El motor IA está consolidando métricas recientes para producir un diagnóstico único con contexto operativo.
-        </p>
-        <div class="ia-recommendation__solution">
-          <span class="ia-recommendation__label">Plan sugerido</span>
-          <p class="ia-recommendation__solution-text" data-ia-solution>
-            El sistema propondrá una intervención prioritaria una vez completado el análisis.
+      <header class="flex flex-col gap-2 text-left">
+        <p class="text-xs uppercase tracking-[0.45em] text-white/60">Terminal de Investigación</p>
+        <div class="flex flex-wrap items-center justify-between gap-4 text-white">
+          <h1 class="text-2xl font-semibold tracking-tight">Centro de Inteligencia Forense</h1>
+          <p class="text-sm text-white/60 max-w-xl">
+            Filtra por usuario, producto, estante, tipo_evento, severidad y fecha.
+            Combina criterios para aislar patrones críticos.
           </p>
         </div>
-      </div>
-    </article>
+      </header>
 
-  </section>
-
-  <!-- SYSTEM INSIGHTS -->
-  <section>
-    <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary-600 dark:text-primary-400">insights</span>
-      System Insights
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-
-      <!-- Chart 1 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Distribución de tipos de evento</p>
-        <canvas id="chartEventos" class="h-[250px] w-full !p-2"></canvas>
-
+      <!-- BUSCADOR -->
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="relative flex-grow">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50">search</span>
+          <input
+            id="audit-search"
+            class="w-full bg-[#11141a] border border-white/10 rounded-lg h-11 pl-12 pr-4 text-white placeholder-white/40"
+            placeholder="usuario:jperez producto:prod-0012 estante:est-a03 tipo_evento:anomalia fecha:2024-09-21"
+          />
+        </div>
+        <button id="audit-exec-query" class="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-white shadow hover:bg-primary/90">
+          <span class="material-symbols-outlined text-base">play_arrow</span>
+          Ejecutar Consulta
+        </button>
       </div>
 
-      <!-- Chart 2 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Incidencias (últimos 7 días)</p>
-        <canvas id="chartIncidencias" class="h-[250px] w-full !p-2"></canvas>
+      <!-- FILTROS ACTIVOS -->
+      <div class="flex flex-wrap items-center gap-3 text-sm text-white/80">
+        <span class="uppercase text-white/40 text-xs">Filtros Activos</span>
+        <div id="audit-active-filters" class="flex flex-wrap gap-2"></div>
+        <button id="audit-clear-filters" class="text-white/50 hover:text-white text-xs uppercase tracking-wide">Limpiar</button>
       </div>
 
-      <!-- Chart 3 -->
-      <div class="insights-card rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-5">
-        <p class="mb-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">Mapa de actividad (24h)</p>
-        <canvas id="chartActividad" class="h-[250px] w-full !p-2"></canvas>
-
+      <!-- BOTONES -->
+      <div class="flex flex-wrap gap-2 text-sm">
+        <button id="audit-export-zip" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
+          <span class="material-symbols-outlined text-base">archive</span> Export ZIP
+        </button>
+        <button id="audit-export-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
+          <span class="material-symbols-outlined text-base">picture_as_pdf</span> Generar PDF
+        </button>
+        <button id="audit-export-csv" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
+          <span class="material-symbols-outlined text-base">file_download</span> Export CSV
+        </button>
+        <button id="audit-recalibrate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
+          <span class="material-symbols-outlined text-base">sensors</span> Recalibrar Sensores
+        </button>
       </div>
 
     </div>
   </section>
 
-</div>
+  <!-- GRID PRINCIPAL: TERMINAL IZQUIERDA | IA DERECHA -->
+  <section class="grid grid-cols-12 gap-6 mt-8">
 
-  {% if request.endpoint == 'main.auditoria' %}
-    <script src="{{ url_for('static', filename='js/ia-recommendation.js') }}"></script>
-  {% endif %}
+    <!-- TERMINAL + LIVE AUDIT TRAIL -->
+    <div class="col-span-12 lg:col-span-8 space-y-6">
+
+      <!-- LIVE AUDIT TRAIL -->
+      <div class="rounded-xl border border-white/10 bg-[--card-bg-light] dark:bg-[--card-bg-dark] shadow-xl">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between border-b border-white/10 px-5 py-3">
+          <div>
+            <p class="uppercase tracking-[0.35em] text-[--text-muted-light] dark:text-[--text-muted-dark] text-xs">
+              Live Audit Trail
+            </p>
+            <p class="text-sm text-[--text-subtle-light] dark:text-[--text-subtle-dark]">
+              Streaming INFO / WARN / CRIT en tiempo real.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div id="audit-stream-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span id="audit-last-updated" class="text-xs text-[--text-muted-light] dark:text-[--text-muted-dark]">
+              Sin sincronizar
+            </span>
+          </div>
+        </div>
+
+        <!-- CONSOLA -->
+        <div class="px-5 py-3">
+          <div id="audit-log-stream"
+            class="flex-grow overflow-y-auto px-4 py-3 rounded-lg font-mono text-sm leading-[1.35]
+                  bg-[--log-bg-light] dark:bg-[--log-bg-dark]
+                  text-[--log-text-light] dark:text-[--log-text-dark]
+                  space-y-1"
+            style="max-height:300px; scrollbar-width: thin;">
+
+            <div id="audit-log-empty" class="text-xs italic opacity-60">
+              Esperando eventos del backend…
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="flex items-center justify-between border-t border-white/10 px-5 py-3 text-xs
+                    text-[--text-muted-light] dark:text-[--text-muted-dark]">
+          <div class="flex gap-4">
+            <span>MEM: <span id="audit-mem-usage">--</span></span>
+            <span>CPU: <span id="audit-cpu-usage">--</span></span>
+            <span>LATENCY: <span id="audit-latency">--</span></span>
+          </div>
+
+          <button id="audit-export-csv-footer" class="flex items-center gap-1 hover:text-white">
+            <span class="material-symbols-outlined text-sm">download</span>
+            Export logs (.csv)
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- BLOQUE IA -->
+    <div class="col-span-12 lg:col-span-4">
+      <article
+        id="ai-recomendacion-auditoria"
+        class="ia-recommendation h-full"
+        data-ia-card
+        data-severity="info"
+        data-ia-status="idle"
+        aria-live="polite"
+        aria-busy="false"
+      >
+        <div class="ia-recommendation__halo" aria-hidden="true"></div>
+
+        <div class="ia-recommendation__body h-full">
+          <div class="ia-recommendation__meta">
+            <span class="material-symbols-outlined" data-ia-icon>auto_awesome</span>
+            <span data-ia-severity>Analizando entorno</span>
+          </div>
+
+          <h4 class="ia-recommendation__title" data-ia-title>Sincronizando contexto operacional…</h4>
+
+          <p class="ia-recommendation__message" data-ia-message>
+            El motor IA correlaciona accesos, alertas y sensores para priorizar incidentes de alto impacto en el inventario.
+          </p>
+
+          <div class="ia-recommendation__solution">
+            <span class="ia-recommendation__label">Plan sugerido</span>
+            <p class="ia-recommendation__solution-text" data-ia-solution>
+              Se generará una acción sugerida al confirmarse patrones anómalos.
+            </p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+  </section>
+</div>
 
 {% endblock %}

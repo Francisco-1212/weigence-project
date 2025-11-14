@@ -863,4 +863,156 @@ const NuevaVenta = {
 document.addEventListener('DOMContentLoaded', () => {
   Ventas.init();
   NuevaVenta.init();
+  initBotonesAccion();
 });
+
+// ===========================================================
+// Funciones para Botones de Acción
+// ===========================================================
+
+function initBotonesAccion() {
+  // Botón "Exportar reporte"
+  const btnExportar = document.getElementById('btn-exportar-reporte');
+  if (btnExportar) {
+    btnExportar.addEventListener('click', () => {
+      exportarReporteVentas();
+    });
+  }
+
+  console.log('✅ Botones de acción inicializados correctamente');
+}
+
+function exportarReporteVentas() {
+  try {
+    const ventas = Ventas.state.filteredRows;
+    
+    if (ventas.length === 0) {
+      mostrarNotificacion('No hay ventas para exportar', 'warning');
+      return;
+    }
+
+    // Preparar datos CSV
+    const headers = ['ID Venta', 'Fecha', 'Vendedor', 'RUT Vendedor', 'Total', 'Productos', 'Unidades'];
+    const rows = [];
+
+    ventas.forEach(row => {
+      const idVenta = row.dataset.idventa;
+      const fecha = row.dataset.fecha;
+      const vendedorNombre = row.dataset.vendedorNombre;
+      const vendedorRut = row.dataset.vendedorRut;
+      const total = parseFloat(row.dataset.total);
+      
+      // Obtener detalles de productos
+      const ventaData = Ventas.state.detallesVentas[idVenta];
+      let totalProductos = 0;
+      let totalUnidades = 0;
+      
+      if (ventaData && ventaData.items) {
+        totalProductos = ventaData.items.length;
+        totalUnidades = ventaData.items.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+      }
+
+      rows.push([
+        idVenta,
+        formatearFecha(fecha),
+        vendedorNombre,
+        vendedorRut,
+        total.toFixed(2),
+        totalProductos,
+        totalUnidades
+      ]);
+    });
+
+    // Generar CSV
+    let csv = headers.join(',') + '\n';
+    rows.forEach(row => {
+      csv += row.map(cell => {
+        // Escapar comillas y envolver en comillas si contiene comas
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return '"' + cellStr.replace(/"/g, '""') + '"';
+        }
+        return cellStr;
+      }).join(',') + '\n';
+    });
+
+    // Agregar resumen al final
+    const totalGeneral = rows.reduce((sum, row) => sum + parseFloat(row[4]), 0);
+    const promedioVenta = totalGeneral / rows.length;
+    csv += '\n';
+    csv += 'RESUMEN\n';
+    csv += `Total de Ventas,${rows.length}\n`;
+    csv += `Total General,$${totalGeneral.toFixed(2)}\n`;
+    csv += `Promedio por Venta,$${promedioVenta.toFixed(2)}\n`;
+
+    // Descargar archivo
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().split('T')[0];
+    link.href = URL.createObjectURL(blob);
+    link.download = `reporte_ventas_${fecha}.csv`;
+    link.click();
+
+    mostrarNotificacion(`Reporte exportado exitosamente: ${rows.length} ventas`, 'success');
+    console.log('✅ Reporte exportado:', rows.length, 'ventas');
+  } catch (error) {
+    console.error('❌ Error al exportar reporte:', error);
+    mostrarNotificacion('Error al exportar el reporte', 'error');
+  }
+}
+
+function formatearFecha(fechaISO) {
+  const fecha = new Date(fechaISO);
+  return fecha.toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function mostrarNotificacion(mensaje, tipo = 'info') {
+  // Crear elemento de notificación
+  const notificacion = document.createElement('div');
+  notificacion.className = `fixed top-4 right-4 z-[9999] px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-[400px]`;
+  
+  // Estilos según tipo
+  const estilos = {
+    success: 'bg-green-500 text-white',
+    error: 'bg-red-500 text-white',
+    warning: 'bg-amber-500 text-white',
+    info: 'bg-blue-500 text-white'
+  };
+  
+  const iconos = {
+    success: 'check_circle',
+    error: 'error',
+    warning: 'warning',
+    info: 'info'
+  };
+  
+  notificacion.className += ` ${estilos[tipo] || estilos.info}`;
+  
+  notificacion.innerHTML = `
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined">${iconos[tipo] || iconos.info}</span>
+      <span class="font-medium">${mensaje}</span>
+    </div>
+  `;
+  
+  document.body.appendChild(notificacion);
+  
+  // Animar entrada
+  setTimeout(() => {
+    notificacion.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Remover después de 3 segundos
+  setTimeout(() => {
+    notificacion.style.transform = 'translateX(400px)';
+    setTimeout(() => {
+      notificacion.remove();
+    }, 300);
+  }, 3000);
+}

@@ -176,6 +176,10 @@ ACCIONES_POR_ROL = {
             'crear': False,
             'editar': False,
             'eliminar': False
+        },
+        'perfil': {
+            'ver': True,
+            'editar': True
         }
     },
     
@@ -200,6 +204,10 @@ ACCIONES_POR_ROL = {
             'crear': False,
             'editar': False,
             'eliminar': False
+        },
+        'perfil': {
+            'ver': True,
+            'editar': True
         }
     },
     
@@ -229,6 +237,10 @@ ACCIONES_POR_ROL = {
             'crear': False,
             'editar': False,
             'eliminar': False
+        },
+        'perfil': {
+            'ver': True,
+            'editar': True
         }
     },
     
@@ -272,6 +284,10 @@ ACCIONES_POR_ROL = {
             'ver': True,
             'descargar': False,
             'exportar': False
+        },
+        'perfil': {
+            'ver': True,
+            'editar': True
         }
     },
     
@@ -319,6 +335,10 @@ ACCIONES_POR_ROL = {
         'recomendaciones': {
             'ver': True,
             'configurar': True
+        },
+        'perfil': {
+            'ver': True,
+            'editar': True
         }
     }
 }

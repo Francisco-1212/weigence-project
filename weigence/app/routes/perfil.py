@@ -12,6 +12,7 @@ except Exception as e:
 
 from . import bp
 from . import bp as main
+from .decorators import puede_realizar_accion
 
 def validar_email(email):
     """Valida que el email tenga un formato correcto"""
@@ -53,7 +54,7 @@ def formatear_numero_celular(numero_celular):
     return numero_celular
 
 @main.route('/editar', methods=['GET', 'POST'])
-@login_required
+@puede_realizar_accion('perfil', 'editar')
 def editar():
     if request.method == 'POST':
         try:
@@ -169,6 +170,7 @@ def api_editar_perfil_test():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @main.route('/api/editar-perfil', methods=['POST'])
+@puede_realizar_accion('perfil', 'editar')
 def api_editar_perfil_handler():
     """API endpoint para actualizar el perfil mediante AJAX"""
     

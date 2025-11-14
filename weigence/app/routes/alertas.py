@@ -112,6 +112,7 @@ def generar_alertas_basicas():
                             "icono": "cancel",
                             "tipo_color": "rojo",
                             "estado": "pendiente",
+                            "idproducto": p.get("idproducto"),
                             "fecha_creacion": datetime.now().isoformat()
                         })
 
@@ -127,6 +128,7 @@ def generar_alertas_basicas():
                             "icono": "inventory_2",
                             "tipo_color": "amarilla",
                             "estado": "pendiente",
+                            "idproducto": p.get("idproducto"),
                             "fecha_creacion": datetime.now().isoformat()
                         })
 
@@ -152,8 +154,27 @@ def descartar_alerta(alerta_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@bp.route("/api/generar_alertas_basicas")
+@bp.route("/api/actualizar_alerta/<int:alerta_id>", methods=["POST"])
+@requiere_login
+def actualizar_alerta(alerta_id):
+    try:
+        datos = request.json
+        nuevo_estado = datos.get("estado")
+        
+        if not nuevo_estado or nuevo_estado not in ["pendiente", "resuelto"]:
+            return jsonify({"success": False, "error": "Estado inválido"}), 400
+        
+        # Actualizar la alerta
+        supabase.table("alertas").update({"estado": nuevo_estado}).eq("id", alerta_id).execute()
+        
+        print(f"✅ Alerta #{alerta_id} actualizada a estado: {nuevo_estado}")
+        return jsonify({"success": True, "mensaje": "Alerta actualizada correctamente"})
+    except Exception as e:
+        print(f"❌ Error al actualizar alerta {alerta_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
+
+@bp.route("/api/generar_alertas_basicas")
 def generar_alertas_basicas_api():
     resultado = generar_alertas_basicas()
     if resultado:

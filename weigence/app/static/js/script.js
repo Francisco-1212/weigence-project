@@ -133,7 +133,7 @@ function inicializarAplicacion() {
     nav.classList.remove('hidden');
     trigger.classList.remove('hidden');
     });
-    
+
 
     // Selectores de período para gráficos
     const periodSelectors = document.querySelectorAll('input[name="periodo-graficos"]');
