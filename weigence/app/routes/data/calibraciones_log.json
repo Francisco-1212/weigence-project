@@ -1,5 +1,10 @@
 [
   {
+    "timestamp": "2025-11-14T23:40:16.070781+00:00",
+    "usuario": "Francisco Carrasco",
+    "detalle": "Recalibración solicitada desde UI"
+  },
+  {
     "timestamp": "2025-11-14T01:39:09.874267+00:00",
     "usuario": "Francisco Carrasco",
     "detalle": "Recalibración solicitada desde UI"

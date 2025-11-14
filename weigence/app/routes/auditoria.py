@@ -10,7 +10,6 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
-
 from flask import jsonify, render_template, request, send_file, session
 
 from api.conexion_supabase import supabase
@@ -59,6 +58,8 @@ SEVERITY_DEFAULT = {
 @bp.route('/auditoria')
 @requiere_rol('supervisor', 'jefe', 'administrador')
 def auditoria():
+    from app.routes.utils.registrar_evento_humano import registrar_evento_humano
+    registrar_evento_humano("navegacion", "Ingresó al módulo Auditoría")
     snapshot = generar_traza_auditoria(limit=80)
     return render_template('pagina/auditoria.html', audit_snapshot=snapshot)
 
@@ -102,6 +103,13 @@ def api_auditoria_logs():
         "meta": snapshot["meta"],
         "filtros_aplicados": filtros,
     })
+
+@bp.route('/auditoria')
+@requiere_rol('supervisor', 'jefe', 'administrador')
+def auditoria():
+    registrar_evento_humano("navegacion", "Ingresó al módulo Auditoría")
+    snapshot = generar_traza_auditoria(limit=80)
+    return render_template('pagina/auditoria.html', audit_snapshot=snapshot)
 
 
 @bp.route('/api/auditoria/export', methods=['POST'])

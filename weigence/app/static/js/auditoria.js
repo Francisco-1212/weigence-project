@@ -78,9 +78,6 @@
       el.terminal.scrollTop = el.terminal.scrollHeight;
   }
 
-
-  pushTerminal("Terminal inicializada y escuchando eventos…");
-
   // ===========================================================
   //  LIVE AUDIT TRAIL (LISTA INFERIOR)
   // ===========================================================
