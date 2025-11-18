@@ -377,6 +377,8 @@
           <div class="ia-recommendation__meta">
             <span class="material-symbols-outlined" data-ia-icon>auto_awesome</span>
             <span data-ia-severity>Analizando entorno</span>
+            <!-- Badge ML cuando detecta anomalía -->
+            <span class="ml-badge" data-ml-badge style="display: none;">ML</span>
           </div>
 
           <h4 class="ia-recommendation__title" data-ia-title>Sincronizando contexto operacional…</h4>
@@ -385,11 +387,70 @@
             El motor IA correlaciona accesos, alertas y sensores para priorizar incidentes de alto impacto en el inventario.
           </p>
 
+          <!-- Mensaje conversacional de situación -->
+          <div class="situacion-mensaje" data-situacion-mensaje style="display: none;">
+            <span class="material-symbols-outlined">psychology</span>
+            <span data-situacion-texto>Analizando...</span>
+          </div>
+
           <div class="ia-recommendation__solution">
             <span class="ia-recommendation__label">Plan sugerido</span>
             <p class="ia-recommendation__solution-text" data-ia-solution>
               Se generará una acción sugerida al confirmarse patrones anómalos.
             </p>
+          </div>
+          
+          <!-- Panel ML: Carrusel de Hallazgos -->
+          <div class="ml-insights" data-ml-insights style="display: none;">
+            
+            <!-- Header dinámico del carrusel -->
+            <div class="ml-insights__header">
+              <div class="ml-insights__header-icon">
+                <span class="material-symbols-outlined">psychology</span>
+              </div>
+              <div class="ml-insights__header-content">
+                <h3 class="ml-insights__title" data-ml-carousel-title>¿Qué detectó el sistema?</h3>
+                <p class="ml-insights__subtitle" data-ml-carousel-subtitle>Navegá con las flechas o teclado</p>
+              </div>
+            </div>
+            
+            <!-- Carrusel -->
+            <div class="ml-carousel" role="region" aria-label="Hallazgos del sistema ML">
+              
+              <!-- Botón Anterior -->
+              <button 
+                class="ml-carousel__nav ml-carousel__nav--prev" 
+                data-ml-prev 
+                aria-label="Hallazgo anterior"
+                tabindex="0">
+                <span class="material-symbols-outlined">chevron_left</span>
+              </button>
+              
+              <!-- Contenedor de slides -->
+              <div class="ml-carousel__viewport">
+                <div class="ml-carousel__track" data-ml-track>
+                  <!-- Las tarjetas se insertan aquí dinámicamente -->
+                </div>
+              </div>
+              
+              <!-- Botón Siguiente -->
+              <button 
+                class="ml-carousel__nav ml-carousel__nav--next" 
+                data-ml-next 
+                aria-label="Siguiente hallazgo"
+                tabindex="0">
+                <span class="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+            
+            <!-- Indicadores de paginación -->
+            <div class="ml-carousel__pagination">
+              <div class="ml-carousel__dots" data-ml-dots role="tablist"></div>
+              <div class="ml-carousel__counter" data-ml-counter aria-live="polite">
+                <span data-ml-current>1</span> / <span data-ml-total>1</span>
+              </div>
+            </div>
+            
           </div>
         </div>
       </article>

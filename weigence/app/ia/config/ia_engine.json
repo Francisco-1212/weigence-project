@@ -284,8 +284,8 @@
         "Prioridad roja en alarmas operativas"
       ],
       "summary_modules": [
-        "{critical_alerts:.0f} alertas críticas y {warning_alerts:.0f} advertencias activas.",
-        "Señal compuesta en {signal_strength:.2f} con ventas variando {trend_percent:.1f}%."
+        "{critical_alerts:.0f} alertas rojas y {warning_alerts:.0f} amarillas activas.",
+        "Ventas {trend_percent:+.0f}% comparado con ayer."
       ],
       "detail_modules": [
         "La densidad de incidencias excede el umbral saludable y amenaza la continuidad operativa.",
@@ -303,8 +303,8 @@
         "Riesgo comercial en evolución"
       ],
       "summary_modules": [
-        "Las ventas caen {trend_percent:.1f}% con anomalía estadística de {sales_anomaly_score:.2f}.",
-        "Inventario acompaña la caída con variación {weight_change_rate:.1%}."
+        "Ventas cayeron {trend_percent:.0f}% hoy.",
+        "Inventario bajó {weight_change_rate:.0%} en el mismo periodo."
       ],
       "detail_modules": [
         "La contracción impacta los objetivos diarios y reduce la rotación de productos clave.",
@@ -322,7 +322,7 @@
         "Recuperación validada por métricas"
       ],
       "summary_modules": [
-        "Ventas creciendo {trend_percent:.1f}% con señal compuesta {signal_strength:.2f}.",
+        "Ventas subieron {trend_percent:.0f}% comparado con días anteriores.",
         "Inventario acompaña con variación {weight_change_rate:.1%}."
       ],
       "detail_modules": [

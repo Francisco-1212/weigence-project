@@ -9,6 +9,7 @@ from .ia_formatter import IAFormatter
 from .ia_logger import AuditLogger, audit_logger
 from .ia_messages import get_header_message
 from .ia_snapshots import IASnapshot, SnapshotBuilder, snapshot_builder
+from .ia_ml_anomalies import detect_anomalies
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,15 @@ class IAService:
         context_data = self._context_builder.get_context_data(contexto_key, merged_snapshot)
         final_snapshot = merged_snapshot.merge(context_data)
 
+        # 🤖 DETECCIÓN DE ANOMALÍAS CON ML
+        ml_insights = detect_anomalies(final_snapshot)
+        logger.debug(
+            "[IAService] ML Anomaly Detection: is_anomaly=%s, score=%.3f, severity=%s",
+            ml_insights.get('is_anomaly'),
+            ml_insights.get('anomaly_score'),
+            ml_insights.get('severity')
+        )
+
         insight = self._engine.evaluate(final_snapshot, profile=perfil_ia)
         logger.debug(
             "[IAService] Insight calculado: key=%s severity=%s score=%.3f",
@@ -73,6 +83,14 @@ class IAService:
         )
 
         resultado = self._formatter.render(insight, final_snapshot)
+        
+        # 🔥 ENRIQUECER CON INSIGHTS DE ML
+        resultado = self._enriquecer_con_ml(resultado, ml_insights, final_snapshot)
+        
+        # Generar resumen amigable de la situación
+        resumen_situacion = self._generar_resumen_situacion(final_snapshot)
+        insights_cards = self._generar_insights_cards(final_snapshot, ml_insights)
+        
         resultado.update(
             {
                 "score": round(float(insight.score), 3),
@@ -81,10 +99,21 @@ class IAService:
                 "contexto": contexto_key,
                 "perfil_ia": perfil_ia,
                 "timestamp": base_snapshot.generated_at.isoformat(),
+                # Añadir insights de ML
+                "ml_anomaly_detected": ml_insights.get('is_anomaly', False),
+                "ml_anomaly_score": round(ml_insights.get('anomaly_score', 0.0), 3),
+                "ml_severity": ml_insights.get('severity', 'low'),
+                "situacion_actual": resumen_situacion,
+                "ml_insights_cards": insights_cards,
             }
         )
 
         resultado = self._normalizar_payload(resultado)
+
+        # 💬 Sobrescribir con mensaje simple si hay anomalía ML
+        if ml_insights.get('is_anomaly'):
+            resultado["mensaje_resumen"] = resumen_situacion
+            resultado["mensaje"] = resumen_situacion
 
         if modo == "header":
             header_message = get_header_message(
@@ -115,6 +144,129 @@ class IAService:
         if perfil:
             return perfil
         return self._PROFILE_MAP.get(contexto, self._default_profile)
+
+    def _generar_resumen_situacion(self, snapshot: "IASnapshot") -> str:
+        """Genera un resumen conversacional de la situación actual."""
+        partes = []
+        
+        # Alertas
+        if snapshot.critical_alerts > 0:
+            partes.append(f"{snapshot.critical_alerts} alertas críticas")
+        if snapshot.warning_alerts > 0:
+            partes.append(f"{snapshot.warning_alerts} advertencias")
+        
+        # Ventas
+        if abs(snapshot.sales_trend_percent) > 5:
+            direccion = "subieron" if snapshot.sales_trend_percent > 0 else "bajaron"
+            partes.append(f"ventas {direccion} {abs(snapshot.sales_trend_percent):.0f}%")
+        
+        # Actividad
+        if snapshot.inactivity_hours > 2:
+            partes.append(f"{snapshot.inactivity_hours:.0f}h sin movimientos")
+        elif snapshot.movements_per_hour < 0.5:
+            partes.append("poca actividad")
+        
+        if not partes:
+            return "Operación funcionando normalmente."
+        
+        return "Detecté " + ", ".join(partes) + "."
+    
+    def _generar_insights_cards(self, snapshot: "IASnapshot", ml_insights: Dict[str, Any]) -> list:
+        """Genera tarjetas individuales de insights para el carrusel."""
+        
+        # 🎯 Si ML generó hallazgos, usarlos directamente
+        ml_findings = ml_insights.get('findings', [])
+        if ml_findings:
+            cards = []
+            for finding in ml_findings:
+                cards.append({
+                    "tipo": "ml_finding",
+                    "icono": finding.get('emoji', '🔍'),
+                    "titulo": finding.get('title', 'Hallazgo detectado'),
+                    "descripcion": finding.get('description', 'El sistema identificó un patrón.'),
+                    "accion": None  # Por ahora sin acciones específicas
+                })
+            return cards
+        
+        # 🔄 Fallback: lógica anterior si ML no generó hallazgos
+        cards = []
+        
+        # Card 1: Alertas si hay críticas
+        if snapshot.critical_alerts >= 3:
+            cards.append({
+                "tipo": "alertas",
+                "icono": "🚨",
+                "titulo": f"{snapshot.critical_alerts} alertas rojas activas",
+                "descripcion": f"Tienes {snapshot.critical_alerts} alertas críticas que necesitan atención. Revisa la sección de alertas.",
+                "accion": None
+            })
+        
+        # Card 2: Ventas si hay caída significativa
+        if snapshot.sales_trend_percent < -30:
+            cards.append({
+                "tipo": "ventas",
+                "icono": "📉",
+                "titulo": f"Ventas cayeron {abs(snapshot.sales_trend_percent):.0f}%",
+                "descripcion": f"Las ventas están {abs(snapshot.sales_trend_percent):.0f}% más bajas que ayer. Puede ser falta de stock o problema técnico.",
+                "accion": None
+            })
+        
+        # Card 3: Inactividad si es prolongada
+        if snapshot.inactivity_hours >= 3:
+            cards.append({
+                "tipo": "inactividad",
+                "icono": "⏱️",
+                "titulo": f"{snapshot.inactivity_hours:.0f}h sin movimientos",
+                "descripcion": f"Llevan {snapshot.inactivity_hours:.0f} horas sin registrar movimientos. Verifica sensores y conectividad.",
+                "accion": None
+            })
+        
+        # Si no hay nada especial, agregar card positiva
+        if not cards:
+            cards.append({
+                "tipo": "normal",
+                "icono": "✅",
+                "titulo": "Todo funciona normal",
+                "descripcion": "No se detectaron problemas. La operación está dentro de lo esperado.",
+                "accion": None
+            })
+        
+        return cards
+    
+    def _enriquecer_con_ml(
+        self,
+        resultado: Dict[str, Any],
+        ml_insights: Dict[str, Any],
+        snapshot: "IASnapshot",
+    ) -> Dict[str, Any]:
+        """
+        Enriquece la recomendación con insights de ML.
+        Si ML detecta anomalía severa, puede elevar la severidad.
+        """
+        if not ml_insights.get('is_anomaly'):
+            return resultado
+        
+        ml_severity = ml_insights.get('severity', 'low')
+        ml_actions = ml_insights.get('recommended_actions', [])
+        
+        # Si ML detecta anomalía HIGH y el motor dice INFO, elevar a WARNING
+        if ml_severity == 'high' and resultado.get('severidad') == 'info':
+            resultado['severidad'] = 'warning'
+            logger.info("[ML] Elevando severidad de info → warning por anomalía ML detectada")
+        
+        # Añadir acciones de ML a la solución
+        if ml_actions:
+            solucion_actual = resultado.get('solucion', '')
+            ml_actions_text = "\n\n🤖 Insights ML adicionales:\n" + "\n".join(f"• {action}" for action in ml_actions[:2])
+            resultado['solucion'] = solucion_actual + ml_actions_text
+        
+        # Añadir badge de ML al título si anomalía es severa
+        if ml_severity in ['medium', 'high']:
+            titulo_actual = resultado.get('titulo', '')
+            if '🤖' not in titulo_actual:
+                resultado['titulo'] = f"🤖 {titulo_actual}"
+        
+        return resultado
 
     def _normalizar_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         campos = {
