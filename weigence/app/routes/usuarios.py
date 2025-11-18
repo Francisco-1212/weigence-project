@@ -6,9 +6,13 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, s
 from . import bp
 from .decorators import requiere_rol
 from api.conexion_supabase import supabase
+from app.utils.security import hash_password, validar_fortaleza_password, validar_email, validar_rut_chileno, sanitizar_input
 import re
 import uuid
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Roles disponibles en el sistema
@@ -28,6 +32,11 @@ PERMISOS_POR_ROL = {
 @requiere_rol('administrador', 'jefe')
 def usuarios():
     """Página principal de gestión de usuarios"""
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'usuarios':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Gestión de Usuarios")
+        session['last_page'] = 'usuarios'
     try:
         # Obtener todos los usuarios
         response = supabase.table("usuarios").select("*").execute()
@@ -153,27 +162,42 @@ def api_crear_usuario():
         print(f"[API-CREAR-USUARIO] Datos recibidos: {data.keys()}")
         
         # Obtener y validar datos (flexible con mayúsculas/minúsculas)
-        rut = data.get('rut_usuario', '').strip()
-        nombre = data.get('nombre', '').strip()
-        correo = data.get('correo', '').strip()
-        rol = data.get('rol', '').strip()
-        numero_celular = data.get('numero_celular', data.get('numero celular', '')).strip()
+        rut = sanitizar_input(data.get('rut_usuario', '').strip())
+        nombre = sanitizar_input(data.get('nombre', '').strip())
+        correo = data.get('correo', '').strip().lower()
+        rol = data.get('rol', '').strip().lower()
+        numero_celular = sanitizar_input(data.get('numero_celular', data.get('numero celular', '')).strip())
         contraseña = data.get('contraseña', data.get('Contraseña', '')).strip()
         
-        print(f"[API-CREAR-USUARIO] RUT: {rut}, Nombre: {nombre}, Correo: {correo}, Rol: {rol}, Contraseña: {'***' if contraseña else 'vacía'}")
+        logger.info(f"[API-CREAR-USUARIO] Intento de crear usuario: {nombre} ({rut})")
         
         # Validaciones
         if not rut or not nombre or not correo or not rol or not contraseña:
-            print(f"[API-CREAR-USUARIO] ❌ Campos faltantes - rut: {bool(rut)}, nombre: {bool(nombre)}, correo: {bool(correo)}, rol: {bool(rol)}, contraseña: {bool(contraseña)}")
+            logger.warning(f"[API-CREAR-USUARIO] ✗ Campos faltantes")
             return jsonify({
                 'success': False,
                 'error': 'Todos los campos son requeridos'
+            }), 400
+        
+        # Validar RUT chileno
+        if not validar_rut_chileno(rut):
+            return jsonify({
+                'success': False,
+                'error': 'RUT inválido'
             }), 400
         
         if not validar_email(correo):
             return jsonify({
                 'success': False,
                 'error': 'Email inválido'
+            }), 400
+        
+        # Validar fortaleza de contraseña
+        es_valida, mensaje_error = validar_fortaleza_password(contraseña)
+        if not es_valida:
+            return jsonify({
+                'success': False,
+                'error': mensaje_error
             }), 400
         
         if rol not in ROLES_DISPONIBLES:
@@ -198,6 +222,15 @@ def api_crear_usuario():
                 'error': 'El email ya está registrado'
             }), 409
         
+        # Generar hash seguro de la contraseña
+        try:
+            password_hash = hash_password(contraseña)
+        except ValueError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
+        
         # Crear nuevo usuario
         nuevo_usuario = {
             'rut_usuario': rut,
@@ -205,17 +238,18 @@ def api_crear_usuario():
             'correo': correo,
             'rol': rol,
             'numero celular': numero_celular if numero_celular else None,
-            'Contraseña': contraseña,
+            'password_hash': password_hash,
+            'Contraseña': password_hash,  # Compatibilidad temporal
             'fecha_registro': datetime.now().isoformat(),
             'reset_token': None,
             'reset_token_expires': None
         }
         
-        print(f"[API-CREAR-USUARIO] Creando usuario: {rut}")
+        logger.info(f"[API-CREAR-USUARIO] Creando usuario: {rut}")
         response = supabase.table("usuarios").insert(nuevo_usuario).execute()
         
         if hasattr(response, 'data') and response.data:
-            print(f"[API-CREAR-USUARIO] ✅ Usuario creado: {rut}")
+            logger.info(f"[API-CREAR-USUARIO] ✅ Usuario creado: {rut}")
             return jsonify({
                 'success': True,
                 'message': 'Usuario creado correctamente',

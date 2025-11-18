@@ -1,6 +1,9 @@
 import os
 from flask import Flask, session, jsonify, request
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from .routes import bp as routes_bp
 from .routes.utils import obtener_notificaciones
 from flask import Blueprint
@@ -8,26 +11,66 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import traceback
 
+# Cargar configuración y logging
+from .app_config import get_config
+from .utils.logger import setup_logging, get_logger
+
 # Cargar variables de entorno
 load_dotenv()
 
-def create_app():
-    app = Flask(__name__)
-    app.config["DEBUG"] = True
-    app.config["TEMPLATES_AUTO_RELOAD"] = True
-    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0  # desactiva cache estático
+# Inicializar extensiones
+csrf = CSRFProtect()
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri="memory://",
+    default_limits=["500 per hour", "100 per minute"]  # Límites más generosos
+)
+
+def create_app(config_name=None):
+    """
+    Factory para crear la aplicación Flask
     
-    # Configuración de sesiones
-    app.config["SESSION_COOKIE_SECURE"] = False  # False para desarrollo HTTP, True para HTTPS
-    app.config["SESSION_COOKIE_HTTPONLY"] = True
-    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)  # Máximo 30 días si es permanente
-
-    app.secret_key = os.getenv("SECRET_KEY", "weigence_secret_key_2024")
-
-    # Registrar endpoint de debug
-    from .routes.debug import debug_bp
-    app.register_blueprint(debug_bp)
+    Args:
+        config_name: Nombre de la configuración ('development', 'production', 'testing')
+    """
+    app = Flask(__name__)
+    
+    # ========== CARGAR CONFIGURACIÓN ==========
+    if config_name is None:
+        config_name = os.getenv('FLASK_ENV', 'development')
+    
+    config_class = get_config()
+    app.config.from_object(config_class)
+    
+    # ========== CONFIGURAR LOGGING ==========
+    logger = setup_logging(
+        app=app,
+        log_file=app.config.get('LOG_FILE', 'app.log'),
+        log_level=app.config.get('LOG_LEVEL', 'INFO')
+    )
+    
+    logger.info("="*60)
+    logger.info(f"🚀 Weigence Inventory - Modo: {config_name.upper()}")
+    logger.info("="*60)
+    
+    # ========== INICIALIZAR EXTENSIONES DE SEGURIDAD ==========
+    # CSRF Protection
+    csrf.init_app(app)
+    logger.info("✓ CSRF Protection activado")
+    
+    # Rate Limiting
+    limiter.init_app(app)
+    logger.info("✓ Rate Limiting configurado")
+    
+    # Registrar endpoint de debug (solo en desarrollo)
+    if app.config.get("DEBUG"):
+        try:
+            from .routes.debug import debug_bp
+            app.register_blueprint(debug_bp)
+            csrf.exempt(debug_bp)
+            logger.info("✓ Endpoints de debug registrados")
+        except ImportError:
+            logger.warning("⚠️  No se pudo cargar módulo debug")
 
     # Inicializar Flask-Login
     login_manager = LoginManager()
@@ -45,18 +88,18 @@ def create_app():
 
     app.register_blueprint(routes_bp)
     
-    # Manejador de errores global para peticiones AJAX
     @app.errorhandler(Exception)
     def handle_error(e):
         """Maneja todos los errores y devuelve JSON para peticiones AJAX"""
-        print(f"[ERROR] Excepción no capturada: {str(e)}")
-        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        logger.error(f"Excepción no capturada: {str(e)}", exc_info=True)
         
         # Si es una petición AJAX, devolver JSON
         if request.path.startswith('/api/'):
+            # No exponer detalles en producción
+            error_msg = 'Error del servidor' if not app.config.get("DEBUG") else f'Error: {str(e)}'
             return jsonify({
                 'success': False,
-                'error': f'Error del servidor: {str(e)}'
+                'error': error_msg
             }), 500
         
         # Si no, dejar que Flask maneje el error normalmente
@@ -99,8 +142,9 @@ def create_app():
             notificaciones, agrupadas = obtener_notificaciones(session.get("usuario_id"))
             return dict(notificaciones=notificaciones, notificaciones_agrupadas=agrupadas)
         except Exception as e:
-            print("Error al inyectar notificaciones globales:", e)
+            logger.error(f"Error al inyectar notificaciones globales: {e}")
             return dict(notificaciones=[], notificaciones_agrupadas={})
 
-    print("Aplicación Weigence iniciada correctamente.")
+    logger.info("✅ Aplicación Weigence iniciada correctamente")
+    logger.info("="*60)
     return app

@@ -9,6 +9,11 @@ from .decorators import requiere_rol
 @bp.route("/ventas")
 @requiere_rol('jefe', 'administrador')
 def ventas():
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'ventas':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Ventas")
+        session['last_page'] = 'ventas'
     ventas = supabase.table("ventas").select("*").order("fecha_venta", desc=True).execute().data
     detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data
     productos = supabase.table("productos").select("*").execute().data
@@ -175,6 +180,11 @@ def crear_nueva_venta():
         
         id_venta = venta_response.data[0]["idventa"]
         print(f"✅ Venta creada con ID: {id_venta}")
+        
+        # Registrar evento de venta en auditoría
+        from app.utils.eventohumano import registrar_evento_humano
+        usuario_nombre = session.get("usuario_nombre", "Usuario")
+        registrar_evento_humano("venta", f"Venta #{id_venta} registrada por ${total_venta:,.0f}")
         
         # 2. Crear detalles de venta y actualizar inventario
         detalles_venta = []

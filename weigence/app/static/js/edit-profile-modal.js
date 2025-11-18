@@ -127,10 +127,13 @@ function setupEditProfileModal() {
         const originalText = submitBtn.textContent;
         submitBtn.textContent = '🔄 Guardando...';
 
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
         const response = await fetch('/api/editar-perfil', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           credentials: 'same-origin',
           body: JSON.stringify({

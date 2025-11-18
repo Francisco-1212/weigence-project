@@ -2,6 +2,19 @@ from flask import render_template, jsonify, request, session, redirect, url_for,
 from . import bp
 from api.conexion_supabase import supabase
 from app.email_utils import enviar_correo_recuperacion, verificar_token_valido, marcar_token_usado
+from app.utils.security import verify_password
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Aplicar rate limiting a rutas sensibles
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Obtener limiter desde app
+def get_limiter():
+    from flask import current_app
+    return current_app.extensions.get('limiter')
 
 
 @bp.route("/", methods=["GET", "POST"])
@@ -39,13 +52,21 @@ def login():
         )
 
         if usuario_encontrado:
-            # DEBUG: Mostrar qué usuario se encontró
-            print(f"[LOGIN DEBUG] Usuario encontrado:")
-            print(f"  - Nombre: {usuario_encontrado.get('nombre')}")
-            print(f"  - Rol en BD: {usuario_encontrado.get('rol')}")
-            print(f"  - Rol minúsculas: {str(usuario_encontrado.get('rol', '')).lower()}")
+            logger.info(f"[LOGIN] Intento de login para usuario: {usuario_encontrado.get('nombre')}")
             
-            if usuario_encontrado.get("Contraseña") == password_input:
+            # Verificar contraseña con hash seguro
+            password_hash = usuario_encontrado.get("password_hash") or usuario_encontrado.get("Contraseña")
+            
+            # Compatibilidad: verificar si es hash o texto plano (temporal)
+            if password_hash and (password_hash.startswith('$2b$') or password_hash.startswith('$2a$')):
+                # Es un hash bcrypt, verificar correctamente
+                password_valida = verify_password(password_input, password_hash)
+            else:
+                # Contraseña en texto plano (backward compatibility)
+                logger.warning(f"[LOGIN] Usuario {usuario_encontrado.get('rut_usuario')} tiene contraseña sin hash")
+                password_valida = (password_hash == password_input)
+            
+            if password_valida:
                 # Crear sesión
                 session["usuario_logueado"] = True
                 session["usuario_nombre"] = usuario_encontrado.get("nombre")
@@ -53,31 +74,34 @@ def login():
                 session["usuario_id"] = usuario_encontrado.get("rut_usuario")
                 session["usuario_correo"] = usuario_encontrado.get("correo")
                 
-                # DEBUG: Mostrar sesión creada
-                print(f"[LOGIN DEBUG] Sesión creada:")
-                print(f"  - usuario_nombre: {session['usuario_nombre']}")
-                print(f"  - usuario_rol: {session['usuario_rol']}")
-                print(f"  - usuario_id: {session['usuario_id']}")
+                logger.info(f"[LOGIN] ✓ Login exitoso para: {session['usuario_nombre']} (Rol: {session['usuario_rol']})")
+                
+                # Registrar evento de login en auditoría
+                from app.utils.eventohumano import registrar_evento_humano
+                registrar_evento_humano("login", f"{session['usuario_nombre']} inició sesión")
+                logger.info(f"[LOGIN] ✓ Evento de auditoría registrado para: {session['usuario_nombre']}")
                 
                 # Guardar el estado de "Recordarme"
                 if recordarme == "on":
                     # SESIÓN PERMANENTE: 30 días
                     session["recordarme_activado"] = True
                     session.permanent = True
-                    print(f"[LOGIN] ✓ Sesión PERMANENTE (30 días) para: {usuario_input}")
+                    logger.info(f"[LOGIN] Sesión PERMANENTE (30 días) para: {usuario_input}")
                 else:
                     # SESIÓN TEMPORAL: Solo mientras el navegador está abierto
                     session["recordarme_activado"] = False
                     session.permanent = False
-                    print(f"[LOGIN] ✓ Sesión TEMPORAL (cierre navegador) para: {usuario_input}")
+                    logger.info(f"[LOGIN] Sesión TEMPORAL (cierre navegador) para: {usuario_input}")
                 
                 # Marcar como modificado para que se guarde
                 session.modified = True
                 
                 return redirect(url_for("main.dashboard"))
             else:
+                logger.warning(f"[LOGIN] ✗ Contraseña incorrecta para: {usuario_input}")
                 flash("Contraseña incorrecta", "error")
         else:
+            logger.warning(f"[LOGIN] ✗ Usuario no encontrado: {usuario_input}")
             flash("Usuario no encontrado", "error")
 
     return render_template("login.html")
@@ -86,6 +110,7 @@ def login():
 def password_reset():
     """
     Endpoint para solicitar recuperación de contraseña
+    Rate limited: 5 intentos por hora
     Recibe: JSON con { "email": "usuario@example.com" }
     Responde: JSON con { "success": true/false, "message": "..." }
     """
@@ -140,6 +165,13 @@ def password_reset():
 
 @bp.route("/logout")
 def logout():
+    # Registrar evento de logout antes de limpiar sesión
+    from app.utils.eventohumano import registrar_evento_humano
+    usuario_nombre = session.get("usuario_nombre", "Usuario desconocido")
+    logger.info(f"[LOGOUT] Usuario cerrando sesión: {usuario_nombre}")
+    registrar_evento_humano("logout", f"{usuario_nombre} cerró sesión")
+    logger.info(f"[LOGOUT] ✓ Evento de auditoría registrado para: {usuario_nombre}")
+    
     session.clear()
     flash("Sesión cerrada correctamente", "info")
     return redirect(url_for("main.login"))

@@ -7,6 +7,11 @@ from .decorators import requiere_rol
 @bp.route("/historial")
 @requiere_rol('jefe', 'administrador')
 def historial():
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'historial':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al Historial")
+        session['last_page'] = 'historial'
     try:
         q = (
             supabase.table("movimientos_inventario")

@@ -149,7 +149,12 @@
    === RESET / BASE ===
    Reset, typebase and small utility defaults.
    ====================================================================== */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
 html, body { height: 100%; }
 

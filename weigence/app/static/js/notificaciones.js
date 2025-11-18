@@ -36,9 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
       item.classList.add('opacity-0', 'translate-x-2');
       setTimeout(() => item.remove(), 250);
 
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
       fetch(`/api/descartar_alerta/${id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
       }).then(r => r.json()).then(j => {
         if (!j.success) console.error('Error al descartar:', j.error);
       }).catch(err => console.error('Fallo conexión:', err));
@@ -74,9 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Optimista: limpiar UI
     items.forEach(it => { it.classList.add('opacity-0'); setTimeout(() => it.remove(), 200); });
     // Enviar una por una (simple y robusto)
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     items.forEach(it => {
       const id = it.dataset.id;
-      fetch(`/api/descartar_alerta/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      fetch(`/api/descartar_alerta/${id}`, { 
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        } 
+      })
         .catch(()=>{});
     });
   });

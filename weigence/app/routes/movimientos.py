@@ -9,6 +9,11 @@ from .decorators import requiere_rol
 @bp.route("/movimientos")
 @requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def movimientos():
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'movimientos':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Movimientos")
+        session['last_page'] = 'movimientos'
     try:
         #print("Realizando consulta a Supabase...")
         q = (

@@ -239,10 +239,13 @@ function guardarUsuario(e) {
 function crearUsuario(datos) {
   console.log('[USUARIOS] Creando nuevo usuario...', datos);
   
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  
   fetch('/api/usuarios', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
     },
     body: JSON.stringify(datos)
   })

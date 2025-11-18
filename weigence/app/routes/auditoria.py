@@ -58,8 +58,11 @@ SEVERITY_DEFAULT = {
 @bp.route('/auditoria')
 @requiere_rol('supervisor', 'jefe', 'administrador')
 def auditoria():
-    from app.routes.utils.registrar_evento_humano import registrar_evento_humano
-    registrar_evento_humano("navegacion", "Ingresó al módulo Auditoría")
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'auditoria':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al módulo Auditoría")
+        session['last_page'] = 'auditoria'
     snapshot = generar_traza_auditoria(limit=80)
     return render_template('pagina/auditoria.html', audit_snapshot=snapshot)
 
@@ -86,31 +89,33 @@ def api_auditoria_logs():
     """
     Endpoint simple para la nueva Terminal de Investigación.
     Retorna todos los eventos ya normalizados.
+    Sin límite de rate ya que se actualiza cada 45 segundos.
     """
-    filtros = _extract_filters(request.args)
-    limit = _safe_int(request.args.get('limit'), DEFAULT_LIMIT)
-    horas = _safe_int(request.args.get('horas'), DEFAULT_HOURS)
+    try:
+        filtros = _extract_filters(request.args)
+        limit = _safe_int(request.args.get('limit'), DEFAULT_LIMIT)
+        horas = _safe_int(request.args.get('horas'), DEFAULT_HOURS)
 
-    snapshot = generar_traza_auditoria(
-        limit=limit,
-        filtros=filtros,
-        horas=horas
-    )
+        snapshot = generar_traza_auditoria(
+            limit=limit,
+            filtros=filtros,
+            horas=horas
+        )
 
-    return jsonify({
-        "ok": True,
-        "logs": snapshot["logs"],
-        "meta": snapshot["meta"],
-        "filtros_aplicados": filtros,
-    })
-
-@bp.route('/auditoria')
-@requiere_rol('supervisor', 'jefe', 'administrador')
-def auditoria():
-    registrar_evento_humano("navegacion", "Ingresó al módulo Auditoría")
-    snapshot = generar_traza_auditoria(limit=80)
-    return render_template('pagina/auditoria.html', audit_snapshot=snapshot)
-
+        return jsonify({
+            "ok": True,
+            "logs": snapshot["logs"],
+            "meta": snapshot["meta"],
+            "filtros_aplicados": filtros,
+        })
+    except Exception as e:
+        logger.error(f"Error en api_auditoria_logs: {str(e)}", exc_info=True)
+        return jsonify({
+            "ok": False,
+            "error": str(e),
+            "logs": [],
+            "meta": {}
+        }), 200  # Devolver 200 pero con ok: False para que el frontend lo maneje
 
 @bp.route('/api/auditoria/export', methods=['POST'])
 @requiere_rol('supervisor', 'jefe', 'administrador')
@@ -223,7 +228,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
     productos_cache = _build_cache('productos', 'idproducto', 'nombre')
     estantes_cache = _build_cache('estantes', 'id_estante', 'nombre')
 
-    def add_event(*, event_id: str | None, tipo: str, mensaje: str, ts: datetime, nivel: str = 'INFO',
+    def add_event(*, event_id: str | None, tipo: str, mensaje: str, ts: datetime | str, nivel: str = 'INFO',
                   usuario: str | None = None, usuario_id: str | None = None,
                   producto: str | None = None, producto_id: Any = None,
                   estante: str | None = None, estante_id: Any = None,
@@ -234,18 +239,30 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
         nivel_up = (nivel or 'INFO').upper()
         severidad = SEVERITY_DEFAULT.get(nivel_up.lower(), 'info')
 
+        # Normalizar timestamp - puede venir como string ISO o datetime
+        if isinstance(ts, str):
+            # Ya es un string ISO, parsearlo a datetime para procesar
+            ts_dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            ts_str = ts
+        else:
+            # Es datetime, convertir a string
+            ts_dt = ts
+            ts_str = ts.isoformat()
+
         entry = {
             "id": event_id or f"evt-{uuid.uuid4().hex[:8]}",
-            "timestamp": ts.isoformat(),
-            "_ts": ts,
-            "fecha": ts.strftime('%Y-%m-%d'),
-            "hora": ts.strftime('%H:%M:%S'),
+            "timestamp": ts_str,
+            "_ts": ts_dt,
+            "fecha": ts_dt.strftime('%Y-%m-%d'),
+            "hora": ts_dt.strftime('%H:%M:%S'),
             "nivel": nivel_up,
             "severidad": severidad,
             "tipo_evento": tipo_clean,
             "mensaje": mensaje,
+            "detalle": mensaje,  # Agregar detalle explícitamente
             "usuario": usuario,
             "usuario_id": usuario_id,
+            "rut": usuario_id or 'N/A',  # RUT del usuario
             "producto": producto,
             "producto_id": producto_id,
             "estante": estante,
@@ -446,14 +463,34 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
         for row in rows:
             ts = _parse_ts(row.get('fecha_creacion'))
             tono = (row.get('tipo_color') or '').lower()
+            titulo = row.get('titulo') or 'Alerta del sistema'
+            descripcion = row.get('descripcion') or ''
+            
+            # Determinar nivel según color
             nivel = 'CRIT' if tono == 'rojo' else 'WARN' if tono == 'amarillo' else 'INFO'
-            base_type = 'anomalias_detectadas' if 'anom' in (row.get('titulo') or '').lower() else 'alertas'
+            
+            # Categorizar el tipo de alerta de forma más específica
+            titulo_lower = titulo.lower()
+            if 'stock' in titulo_lower or 'bajo' in titulo_lower or 'agotado' in titulo_lower or 'inventario' in titulo_lower:
+                base_type = 'alertas_stock'
+            elif 'anom' in titulo_lower:
+                base_type = 'anomalias_detectadas'
+            else:
+                base_type = 'alertas_sistema'
+            
             usuario_nombre = _safe_label(usuarios_cache.get(row.get('idusuario')), row.get('idusuario'))
             producto_nombre = _safe_label(productos_cache.get(row.get('idproducto')), f"Producto {row.get('idproducto')}")
+            
+            # Crear mensaje más descriptivo combinando título y descripción
+            if descripcion and descripcion != titulo:
+                mensaje = f"{titulo}: {descripcion}"
+            else:
+                mensaje = titulo
+            
             add_event(
                 event_id=f"alert-{row.get('id')}",
                 tipo=base_type,
-                mensaje=row.get('titulo') or 'Alerta del sistema',
+                mensaje=mensaje,
                 ts=ts,
                 nivel=nivel,
                 usuario=usuario_nombre,
@@ -461,7 +498,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
                 producto=producto_nombre,
                 producto_id=row.get('idproducto'),
                 fuente='alertas',
-                metadata={'descripcion': row.get('descripcion'), 'estado': row.get('estado')},
+                metadata={'descripcion': row.get('descripcion'), 'estado': row.get('estado'), 'tipo_color': tono},
             )
 
     def collect_eventos_ia() -> None:
@@ -496,6 +533,9 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
     def collect_error_logs() -> None:
         for entry in _read_json_list(ERROR_LOG_FILE)[:80]:
             ts = _parse_ts(entry.get('timestamp'))
+            # Filtrar eventos antiguos fuera del rango temporal
+            if ts < desde:
+                continue
             mensaje = entry.get('message') or 'Error registrado'
             add_event(
                 event_id=f"err-{uuid.uuid4().hex[:8]}",
@@ -509,6 +549,9 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
     def collect_calibraciones() -> None:
         for entry in _read_json_list(CALIBRATION_LOG_FILE)[:60]:
             ts = _parse_ts(entry.get('timestamp'))
+            # Filtrar eventos antiguos fuera del rango temporal
+            if ts < desde:
+                continue
             add_event(
                 event_id=f"cal-{uuid.uuid4().hex[:8]}",
                 tipo='calibraciones',
@@ -535,6 +578,82 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
                 fuente='sensores',
                 metadata={'sensor': data.get('sensor'), 'peso': data.get('peso')},
             )
+
+    def collect_auditoria_eventos():
+        """Recolectar eventos de login/logout desde la tabla auditoria_eventos"""
+        try:
+            # Usar el parámetro 'desde' para filtrar correctamente
+            desde_iso = desde.isoformat()
+            
+            # Aumentar límite según el rango temporal
+            eventos_limit = 100
+            if horas >= 720:  # Mes
+                eventos_limit = 1000
+            elif horas >= 168:  # Semana
+                eventos_limit = 500
+            
+            response = (
+                supabase.table("auditoria_eventos")
+                .select("id,fecha,usuario,accion,detalle")
+                .gte("fecha", desde_iso)
+                .order("fecha", desc=True)
+                .limit(eventos_limit)
+                .execute()
+            )
+            
+            for row in response.data:
+                try:
+                    accion = row.get("accion", "").lower()
+                    detalle = row.get("detalle", "")
+                    usuario_nombre = row.get("usuario", "desconocido")
+                    
+                    # Mapear accion a tipo_evento esperado por frontend
+                    if accion in ["login", "logout"]:
+                        tipo = "login_logout_usuarios"
+                        nivel = 'INFO'
+                    elif accion in ["ver", "navegacion", "acceso"]:
+                        tipo = "consulta_lectura"
+                        nivel = 'INFO'
+                    elif accion in ["exportar", "export", "descarga"]:
+                        tipo = "exportacion"
+                        nivel = 'INFO'
+                    else:
+                        tipo = "modificacion_datos"
+                        nivel = 'INFO'
+                    
+                    # La fecha ya viene como string ISO desde Supabase
+                    ts = row.get("fecha")
+                    if not ts:
+                        ts = datetime.now(timezone.utc).isoformat()
+                    
+                    # Intentar obtener RUT del usuario
+                    usuario_id = None
+                    if usuario_nombre and usuario_nombre != 'Sistema':
+                        user_data = usuarios_cache.get(usuario_nombre)
+                        if not user_data:
+                            # Buscar por nombre
+                            for rut, nombre in usuarios_cache.items():
+                                if nombre == usuario_nombre:
+                                    usuario_id = rut
+                                    break
+                    
+                    add_event(
+                        event_id=f"audit-{row.get('id')}",
+                        tipo=tipo,
+                        mensaje=detalle or accion,
+                        ts=ts,
+                        nivel=nivel,
+                        usuario=usuario_nombre,
+                        usuario_id=usuario_id,
+                        fuente='auditoria_eventos',
+                        metadata={'accion_original': accion},
+                    )
+                except Exception as row_error:
+                    logger.error(f"[AUDITORIA] Error procesando fila individual: {row_error} | Fila: {row}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"[AUDITORIA] Error al recolectar eventos de auditoria_eventos: {e}", exc_info=True)
 
     def build_login_logout() -> None:
         for user_id, data in user_activity.items():
@@ -592,11 +711,12 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
     collect_detalle_ventas()
     collect_pesajes()
     collect_alertas()
-    collect_eventos_ia()
+    # collect_eventos_ia()  # ← DESHABILITADO: no mostrar eventos IA en consola
     collect_error_logs()
     collect_calibraciones()
     collect_sensor_snapshots()
-    build_login_logout()
+    collect_auditoria_eventos()  # ← Eventos reales: login, logout, ventas manuales, etc.
+    # build_login_logout()  # ← DESHABILITADO: genera eventos duplicados con timestamps incorrectos
     build_inactividad()
 
     events.sort(key=lambda e: e['_ts'], reverse=True)
@@ -691,14 +811,14 @@ def _serialize_metadata(data: Dict[str, Any] | None) -> Dict[str, Any]:
 
 
 def _supabase_select(table: str, *, select: str, order_field: str, limit: int = 200, since: datetime | None = None) -> List[Dict[str, Any]]:
-    query = (
-        supabase.table(table)
-        .select(select)
-        .order(order_field, desc=True)
-        .limit(limit)
-    )
+    query = supabase.table(table).select(select)
+    
+    # IMPORTANTE: Aplicar filtro de fecha ANTES de ordenar y limitar
     if since is not None:
         query = query.gte(order_field, since.isoformat())
+    
+    query = query.order(order_field, desc=True).limit(limit)
+    
     try:
         response = query.execute()
         return response.data or []

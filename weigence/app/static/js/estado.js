@@ -140,20 +140,25 @@ function updateTimestampText() {
     }
   }
 
-  // Realiza actualización manual de datos
-  async function manualRefresh() {
-    updateStatus('syncing');
-    try {
-      const res = await fetch('/api/refresh', { method: 'POST' });
-      if (!res.ok) throw new Error('Error refrescando');
-      await fetchSystemStatus();
-    } catch (err) {
-      updateStatus('offline');
-      console.error(err);
-    }
-  }
-
-  // Animación de apertura/cierre del modal historial
+  // Realiza actualización manual de datos
+  async function manualRefresh() {
+    updateStatus('syncing');
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const res = await fetch('/api/refresh', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+      if (!res.ok) throw new Error('Error refrescando');
+      await fetchSystemStatus();
+    } catch (err) {
+      updateStatus('offline');
+      console.error(err);
+    }
+  }  // Animación de apertura/cierre del modal historial
   function openHistoryModal(tab = 'movements') {
     if (!historyModal) return;
     // Show modal

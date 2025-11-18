@@ -116,4 +116,10 @@ def api_notificaciones():
 @requiere_rol('jefe', 'administrador')
 def recomendaciones():
     """Página con interfaz de recomendaciones IA"""
+    from flask import session
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'recomendaciones':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Recomendaciones IA")
+        session['last_page'] = 'recomendaciones'
     return render_template('pagina/recomendaciones.html')

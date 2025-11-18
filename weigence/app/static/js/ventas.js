@@ -834,9 +834,15 @@ const NuevaVenta = {
     btnSubmit.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Guardando...';
 
     try {
+      // Obtener CSRF token del meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
       const response = await fetch('/api/ventas/nueva', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
         body: JSON.stringify({ productos: this.productosSeleccionados })
       });
 

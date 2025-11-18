@@ -238,9 +238,14 @@ filterByStatus(status) {
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Guardando...';
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
     fetch('/api/productos/agregar', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {
+        'Content-Type':'application/json',
+        'X-CSRFToken': csrfToken
+      },
       body: JSON.stringify(data)
     })
     .then(r=>r.json())
@@ -1257,10 +1262,17 @@ async function cargarAlertas() {
     cont.style.overflowY = "visible";
 
     // Eventos "Marcar como revisada"
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     cont.querySelectorAll("button[data-id]").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        await fetch(`/api/alertas/marcar_revisada/${id}`, { method: "POST" });
+        await fetch(`/api/alertas/marcar_revisada/${id}`, { 
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          }
+        });
         cargarAlertas();
       });
     });

@@ -45,8 +45,14 @@ def construir_mapa_categorias(productos):
 
 
 @bp.route("/inventario")
-@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
+@requiere_rol('farmaceutico', 'supervisor', 'jefe', 'administrador')
 def inventario():
+    from flask import session
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'inventario':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al Inventario")
+        session['last_page'] = 'inventario'
     try:
         # === 1. Cargar productos y categorías ===
         productos = supabase.table("productos").select("*").execute().data or []

@@ -6,61 +6,259 @@
 
 {% block contenido %}
 
-<div class="w-full space-y-8 font-sans text-[#EAEAEA]">
+<style>
+/* Estilos modernos para la terminal de auditoría */
+#audit-log-stream::-webkit-scrollbar {
+  width: 8px;
+}
 
-  <!-- TARJETA SUPERIOR: BUSCADOR / FILTROS / BOTONES -->
-  <section class="rounded-2xl border border-white/10 bg-[#0F1014]/70 shadow-soft backdrop-blur">
-    <div class="p-6 space-y-6">
+#audit-log-stream::-webkit-scrollbar-track {
+  background: #000000;
+  border-radius: 0px;
+}
 
-      <header class="flex flex-col gap-2 text-left">
-        <p class="text-xs uppercase tracking-[0.45em] text-white/60">Terminal de Investigación</p>
-        <div class="flex flex-wrap items-center justify-between gap-4 text-white">
-          <h1 class="text-2xl font-semibold tracking-tight">Centro de Inteligencia Forense</h1>
-          <p class="text-sm text-white/60 max-w-xl">
-            Filtra por usuario, producto, estante, tipo_evento, severidad y fecha.
-            Combina criterios para aislar patrones críticos.
-          </p>
-        </div>
-      </header>
+#audit-log-stream::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 0px;
+  border: none;
+}
 
-      <!-- BUSCADOR -->
-      <div class="flex flex-wrap items-center gap-4">
-        <div class="relative flex-grow">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50">search</span>
+#audit-log-stream::-webkit-scrollbar-thumb:hover {
+  background: #00ff88;
+}
+
+.log-entry {
+  animation: fadeInLog 0.3s ease-out;
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Estilos modernos para la terminal de auditoría */
+#audit-log-stream::-webkit-scrollbar {
+  width: 10px;
+}
+
+#audit-log-stream::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+#audit-log-stream::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+#audit-log-stream::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+.log-entry {
+  animation: fadeInLog 0.3s ease-out;
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Resaltado de usuarios - estilo badge con fuente monospace */
+.user-highlight {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1.5px solid rgba(59, 130, 246, 0.35);
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.1px;
+  display: inline-block;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .user-highlight {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.log-entry:hover .user-highlight {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.03);
+}
+
+.dark .log-entry:hover .user-highlight {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+/* Efectos de hover mejorados */
+.log-entry {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.log-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: inherit;
+  transition: width 0.2s ease;
+}
+
+.log-entry:hover::before {
+  width: 5px;
+}
+
+.log-entry:hover {
+  transform: translateX(2px) scale(1.01);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Efecto de pulsación para el indicador de estado */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px #10b98144, 0 0 10px #10b98122;
+  }
+  50% {
+    box-shadow: 0 0 10px #10b98166, 0 0 20px #10b98144;
+  }
+}
+
+#audit-stream-status {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Animación de carga de consola */
+@keyframes console-loading {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.console-loading {
+  animation: console-loading 1.5s ease-in-out infinite;
+}
+
+/* Animaciones para notificaciones toast */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Efecto de focus en el buscador */
+#audit-search:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: scale(1.01);
+  transition: all 0.2s ease;
+}
+
+/* Efecto ripple al hacer clic */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(20);
+    opacity: 0;
+  }
+}
+
+/* Transiciones suaves para modo oscuro */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+</style>
+
+<div class="w-full space-y-8 font-sans text-neutral-800 dark:text-[#EAEAEA]">
+
+  <!-- TARJETA SUPERIOR: BUSCADOR COMPACTO -->
+  <section class="rounded-lg border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-soft backdrop-blur">
+    <div class="p-2 space-y-2">
+
+      <!-- BUSCADOR Y BOTONES EN UNA LÍNEA -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-grow min-w-[200px]">
           <input
             id="audit-search"
-            class="w-full bg-[#11141a] border border-white/10 rounded-lg h-11 pl-12 pr-4 text-white placeholder-white/40"
-            placeholder="usuario:jperez producto:prod-0012 estante:est-a03 tipo_evento:anomalia fecha:2024-09-21"
+            type="text"
+            placeholder="usuario:nombre rut:12345678-9 tipo_evento:ventas"
+            class="w-full bg-neutral-50 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-md h-8 pl-3 pr-3 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-white/40 focus:border-primary/50 focus:outline-none transition-colors"
           />
         </div>
-        <button id="audit-exec-query" class="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-white shadow hover:bg-primary/90">
-          <span class="material-symbols-outlined text-base">play_arrow</span>
-          Ejecutar Consulta
+        
+        <button id="audit-exec-query" class="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-white shadow hover:bg-primary/90 transition-colors">
+          <span class="material-symbols-outlined text-sm">play_arrow</span>
+          Buscar
+        </button>
+        
+        <button id="audit-filter-user" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors text-xs">
+          <span class="material-symbols-outlined text-sm">person</span> 
+          <span id="current-user-display">Mi usuario</span>
+        </button>
+        
+        <button id="audit-active-users" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-green-300 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors text-xs">
+          <span class="material-symbols-outlined text-sm">group</span> 
+          <span id="active-user-count">0</span>
+        </button>
+        
+        <button id="audit-export-csv" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-xs">
+          <span class="material-symbols-outlined text-sm">file_download</span>
+        </button>
+        
+        <button id="audit-export-pdf" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-xs">
+          <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+        </button>
+        
+        <button id="audit-export-zip" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-xs">
+          <span class="material-symbols-outlined text-sm">archive</span>
+        </button>
+        
+        <button id="audit-clear-filters" class="text-neutral-500 dark:text-white/40 hover:text-neutral-900 dark:hover:text-white text-xs uppercase tracking-wide ml-auto">
+          Limpiar
         </button>
       </div>
 
       <!-- FILTROS ACTIVOS -->
-      <div class="flex flex-wrap items-center gap-3 text-sm text-white/80">
-        <span class="uppercase text-white/40 text-xs">Filtros Activos</span>
-        <div id="audit-active-filters" class="flex flex-wrap gap-2"></div>
-        <button id="audit-clear-filters" class="text-white/50 hover:text-white text-xs uppercase tracking-wide">Limpiar</button>
-      </div>
-
-      <!-- BOTONES -->
-      <div class="flex flex-wrap gap-2 text-sm">
-        <button id="audit-export-zip" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
-          <span class="material-symbols-outlined text-base">archive</span> Export ZIP
-        </button>
-        <button id="audit-export-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
-          <span class="material-symbols-outlined text-base">picture_as_pdf</span> Generar PDF
-        </button>
-        <button id="audit-export-csv" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
-          <span class="material-symbols-outlined text-base">file_download</span> Export CSV
-        </button>
-        <button id="audit-recalibrate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10">
-          <span class="material-symbols-outlined text-base">sensors</span> Recalibrar Sensores
-        </button>
-      </div>
+      <div id="audit-active-filters" class="flex flex-wrap gap-1 min-h-0"></div>
 
     </div>
   </section>
@@ -72,54 +270,89 @@
     <div class="col-span-12 lg:col-span-8 space-y-6">
 
       <!-- LIVE AUDIT TRAIL -->
-      <div class="rounded-xl border border-white/10 bg-[--card-bg-light] dark:bg-[--card-bg-dark] shadow-xl">
+      <div class="rounded-xl border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-xl">
 
         <!-- HEADER -->
-        <div class="flex items-center justify-between border-b border-white/10 px-5 py-3">
+        <div class="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 px-5 py-3 bg-gradient-to-r from-neutral-50 dark:from-white/5 to-transparent">
           <div>
-            <p class="uppercase tracking-[0.35em] text-[--text-muted-light] dark:text-[--text-muted-dark] text-xs">
-              Live Audit Trail
-            </p>
-            <p class="text-sm text-[--text-subtle-light] dark:text-[--text-subtle-dark]">
-              Streaming INFO / WARN / CRIT en tiempo real.
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-xl">terminal</span>
+              <p class="uppercase tracking-wider text-neutral-600 dark:text-white/70 text-xs font-semibold">
+                Live Audit Trail
+              </p>
+            </div>
+            <p class="text-xs text-neutral-500 dark:text-white/50 mt-0.5">
+              Monitoreo en tiempo real · Sistema de eventos
             </p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <div id="audit-stream-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span id="audit-last-updated" class="text-xs text-[--text-muted-light] dark:text-[--text-muted-dark]">
-              Sin sincronizar
-            </span>
-          </div>
-        </div>
-
-        <!-- CONSOLA -->
-        <div class="px-5 py-3">
-          <div id="audit-log-stream"
-            class="flex-grow overflow-y-auto px-4 py-3 rounded-lg font-mono text-sm leading-[1.35]
-                  bg-[--log-bg-light] dark:bg-[--log-bg-dark]
-                  text-[--log-text-light] dark:text-[--log-text-dark]
-                  space-y-1"
-            style="max-height:300px; scrollbar-width: thin;">
-
-            <div id="audit-log-empty" class="text-xs italic opacity-60">
-              Esperando eventos del backend…
+          <div class="flex items-center gap-3">
+            <!-- Stats rápidas -->
+            <div id="audit-quick-stats" class="hidden md:flex items-center gap-4 text-xs mr-4">
+              <div class="flex items-center gap-1.5">
+                <span class="text-green-400">●</span>
+                <span class="text-neutral-600 dark:text-white/60">INFO: <span id="stat-info" class="text-neutral-900 dark:text-white font-semibold">0</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-yellow-400">●</span>
+                <span class="text-neutral-600 dark:text-white/60">WARN: <span id="stat-warn" class="text-neutral-900 dark:text-white font-semibold">0</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-red-400">●</span>
+                <span class="text-neutral-600 dark:text-white/60">CRIT: <span id="stat-crit" class="text-neutral-900 dark:text-white font-semibold">0</span></span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-full px-3 py-1.5">
+              <div id="audit-stream-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-lg shadow-green-500/50"></div>
+              <span id="audit-last-updated" class="text-xs text-neutral-600 dark:text-white/60 font-medium">
+                Sincronizando...
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- FOOTER -->
-        <div class="flex items-center justify-between border-t border-white/10 px-5 py-3 text-xs
-                    text-[--text-muted-light] dark:text-[--text-muted-dark]">
-          <div class="flex gap-4">
-            <span>MEM: <span id="audit-mem-usage">--</span></span>
-            <span>CPU: <span id="audit-cpu-usage">--</span></span>
-            <span>LATENCY: <span id="audit-latency">--</span></span>
+        <!-- TERMINAL - CONSOLA DE LOGS -->
+        <div class="px-4 py-3 bg-gradient-to-b from-neutral-100 to-neutral-50 dark:from-[#0f1014] dark:to-[#1a1b23]">
+          <div id="audit-log-stream" class="
+            h-[480px] overflow-y-auto rounded-lg border p-3
+            bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
+            border-gray-300 dark:border-neutral-700
+            scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-primary/40
+          ">
+
+            <div id="audit-log-empty" class="
+              flex flex-col items-center justify-center h-full
+              text-neutral-400 dark:text-white/30
+            ">
+              <span class="material-symbols-outlined text-5xl opacity-50 mb-2">hourglass_empty</span>
+              <p class="text-sm">Esperando eventos del sistema...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER - MÉTRICAS DEL SISTEMA -->
+        <div class="flex items-center justify-between border-t border-gray-300 dark:border-neutral-700 px-5 py-2.5 text-xs
+                    bg-gradient-to-r from-transparent to-neutral-50 dark:to-white/5 text-neutral-600 dark:text-white/50">
+          <div class="flex gap-6 font-mono">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">memory</span>
+              <span>MEM: <span id="audit-mem-usage" class="text-blue-600 dark:text-blue-400 font-semibold">--</span></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">speed</span>
+              <span>CPU: <span id="audit-cpu-usage" class="text-green-600 dark:text-green-400 font-semibold">--</span></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">network_ping</span>
+              <span>LATENCY: <span id="audit-latency" class="text-yellow-600 dark:text-yellow-400 font-semibold">--</span></span>
+            </div>
           </div>
 
-          <button id="audit-export-csv-footer" class="flex items-center gap-1 hover:text-white">
+          <button id="audit-export-csv-footer" 
+                  class="flex items-center gap-1.5 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3 py-1.5 rounded-md transition-all">
             <span class="material-symbols-outlined text-sm">download</span>
-            Export logs (.csv)
+            Exportar logs
           </button>
         </div>
 

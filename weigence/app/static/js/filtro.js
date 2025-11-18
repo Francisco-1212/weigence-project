@@ -70,8 +70,13 @@ async function fetchDatosFiltrados(rango, boton, mes = null, year = null) {
     renderTopLowLists(data.productos_top || [], data.productos_low || []);
   } catch (error) {
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
       fetch('/api/log_error', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
         body: JSON.stringify({ message: 'Error al obtener datos filtrados', detail: String(error), level: 'error' })
       })
     } catch (e) { console.error('No se pudo enviar el error al servidor', e) }

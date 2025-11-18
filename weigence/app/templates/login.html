@@ -69,6 +69,7 @@
         {% endif %}
         {% endwith %}
         <form action="{{ url_for('main.login') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="space-y-6">
             <div class="form-input-group">
               <input class="form-input w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 py-3 pl-12 pr-4 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:ring-primary focus:ring-opacity-50 transition-all duration-200"

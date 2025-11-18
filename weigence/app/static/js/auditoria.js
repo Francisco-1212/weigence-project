@@ -14,8 +14,8 @@
   // -----------------------------------------------------------
   const el = {
     terminal: document.getElementById("audit-terminal-output"),
-    search: document.getElementById("audit-log-search"),
-    runQuery: document.getElementById("audit-run-query"),
+    search: document.getElementById("audit-search"),
+    runQuery: document.getElementById("audit-exec-query"),
     filters: document.getElementById("audit-active-filters"),
     logStream: document.getElementById("audit-log-stream"),
     empty: document.getElementById("audit-log-empty"),
@@ -28,18 +28,44 @@
     exportCsvFooter: document.getElementById("audit-export-csv-footer"),
     exportZip: document.getElementById("audit-export-zip"),
     exportPdf: document.getElementById("audit-export-pdf"),
-    recalibrate: document.getElementById("audit-recalibrate"),
+    filterUser: document.getElementById("audit-filter-user"),
+    currentUserDisplay: document.getElementById("current-user-display"),
+    activeUsers: document.getElementById("audit-active-users"),
+    activeUserCount: document.getElementById("active-user-count"),
     clearFilters: document.getElementById("audit-clear-filters"),
+    filterToday: document.getElementById("audit-filter-today"),
+    filterWeek: document.getElementById("audit-filter-week"),
+    filterMonth: document.getElementById("audit-filter-month"),
   };
   
   let state = {
     filtros: {},
     logs: [],
+    currentUser: null,
+    renderedLogIds: new Set(), // IDs de logs ya renderizados
+    horasRango: 24, // Horas hacia atrás para cargar logs (por defecto 24h = hoy)
+    filtroTemporalActivo: false, // Indica si se aplicó un filtro temporal explícito
   };
 
   // ===========================================================
-  //  NORMALIZADORES
+  //  NORMALIZADORES & CATEGORÍAS
   // ===========================================================
+  const CATEGORIAS = {
+    login_logout_usuarios: { sigla: "AUTH", color: "#3b82f6", nombre: "Autenticación" },
+    ventas: { sigla: "VENTA", color: "#10b981", nombre: "Ventas" },
+    movimientos_inventario: { sigla: "INVT", color: "#f59e0b", nombre: "Inventario" },
+    alertas_sistema: { sigla: "ALRT", color: "#ef4444", nombre: "Alertas" },
+    alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" }, // Nueva categoría para stock
+    anomalias_detectadas: { sigla: "ANOM", color: "#dc2626", nombre: "Anomalías" },
+    eventos_ia: { sigla: "AI", color: "#8b5cf6", nombre: "IA" },
+    pesajes: { sigla: "PESO", color: "#06b6d4", nombre: "Pesajes" },
+    errores_criticos: { sigla: "ERR", color: "#dc2626", nombre: "Errores Críticos" },
+    calibraciones: { sigla: "CAL", color: "#14b8a6", nombre: "Calibraciones" },
+    accesos_autorizaciones: { sigla: "ACC", color: "#6366f1", nombre: "Accesos" },
+    lecturas_sensores: { sigla: "SENS", color: "#84cc16", nombre: "Sensores" },
+    otros: { sigla: "INFO", color: "#6b7280", nombre: "Otros" }
+  };
+
   const sev = {
     info: { label: "INFO", class: "text-green-400" },
     warning: { label: "WARN", class: "text-yellow-400" },
@@ -48,17 +74,49 @@
   };
 
   function normalize(entry) {
-    const fecha = entry.fecha || entry.timestamp.slice(0, 10);
-    const hora = entry.hora || entry.timestamp.slice(11, 19);
+    let fechaFormateada = "";
+    let hora = "";
+    
+    try {
+      // El backend envía timestamps en UTC, convertir a hora local de Chile
+      const timestampUTC = new Date(entry.timestamp);
+      
+      // Convertir a timezone de Chile (UTC-3 o UTC-4 según DST)
+      const formatter = new Intl.DateTimeFormat('es-CL', {
+        timeZone: 'America/Santiago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
+      const dateFormatter = new Intl.DateTimeFormat('es-CL', {
+        timeZone: 'America/Santiago',
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit'
+      });
+      
+      hora = formatter.format(timestampUTC);
+      fechaFormateada = dateFormatter.format(timestampUTC);
+    } catch (e) {
+      // Fallback
+      fechaFormateada = entry.fecha || entry.timestamp.slice(0, 10);
+      hora = entry.hora || entry.timestamp.slice(11, 19);
+    }
+    
     const nivel = (entry.severidad || "info").toLowerCase();
     const preset = sev[nivel] || sev.info;
 
     return {
       id: entry.id,
-      fecha,
-      hora,
+      fecha: fechaFormateada,
+      hora: hora,
+      timestamp: entry.timestamp,
       mensaje: entry.mensaje,
-      usuario: entry.usuario,
+      detalle: entry.detalle || entry.mensaje,
+      usuario: entry.usuario || 'Sistema',
+      rut: entry.rut || 'N/A',
       producto: entry.producto,
       estante: entry.estante,
       tipo_evento: entry.tipo_evento,
@@ -79,168 +137,664 @@
   }
 
   // ===========================================================
-  //  LIVE AUDIT TRAIL (LISTA INFERIOR)
+  //  LIVE AUDIT TRAIL - TERMINAL MEJORADA
   // ===========================================================
-  function renderLogs() {
-      const cont = el.logStream;
-      if (!cont) return;
-
-      cont.innerHTML = "";
-
-      if (!state.logs.length) {
-          el.empty.classList.remove("hidden");
-          return;
-      }
-
-      el.empty.classList.add("hidden");
-
-      const ordered = [...state.logs].reverse();
-
-      ordered.forEach(log => {
-          const hora = log.hora || "--:--:--";
-          const msg = resumirMensaje(log.mensaje);
-
-          let badgeColor = "var(--log-info)";
-          if (log.nivel === "WARN") badgeColor = "var(--log-warn)";
-          if (log.nivel === "CRIT") badgeColor = "var(--log-crit)";
-
-          const item = document.createElement("p");
-          item.className = "flex items-center gap-3 whitespace-nowrap";
-
-          item.innerHTML = `
-              <span style="color:var(--text-muted-dark);" class="dark:text-[var(--text-muted-light)]">${hora}</span>
-
-              <span class="px-2 py-[2px] text-xs rounded font-medium"
-                  style="background-color: color-mix(in srgb, ${badgeColor} 15%, transparent);
-                        color: ${badgeColor};">
-                  ${log.nivel}
-              </span>
-
-              <span>${msg}</span>
-          `;
-
-          cont.appendChild(item);
-      });
-
-      cont.scrollTop = cont.scrollHeight;
-  }
-
-
-
   function logColor(level) {
-  const l = level.toUpperCase();
-  if (l === "INFO")  return "text-[var(--log-info-light)] dark:text-[var(--log-info-dark)]";
-  if (l === "WARN")  return "text-[var(--log-warn-light)] dark:text-[var(--log-warn-dark)]";
-  if (l === "CRIT")  return "text-[var(--log-crit-light)] dark:text-[var(--log-crit-dark)]";
-  return "text-[var(--log-text-light)] dark:text-[var(--log-text-dark)]";
-}
-
-function renderLogs() {
-  const cont = el.logStream;
-  if (!cont) return;
-
-  cont.innerHTML = "";
-
-  if (!state.logs.length) {
-    el.empty.classList.remove("hidden");
-    return;
+    const l = level.toUpperCase();
+    if (l === "INFO")  return "#10b981"; // verde
+    if (l === "WARN")  return "#f59e0b"; // amarillo
+    if (l === "CRIT")  return "#ef4444"; // rojo
+    return "#94a3b8"; // gris
   }
 
-  el.empty.classList.add("hidden");
+  function getCategoriaInfo(tipo) {
+    return CATEGORIAS[tipo] || CATEGORIAS['otros'];
+  }
 
-  // Mostrar newest ↓ abajo
-  const ordered = [...state.logs].reverse();
+  function formatearMensajeRico(log) {
+    // Usar el detalle completo que viene del backend
+    const usuario = log.usuario || 'Sistema';
+    const rut = log.rut && log.rut !== 'N/A' && log.rut !== 'Sistema' ? log.rut : null;
+    const producto = log.producto || '';
+    const estante = log.estante || '';
+    const detalles = log.detalle || log.mensaje || '';
+    
+    let resultado = '';
+    // Usuario con estilo badge simple (sin RUT inline)
+    const usuarioMarcado = `<span class="user-highlight">${usuario}</span>`;
+    const usuarioCorto = usuario;
+    
+    switch(log.tipo_evento) {
+      case 'login_logout_usuarios':
+        // Usar detalle completo del backend, reemplazar usuario plano por marcado
+        if (detalles) {
+          resultado = detalles.replace(usuario, usuarioMarcado);
+        } else {
+          resultado = detalles.toLowerCase().includes('cerr') || detalles.toLowerCase().includes('salió') 
+            ? `${usuarioMarcado} cerró sesión` 
+            : `${usuarioMarcado} inició sesión`;
+        }
+        break;
+        
+      case 'ventas':
+        // Usar detalle completo del backend
+        resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - Venta`;
+        break;
+        
+      case 'detalle_ventas':
+        const cantMatch = detalles.match(/(\d+)u/);
+        const cant = cantMatch ? cantMatch[1] : '';
+        resultado = `${cant}u ${producto || 'producto'}`;
+        break;
+      
+      case 'consulta_lectura':
+      case 'navegacion':
+      case 'modificacion_datos':
+      case 'exportacion':
+        // Si el detalle NO incluye el nombre del usuario, agregarlo al inicio
+        if (detalles && usuario && usuario !== 'Sistema') {
+          const primerasPalabras = detalles.toLowerCase().split(' ').slice(0, 2).join(' ');
+          const nombreUsuario = usuario.toLowerCase().split(' ')[0];
+          
+          // Verificar si el detalle ya contiene el nombre del usuario
+          if (!primerasPalabras.includes(nombreUsuario)) {
+            // Agregar usuario marcado al inicio con primera letra en minúscula
+            resultado = `${usuarioMarcado} ${detalles.charAt(0).toLowerCase() + detalles.slice(1)}`;
+          } else {
+            // Ya tiene el nombre, reemplazar por versión marcada
+            resultado = detalles.replace(usuario, usuarioMarcado);
+          }
+        } else {
+          resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - Acción en sistema`;
+        }
+        break;
+        
+      case 'movimientos_inventario':
+      case 'retiros_programados':
+      case 'retiros_fuera_de_horario':
+      case 'accesos_a_estantes':
+        // Usar detalle completo del backend si existe
+        resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - ${producto || 'Movimiento'} ${estante ? '@' + estante : ''}`;
+        break;
+        
+      case 'alertas_sistema':
+      case 'alertas_stock':
+      case 'anomalias_detectadas':
+        // Hacer más descriptivas las alertas mostrando el detalle completo
+        if (detalles) {
+          // Si es alerta de stock, mostrar producto y detalles
+          if (producto && (detalles.toLowerCase().includes('stock') || detalles.toLowerCase().includes('bajo') || detalles.toLowerCase().includes('agotado'))) {
+            resultado = `📦 ${producto}: ${detalles}`;
+          } else {
+            resultado = `⚠️ ${detalles}${estante ? ' @' + estante : ''}`;
+          }
+        } else {
+          resultado = `⚠️ ALERTA${producto ? ' - ' + producto : ''}${estante ? ' @' + estante : ''}`;
+        }
+        break;
+        
+      case 'eventos_ia':
+        resultado = `IA: ${detalles.substring(0, 40)}`;
+        break;
+        
+      case 'errores_criticos':
+        resultado = `ERROR: ${detalles.substring(0, 40)}`;
+        break;
+        
+      case 'lecturas_sensores':
+        resultado = `Sensor${estante ? ' @' + estante : ''}`;
+        break;
+        
+      case 'pesajes':
+        resultado = rut 
+          ? `${usuarioMarcado} - Pesaje ${producto || ''}`
+          : `<span class="user-highlight">Sistema</span> - Pesaje automático ${producto || ''}`;
+        break;
+        
+      case 'calibraciones':
+        resultado = rut ? `${usuarioMarcado} - Calibración` : `${usuarioMarcado} - Calibración automática`;
+        break;
+        
+      case 'inactividad':
+        resultado = `Sin actividad detectada`;
+        break;
+        
+      default:
+        resultado = rut ? usuarioMarcado : usuarioMarcado;
+    }
+    
+    // Truncar a 90 caracteres máximo (sin contar tags HTML)
+    const textoSinHTML = resultado.replace(/<[^>]*>/g, '');
+    if (textoSinHTML.length > 90) {
+      const diferencia = resultado.length - textoSinHTML.length;
+      resultado = resultado.substring(0, 87 + diferencia) + '...';
+    }
+    
+    return resultado.trim();
+  }
 
-  ordered.forEach((log) => {
-    let msg = log.mensaje || "";
-    if (msg.length > 70) msg = msg.slice(0, 70) + "…";
+  function renderLogs() {
+    const cont = el.logStream;
+    if (!cont) return;
 
-    const line = document.createElement("div");
-    line.className =
-      "text-sm font-mono whitespace-pre leading-[1.4] flex gap-2";
+    if (!state.logs.length) {
+      el.empty.classList.remove("hidden");
+      updateStats({ info: 0, warn: 0, crit: 0 });
+      state.renderedLogIds.clear();
+      cont.innerHTML = "";
+      return;
+    }
 
-    line.innerHTML = `
-      <span class="opacity-60">${log.hora}</span>
-      <span class="${logColor(log.nivel)} font-bold">[${log.nivel}]</span>
-      <span>${msg}</span>
+    el.empty.classList.add("hidden");
+
+    // Calcular estadísticas
+    const stats = { info: 0, warn: 0, crit: 0 };
+    state.logs.forEach(log => {
+      const nivel = log.nivel.toLowerCase();
+      if (nivel === 'info') stats.info++;
+      else if (nivel === 'warn') stats.warn++;
+      else if (nivel === 'crit') stats.crit++;
+    });
+    updateStats(stats);
+
+    // Ordenar: más recientes al final (orden cronológico ascendente)
+    const ordered = [...state.logs].sort((a, b) => {
+      const timeA = new Date(a.timestamp || 0).getTime();
+      const timeB = new Date(b.timestamp || 0).getTime();
+      return timeA - timeB; // Ascendente: más antiguos primero, más nuevos al final
+    });
+
+    // Detectar si el usuario está en el fondo (para mantener scroll automático)
+    const isAtBottom = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 100;
+
+    // Detectar logs nuevos
+    const nuevosLogIds = new Set();
+    let cantidadNuevos = 0;
+    ordered.forEach(log => {
+      const logId = `${log.timestamp}_${log.tipo_evento}_${log.detalle.substring(0, 20)}`;
+      if (!state.renderedLogIds.has(logId)) {
+        nuevosLogIds.add(logId);
+        state.renderedLogIds.add(logId);
+        cantidadNuevos++;
+      }
+    });
+
+    // Mostrar notificación de nuevos eventos (solo si hay más de 2 nuevos)
+    if (cantidadNuevos > 2) {
+      showNotification(`${cantidadNuevos} nuevos eventos`, "info");
+      
+      // Parpadeo en el indicador de estado
+      if (el.streamStatus) {
+        el.streamStatus.style.animation = 'none';
+        setTimeout(() => {
+          el.streamStatus.style.animation = 'pulse-glow 2s ease-in-out infinite';
+        }, 100);
+      }
+    }
+
+    // Reconstruir todo el contenedor para mantener orden correcto
+    cont.innerHTML = "";
+
+    // Variable para rastrear la última fecha mostrada
+    let lastDate = null;
+    const hoy = new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
+
+    // Renderizar todos los logs
+    ordered.forEach((log, index) => {
+      const logId = `${log.timestamp}_${log.tipo_evento}_${log.detalle.substring(0, 20)}`;
+      const esNuevo = nuevosLogIds.has(logId);
+      
+      // Obtener fecha del log
+      const logDate = new Date(log.timestamp).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
+      
+      // Insertar separador de fecha si es diferente a la anterior
+      if (logDate !== lastDate) {
+        const separator = document.createElement("div");
+        separator.className = "date-separator";
+        separator.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0px;
+          margin: 0px;
+          height: 20px;
+          font-family: 'Roboto', sans-serif;
+          font-size: 9px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        `;
+        
+        const dateLabel = logDate === hoy ? 'HOY' : logDate;
+        const dateColor = logDate === hoy ? '#3b82f6' : '#6b7280';
+        
+        separator.innerHTML = `
+          <div style="flex: 1; height: 1px; background: ${dateColor}20;"></div>
+          <span style="color: ${dateColor};">${dateLabel}</span>
+          <div style="flex: 1; height: 1px; background: ${dateColor}20;"></div>
+        `;
+        
+        cont.appendChild(separator);
+        lastDate = logDate;
+      }
+      
+      const categoria = getCategoriaInfo(log.tipo_evento);
+      const severidadColor = logColor(log.nivel);
+      
+      // Ajustar color del badge según severidad para alertas de stock
+      let badgeColor = categoria.color;
+      let borderColor = categoria.color;
+      
+      if (log.tipo_evento === 'alertas_stock') {
+        // Stock crítico (rojo) o bajo (amarillo)
+        if (log.nivel === 'CRIT') {
+          badgeColor = '#ef4444'; // rojo
+          borderColor = '#ef4444';
+        } else if (log.nivel === 'WARN') {
+          badgeColor = '#f59e0b'; // amarillo
+          borderColor = '#f59e0b';
+        }
+      } else if (log.tipo_evento === 'anomalias_detectadas') {
+        badgeColor = '#dc2626'; // rojo oscuro para anomalías
+        borderColor = '#dc2626';
+      }
+      
+      // Mensaje con formato HTML enriquecido
+      const msg = formatearMensajeRico(log);
+
+      const line = document.createElement("div");
+      line.className = "log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150";
+      
+      line.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        margin-bottom: 2px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13.5px;
+        line-height: 1.5;
+        cursor: pointer;
+        border-left: 3px solid ${borderColor};
+        border-radius: 4px;
+        ${esNuevo ? 'opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease-out, transform 0.5s ease-out;' : ''}
+      `;
+      
+      line.innerHTML = `
+        <span class="text-slate-800 dark:text-gray-200" style="min-width: 70px; flex-shrink: 0; font-size: 13px; font-weight: 700; font-family: 'Roboto Mono', 'Consolas', monospace; letter-spacing: -0.3px;">${log.hora}</span>
+        <span style="
+          background: ${badgeColor}15; 
+          color: ${badgeColor}; 
+          border: 1.5px solid ${badgeColor};
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 10.5px;
+          font-weight: 800;
+          min-width: 52px;
+          text-align: center;
+          flex-shrink: 0;
+          letter-spacing: 0.8px;
+          font-family: 'Roboto Mono', 'Consolas', monospace;
+          text-transform: uppercase;
+        ">${categoria.sigla}</span>
+        <span class="text-slate-900 dark:text-gray-50" style="flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.1px;">${msg}</span>
+      `;
+
+      line.onmouseenter = () => {
+        line.style.borderLeftWidth = '4px';
+        line.style.transform = 'translateX(4px) scale(1.01)';
+        line.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+        line.style.background = 'rgba(59, 130, 246, 0.08)';
+      };
+      
+      line.onmouseleave = () => {
+        line.style.borderLeftWidth = '3px';
+        line.style.transform = 'translateX(0) scale(1)';
+        line.style.boxShadow = 'none';
+        line.style.background = '';
+      };
+
+      line.onclick = () => {
+        // Efecto ripple al hacer clic
+        const ripple = document.createElement("span");
+        ripple.style.cssText = `
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(59, 130, 246, 0.4);
+          width: 20px;
+          height: 20px;
+          margin-left: -10px;
+          margin-top: -10px;
+          animation: ripple 0.6s;
+          pointer-events: none;
+        `;
+        const rect = line.getBoundingClientRect();
+        ripple.style.left = event.clientX - rect.left + 'px';
+        ripple.style.top = event.clientY - rect.top + 'px';
+        line.style.position = 'relative';
+        line.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+        
+        mostrarDetalleLog(log);
+      };
+
+      cont.appendChild(line); // Insertar al final para que los más recientes queden abajo
+      
+      // Activar animación fade-in solo para mensajes nuevos
+      if (esNuevo) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            line.style.opacity = '1';
+            line.style.transform = 'translateY(0)';
+          });
+        });
+      }
+    });
+
+    // Scroll automático hacia abajo solo si estaba en el fondo
+    if (isAtBottom) {
+      cont.scrollTop = cont.scrollHeight;
+    }
+  }
+
+  function updateStats(stats) {
+    const statInfo = document.getElementById('stat-info');
+    const statWarn = document.getElementById('stat-warn');
+    const statCrit = document.getElementById('stat-crit');
+    
+    if (statInfo) statInfo.textContent = stats.info;
+    if (statWarn) statWarn.textContent = stats.warn;
+    if (statCrit) statCrit.textContent = stats.crit;
+  }
+
+  function mostrarDetalleLog(log) {
+    const categoria = getCategoriaInfo(log.tipo_evento);
+    const severidadColor = logColor(log.nivel);
+    
+    const modal = document.createElement("div");
+    modal.className = "fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4";
+    modal.innerHTML = `
+      <div class="bg-gradient-to-br from-white to-neutral-50 dark:from-gray-900 dark:to-gray-800 border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-neutral-300 dark:border-gray-700 pb-4">
+          <div class="flex items-center gap-4">
+            <div style="
+              background: ${categoria.color}20; 
+              color: ${categoria.color}; 
+              border: 2px solid ${categoria.color};
+              padding: 8px 12px;
+              border-radius: 6px;
+              font-size: 11px;
+              font-weight: 700;
+              letter-spacing: 1px;
+            ">${categoria.sigla}</div>
+            <div>
+              <h3 class="text-neutral-900 dark:text-white font-bold text-xl">${categoria.nombre}</h3>
+              <p class="text-neutral-600 dark:text-gray-400 text-sm font-mono">${log.fecha} · ${log.hora}</p>
+            </div>
+          </div>
+          <button class="text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white transition-colors text-2xl font-bold" onclick="this.closest('.fixed').remove()">
+            ✕
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="${log.rut && log.rut !== 'N/A' && log.rut !== 'Sistema' ? '' : 'col-span-2'}">
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Usuario</p>
+            <p class="text-neutral-900 dark:text-white bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 font-semibold text-base">${log.usuario}</p>
+          </div>
+          
+          ${log.rut && log.rut !== 'N/A' && log.rut !== 'Sistema' ? `
+          <div>
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">RUT</p>
+            <p class="text-blue-600 dark:text-blue-400 bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 font-mono text-base font-bold">${log.rut}</p>
+          </div>
+          ` : ''}
+          
+          <div>
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Nivel</p>
+            <div style="
+              background: ${severidadColor}20; 
+              color: ${severidadColor}; 
+              border: 2px solid ${severidadColor};
+              padding: 10px;
+              border-radius: 8px;
+              font-weight: 700;
+              text-align: center;
+              font-size: 14px;
+            ">${log.nivel}</div>
+          </div>
+          
+          ${log.producto ? `
+            <div class="col-span-2">
+              <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Producto</p>
+              <p class="text-green-600 dark:text-green-400 bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 font-semibold text-base">${log.producto}</p>
+            </div>
+          ` : ''}
+          
+          ${log.estante ? `
+            <div class="col-span-2">
+              <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Ubicación/Estante</p>
+              <p class="text-purple-600 dark:text-purple-400 bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 font-semibold text-base">${log.estante}</p>
+            </div>
+          ` : ''}
+          
+          <div class="col-span-2">
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Detalles del Evento</p>
+            <p class="text-neutral-900 dark:text-white bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-4 font-mono text-sm leading-relaxed">${log.detalle || log.mensaje}</p>
+          </div>
+          
+          <div>
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">Tipo de Evento</p>
+            <p class="text-neutral-800 dark:text-gray-300 bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 text-sm">${log.tipo_evento}</p>
+          </div>
+          
+          <div>
+            <p class="text-neutral-600 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-semibold">ID Evento</p>
+            <p class="text-neutral-500 dark:text-gray-500 bg-neutral-100 dark:bg-gray-800 border border-neutral-300 dark:border-gray-700 rounded-lg p-3 font-mono text-xs">#${log.id}</p>
+          </div>
+        </div>
+        
+        <button onclick="this.closest('.fixed').remove()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-base transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+          CERRAR
+        </button>
+      </div>
     `;
-
-    cont.appendChild(line);
-  });
-
-  cont.scrollTop = cont.scrollHeight;
-}
-
-  function resumirMensaje(msg) {
-    if (!msg) return "";
-
-    const lower = msg.toLowerCase();
-
-    // Resumen por patrones comunes
-    if (lower.includes("flujo en piso bajo")) {
-        return "Flujo bajo en estantes. Inactividad prolongada.";
-    }
-    if (lower.includes("peso") && lower.includes("lectura")) {
-        return "Discrepancia en lectura de peso detectada.";
-    }
-    if (lower.includes("venta")) {
-        return "Venta registrada.";
-    }
-    if (lower.includes("retiro")) {
-        return "Movimiento de retiro ejecutado.";
-    }
-    if (lower.includes("error")) {
-        return "Error del sistema detectado.";
-    }
-
-    // Si no es ningún caso especial → recorte clásico
-    return msg.length > 90 ? msg.slice(0, 90) + "…" : msg;
-}
+    
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+    
+    document.body.appendChild(modal);
+  }
 
   // ===========================================================
-  //  CARGA DE LOGS
+  //  CARGA DE LOGS CON FEEDBACK MEJORADO
   // ===========================================================
   async function loadLogs() {
-    pushTerminal("Sincronizando eventos…");
+    // Indicador de carga
+    if (el.streamStatus) {
+      el.streamStatus.classList.remove('bg-green-500');
+      el.streamStatus.classList.add('bg-yellow-500');
+    }
+    if (el.lastUpdated) {
+      el.lastUpdated.textContent = "Sincronizando...";
+    }
 
-    const params = new URLSearchParams(state.filtros).toString();
-    const url = params ? `${API_LOGS}?${params}` : API_LOGS;
+    const params = new URLSearchParams(state.filtros);
+    params.set('horas', state.horasRango);
+    
+    // Ajustar el límite según el rango temporal
+    // Más días = más eventos posibles
+    let limit = 200; // Default para 24h
+    if (state.horasRango >= 720) limit = 1000; // Mes: 1000 eventos
+    else if (state.horasRango >= 168) limit = 500; // Semana: 500 eventos
+    params.set('limit', limit);
+    
+    const url = `${API_LOGS}?${params.toString()}`;
+    
+    console.log(`🔍 Petición: ${url}`);
+    console.log(`📊 Rango temporal: ${state.horasRango} horas | Límite: ${limit} eventos`);
 
     try {
+      const startTime = Date.now();
       const res = await fetch(url);
+      
+      if (!res.ok) {
+        console.error(`Error HTTP ${res.status}: ${res.statusText}`);
+        if (el.streamStatus) {
+          el.streamStatus.classList.remove('bg-yellow-500', 'bg-green-500');
+          el.streamStatus.classList.add('bg-red-500');
+        }
+        if (el.lastUpdated) {
+          el.lastUpdated.textContent = `Error ${res.status}`;
+        }
+        return;
+      }
+      
       const data = await res.json();
+      const loadTime = Date.now() - startTime;
 
       if (!data.ok) {
-        pushTerminal("Error cargando eventos.");
+        console.error("Error en backend:", data.error || "Error desconocido");
+        if (el.streamStatus) {
+          el.streamStatus.classList.remove('bg-yellow-500', 'bg-green-500');
+          el.streamStatus.classList.add('bg-red-500');
+        }
+        if (el.lastUpdated) {
+          el.lastUpdated.textContent = data.error ? `Error: ${data.error.substring(0, 30)}...` : "Error backend";
+        }
+        
+        // Mostrar logs vacíos si hay error
+        state.logs = [];
+        renderLogs();
         return;
       }
 
       state.logs = data.logs.map(normalize);
 
-      if (data.meta?.system) {
-        el.mem.textContent = data.meta.system.mem;
-        el.cpu.textContent = data.meta.system.cpu;
-        el.latency.textContent = data.meta.system.latency;
+      // Mostrar feedback de cuántos eventos se cargaron
+      console.log(`📄 Cargados ${state.logs.length} eventos (rango: ${state.horasRango}h, límite: ${limit})`);
+      if (state.logs.length > 0) {
+        const primerEvento = new Date(state.logs[state.logs.length - 1].timestamp);
+        const ultimoEvento = new Date(state.logs[0].timestamp);
+        console.log(`📅 Primer evento: ${primerEvento.toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
+        console.log(`📅 Último evento: ${ultimoEvento.toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
+        
+        // Verificar si alcanzamos el límite
+        if (state.logs.length >= limit) {
+          console.warn(`⚠️ Se alcanzó el límite de ${limit} eventos. Puede haber más eventos en este rango.`);
+        }
+      } else {
+        console.log('⚠️ No hay eventos en este rango temporal');
       }
 
-      el.lastUpdated.textContent = "Actualizado";
+      // Actualizar métricas del sistema
+      if (data.meta?.system) {
+        el.mem.textContent = data.meta.system.mem || "--";
+        el.cpu.textContent = data.meta.system.cpu || "--";
+        el.latency.textContent = `${loadTime}ms`;
+      }
+
+      // Actualizar contador de usuarios activos
+      detectCurrentUser();
+      updateActiveUserCount();
+
+      // Actualizar estado
+      if (el.streamStatus) {
+        el.streamStatus.classList.remove('bg-yellow-500');
+        el.streamStatus.classList.add('bg-green-500');
+      }
+      
+      const now = new Date();
+      if (el.lastUpdated) {
+        el.lastUpdated.textContent = `${now.toLocaleTimeString('es-CL')}`;
+      }
 
       renderLogs();
+
     } catch (err) {
-      pushTerminal("Fallo conexión backend.");
+      console.error("Fallo conexión backend:", err);
+      
+      if (el.streamStatus) {
+        el.streamStatus.classList.remove('bg-yellow-500', 'bg-green-500');
+        el.streamStatus.classList.add('bg-red-500');
+      }
+      if (el.lastUpdated) {
+        el.lastUpdated.textContent = "Error de conexión";
+      }
     }
   }
 
+  // Notificaciones toast con animación mejorada
+  function showNotification(message, type = "info") {
+    const colors = {
+      success: "bg-green-500",
+      error: "bg-red-500",
+      info: "bg-blue-500",
+      warning: "bg-yellow-500"
+    };
+
+    const icons = {
+      success: "check_circle",
+      error: "error",
+      info: "info",
+      warning: "warning"
+    };
+
+    const toast = document.createElement("div");
+    toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-5 py-3 rounded-lg shadow-2xl z-50 text-sm font-medium flex items-center gap-3`;
+    toast.style.animation = "slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)";
+    toast.innerHTML = `
+      <span class="material-symbols-outlined text-xl">${icons[type]}</span>
+      <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.animation = "slideOutRight 0.3s ease-in";
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  }
+
   // ===========================================================
-  //  FILTROS
+  //  FILTROS INTELIGENTES
   // ===========================================================
+  function parseSearchQuery(query) {
+    const filtros = {};
+    
+    // Parsear formato: key:value key2:value2
+    const regex = /(\w+):([^\s]+)/g;
+    let match;
+    
+    while ((match = regex.exec(query)) !== null) {
+      filtros[match[1]] = match[2];
+    }
+    
+    return filtros;
+  }
+
   function applySearch() {
     const q = el.search.value.trim();
-    if (q) state.filtros.search = q;
-    else delete state.filtros.search;
+    
+    if (q) {
+      const parsedFilters = parseSearchQuery(q);
+      state.filtros = parsedFilters; // Reemplazar completamente los filtros
+    } else {
+      state.filtros = {};
+    }
+
+    // Limpiar IDs renderizados para re-renderizar con nuevos filtros
+    state.renderedLogIds.clear();
+    el.logStream.innerHTML = "";
 
     renderFilterChips();
     loadLogs();
+    
+    // Feedback visual
+    el.search.classList.add('border-green-400');
+    setTimeout(() => el.search.classList.remove('border-green-400'), 500);
   }
 
   function renderFilterChips() {
@@ -249,19 +803,58 @@ function renderLogs() {
 
     box.innerHTML = "";
 
+    // Mostrar chip de rango temporal si se aplicó un filtro explícito
+    if (state.filtroTemporalActivo) {
+      const rangoChip = document.createElement("span");
+      rangoChip.className =
+        "inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/20 border border-purple-500/40 text-purple-600 dark:text-purple-400 text-xs rounded-full hover:bg-purple-500/30 transition-colors";
+      
+      let rangoTexto = '';
+      if (state.horasRango === 24) rangoTexto = 'Hoy (últimas 24h)';
+      else if (state.horasRango === 168) rangoTexto = 'Últimos 7 días';
+      else if (state.horasRango === 720) rangoTexto = 'Últimos 30 días';
+      else rangoTexto = `Últimas ${state.horasRango}h`;
+      
+      rangoChip.innerHTML = `
+        <span class="material-symbols-outlined text-xs">schedule</span>
+        <span class="font-semibold">Rango</span>
+        <span class="opacity-80">:</span>
+        <span>${rangoTexto}</span>
+        <button class="material-symbols-outlined text-xs text-purple-600 dark:text-purple-400 hover:text-white transition-colors rango-clear-btn">close</button>
+      `;
+
+      rangoChip.querySelector(".rango-clear-btn").onclick = () => {
+        state.horasRango = 24; // Volver a default
+        state.filtroTemporalActivo = false; // Desactivar filtro temporal
+        state.renderedLogIds.clear();
+        el.logStream.innerHTML = "";
+        renderFilterChips();
+        loadLogs();
+        showNotification("Filtro temporal eliminado", "info");
+      };
+
+      box.appendChild(rangoChip);
+    }
+
+    // Mostrar chips de filtros normales
     Object.entries(state.filtros).forEach(([k, v]) => {
       if (!v) return;
+      
       const chip = document.createElement("span");
       chip.className =
-        "px-2 py-1 bg-primary/20 border border-primary/40 text-primary text-xs rounded-full flex items-center gap-1";
+        "inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 border border-primary/40 text-primary text-xs rounded-full hover:bg-primary/30 transition-colors";
 
       chip.innerHTML = `
-        ${k}: ${v}
-        <button class="material-symbols-outlined text-xs text-primary">close</button>
+        <span class="font-semibold">${k}</span>
+        <span class="opacity-80">:</span>
+        <span>${v}</span>
+        <button class="material-symbols-outlined text-xs text-primary hover:text-white transition-colors">close</button>
       `;
 
       chip.querySelector("button").onclick = () => {
         delete state.filtros[k];
+        state.renderedLogIds.clear(); // Limpiar IDs para re-renderizar
+        el.logStream.innerHTML = ""; // Limpiar contenedor
         renderFilterChips();
         loadLogs();
       };
@@ -282,9 +875,14 @@ function renderLogs() {
       limit: 600,
     };
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
     const res = await fetch(API_EXPORT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      },
       body: JSON.stringify(payload),
     });
 
@@ -300,14 +898,299 @@ function renderLogs() {
   }
 
   // ===========================================================
-  //  RECALIBRAR
+  //  FILTROS TEMPORALES (Conectados a botones del header)
+  // ===========================================================
+  function filtrarHoy() {
+    state.filtros = {}; // Limpiar otros filtros
+    state.horasRango = 24; // Últimas 24 horas
+    state.filtroTemporalActivo = true; // Marcar como filtro activo
+    state.renderedLogIds.clear();
+    el.logStream.innerHTML = "";
+    renderFilterChips();
+    loadLogs().then(() => {
+      // Auto-scroll al final (eventos más recientes) para HOY
+      setTimeout(() => {
+        if (el.logStream) {
+          el.logStream.scrollTop = el.logStream.scrollHeight;
+        }
+      }, 150);
+    });
+    showNotification("📅 Mostrando eventos de hoy (últimas 24h)", "info");
+  }
+  
+  function filtrarSemana() {
+    state.filtros = {}; // Limpiar otros filtros
+    state.horasRango = 168; // 7 días = 168 horas
+    state.filtroTemporalActivo = true; // Marcar como filtro activo
+    state.renderedLogIds.clear();
+    el.logStream.innerHTML = "";
+    renderFilterChips();
+    loadLogs().then(() => {
+      // Auto-scroll al inicio (eventos más antiguos) para SEMANA
+      setTimeout(() => {
+        if (el.logStream) {
+          el.logStream.scrollTop = 0;
+          showNotification("📜 Mostrando desde el evento más antiguo de la semana", "success");
+        }
+      }, 150);
+    });
+    showNotification("📅 Cargando eventos de los últimos 7 días...", "info");
+  }
+  
+  function filtrarMes() {
+    state.filtros = {}; // Limpiar otros filtros
+    state.horasRango = 720; // 30 días = 720 horas
+    state.filtroTemporalActivo = true; // Marcar como filtro activo
+    state.renderedLogIds.clear();
+    el.logStream.innerHTML = "";
+    renderFilterChips();
+    loadLogs().then(() => {
+      // Auto-scroll al inicio (eventos más antiguos) para MES
+      setTimeout(() => {
+        if (el.logStream) {
+          el.logStream.scrollTop = 0;
+          showNotification("📜 Mostrando desde el evento más antiguo del mes", "success");
+        }
+      }, 150);
+    });
+    showNotification("📅 Cargando eventos del último mes...", "info");
+  }
+  
+  // Conectar botones del header con funciones de filtrado
+  function conectarBotonesHeaderFiltros() {
+    const botonesHeader = document.querySelectorAll('.filtro-fecha-btn');
+    
+    if (!botonesHeader.length) {
+      console.warn('⚠️ No se encontraron botones de filtro de fecha en el header');
+      return;
+    }
+    
+    console.log(`🔗 Conectando ${botonesHeader.length} botones de filtro de fecha`);
+    
+    botonesHeader.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const rango = btn.getAttribute('data-rango');
+        
+        console.log(`👆 Click en botón: ${rango}`);
+        
+        // Remover clase activa de todos los botones
+        botonesHeader.forEach(b => {
+          b.classList.remove('bg-primary', 'text-white');
+          b.classList.add('text-neutral-700', 'dark:text-neutral-300');
+        });
+        
+        // Activar el botón clickeado
+        btn.classList.add('bg-primary', 'text-white');
+        btn.classList.remove('text-neutral-700', 'dark:text-neutral-300');
+        
+        // Ejecutar filtro correspondiente
+        if (rango === 'hoy') {
+          filtrarHoy();
+        } else if (rango === 'semana') {
+          filtrarSemana();
+        } else if (rango === 'mes') {
+          filtrarMes();
+        }
+      });
+    });
+    
+    console.log('✅ Botones de filtro de fecha conectados correctamente');
+  }
+
+  // ===========================================================
+  //  USUARIOS ACTIVOS - FILTRO POR USUARIO ACTUAL
+  // ===========================================================
+  function detectCurrentUser() {
+    // Primero intentar obtener de la sesión del backend (meta tag)
+    const userFromMeta = document.querySelector('meta[name="current-user"]')?.getAttribute('content');
+    if (userFromMeta && userFromMeta !== 'None') {
+      state.currentUser = userFromMeta;
+      if (el.currentUserDisplay) {
+        el.currentUserDisplay.textContent = userFromMeta.split(' ')[0];
+      }
+      console.log('✅ Usuario actual detectado desde meta:', userFromMeta);
+      return;
+    }
+    
+    // Buscar el evento de login más reciente en la tabla auditoria_eventos
+    const loginLogs = state.logs.filter(log => 
+      log.tipo_evento === 'login_logout_usuarios'
+    ).sort((a, b) => {
+      const timeA = new Date(a.timestamp || 0).getTime();
+      const timeB = new Date(b.timestamp || 0).getTime();
+      return timeB - timeA; // Más recientes primero
+    });
+    
+    console.log('🔍 Detectando usuario actual:', loginLogs.slice(0, 3));
+    
+    // Buscar el login más reciente sin un logout posterior
+    for (let log of loginLogs) {
+      const esLogin = log.detalle.toLowerCase().includes('inició') || 
+                     log.detalle.toLowerCase().includes('inicio');
+      if (esLogin && log.usuario && log.usuario !== 'Sistema') {
+        state.currentUser = log.usuario;
+        if (el.currentUserDisplay) {
+          el.currentUserDisplay.textContent = log.usuario.split(' ')[0];
+        }
+        console.log('✅ Usuario actual detectado:', log.usuario);
+        return;
+      }
+    }
+    
+    // Si no se encontró login, intentar de cualquier evento reciente
+    const eventosRecientes = state.logs.filter(log => 
+      log.usuario && log.usuario !== 'Sistema'
+    ).sort((a, b) => {
+      const timeA = new Date(a.timestamp || 0).getTime();
+      const timeB = new Date(b.timestamp || 0).getTime();
+      return timeB - timeA;
+    });
+    
+    if (eventosRecientes.length > 0) {
+      state.currentUser = eventosRecientes[0].usuario;
+      if (el.currentUserDisplay) {
+        el.currentUserDisplay.textContent = eventosRecientes[0].usuario.split(' ')[0];
+      }
+      console.log('✅ Usuario actual detectado desde eventos:', eventosRecientes[0].usuario);
+      return;
+    }
+    
+    // Si no se encontró ningún usuario, limpiar
+    state.currentUser = null;
+    if (el.currentUserDisplay) {
+      el.currentUserDisplay.textContent = 'Mi usuario';
+    }
+    console.log('⚠️ No se detectó usuario actual');
+  }
+
+  function updateActiveUserCount() {
+    // Contar usuarios que hicieron login en los últimos 30 minutos
+    const ahora = Date.now();
+    const treintaMin = 30 * 60 * 1000;
+    
+    const usuariosActivos = new Set();
+    
+    state.logs.forEach(log => {
+      if (log.tipo_evento !== 'login_logout_usuarios') return;
+      
+      const timestamp = new Date(log.timestamp).getTime();
+      const esReciente = ahora - timestamp < treintaMin;
+      const esLogin = log.detalle.toLowerCase().includes('inició') || 
+                     log.detalle.toLowerCase().includes('inicio');
+      
+      if (esReciente && esLogin && log.usuario && log.usuario !== 'Sistema') {
+        usuariosActivos.add(log.usuario);
+      }
+    });
+    
+    if (el.activeUserCount) {
+      el.activeUserCount.textContent = usuariosActivos.size;
+    }
+  }
+
+  function filtrarPorUsuarioActual() {
+    if (!state.currentUser) {
+      showNotification("No se detectó usuario actual", "warning");
+      return;
+    }
+    
+    // Aplicar filtro de usuario sin tocar el input
+    state.filtros = { usuario: state.currentUser };
+    
+    // Limpiar y re-renderizar
+    state.renderedLogIds.clear();
+    el.logStream.innerHTML = "";
+    
+    renderFilterChips();
+    loadLogs();
+    
+    showNotification(`Mostrando eventos de ${state.currentUser}`, "success");
+  }
+
+  function mostrarUsuariosActivos() {
+    const ahora = Date.now();
+    const treintaMin = 30 * 60 * 1000;
+    const usuariosActivos = new Map();
+    
+    state.logs.forEach(log => {
+      if (log.tipo_evento !== 'login_logout_usuarios') return;
+      
+      const timestamp = new Date(log.timestamp).getTime();
+      const esReciente = ahora - timestamp < treintaMin;
+      const esLogin = log.detalle.toLowerCase().includes('inició') || 
+                     log.detalle.toLowerCase().includes('inicio');
+      
+      if (esReciente && esLogin && log.usuario && log.usuario !== 'Sistema') {
+        if (!usuariosActivos.has(log.usuario)) {
+          usuariosActivos.set(log.usuario, {
+            nombre: log.usuario,
+            ultimoLogin: log.timestamp,
+            hora: log.hora
+          });
+        }
+      }
+    });
+    
+    // Modal informativo - sin filtrado automático
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+            <span class="material-symbols-outlined text-green-500 align-middle">group</span>
+            Usuarios Activos (últimos 30 min)
+          </h3>
+          <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 modal-close-btn">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="space-y-2">
+          ${usuariosActivos.size === 0 ? 
+            '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No hay usuarios activos</p>' :
+            Array.from(usuariosActivos.values()).map(u => `
+              <div class="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div>
+                  <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Último login: ${u.hora}</p>
+                </div>
+                <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Cerrar modal
+    const closeBtn = modal.querySelector('.modal-close-btn');
+    if (closeBtn) {
+      closeBtn.onclick = () => modal.remove();
+    }
+    modal.onclick = (e) => { 
+      if (e.target === modal) modal.remove(); 
+    };
+  }
+
+
+
+  // ===========================================================
+  //  RECALIBRAR (DEPRECADO - mantenido para compatibilidad)
   // ===========================================================
   async function recalibrarSensores() {
     pushTerminal("Enviando secuencia de recalibración…");
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
     const res = await fetch(API_RECALIBRAR, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      },
       body: JSON.stringify({ detalle: "Recalibración solicitada desde UI" }),
     });
 
@@ -320,19 +1203,50 @@ function renderLogs() {
   //  EVENTOS
   // ===========================================================
   if (el.runQuery) el.runQuery.onclick = applySearch;
-  if (el.search) el.search.onkeydown = (e) => e.key === "Enter" && applySearch();
+  if (el.search) {
+    el.search.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applySearch();
+      }
+    };
+    
+    // Agregar tooltip con ejemplos
+    el.search.onfocus = () => {
+      el.search.placeholder = "Ej: usuario:Francisco tipo_evento:ventas";
+    };
+    
+    el.search.onblur = () => {
+      if (!el.search.value) {
+        el.search.placeholder = "usuario:nombre rut:12345678-9 tipo_evento:ventas";
+      }
+    };
+  }
 
   if (el.clearFilters)
     el.clearFilters.onclick = () => {
       state.filtros = {};
+      state.horasRango = 24; // Resetear a default
+      state.filtroTemporalActivo = false; // Desactivar filtro temporal
+      if (el.search) {
+        el.search.value = "";
+      }
+      state.renderedLogIds.clear(); // Limpiar IDs para re-renderizar
+      el.logStream.innerHTML = ""; // Limpiar contenedor
       renderFilterChips();
       loadLogs();
+      showNotification("Filtros eliminados", "info");
     };
 
   if (el.exportCsv) el.exportCsv.onclick = () => exportFormato("csv");
   if (el.exportCsvFooter) el.exportCsvFooter.onclick = () => exportFormato("csv");
   if (el.exportZip) el.exportZip.onclick = () => exportFormato("zip");
   if (el.exportPdf) el.exportPdf.onclick = () => exportFormato("pdf");
+  if (el.filterUser) el.filterUser.onclick = filtrarPorUsuarioActual;
+  if (el.activeUsers) el.activeUsers.onclick = mostrarUsuariosActivos;
+  if (el.filterToday) el.filterToday.onclick = filtrarHoy;
+  if (el.filterWeek) el.filterWeek.onclick = filtrarSemana;
+  if (el.filterMonth) el.filterMonth.onclick = filtrarMes;
 
   if (el.recalibrate) el.recalibrate.onclick = recalibrarSensores;
 
@@ -340,5 +1254,47 @@ function renderLogs() {
   //  ARRANQUE
   // ===========================================================
   loadLogs();
+  conectarBotonesHeaderFiltros(); // Conectar botones del header
+  
+  // Scroll inicial al fondo después de cargar
+  setTimeout(() => {
+    if (el.logStream) {
+      el.logStream.scrollTop = el.logStream.scrollHeight;
+    }
+  }, 200);
+  
   setInterval(loadLogs, REFRESH_INTERVAL);
+  
+  // Atajos de teclado para mejor UX
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+F o Cmd+F: Focus en buscador
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      if (el.search) {
+        el.search.focus();
+        el.search.select();
+      }
+    }
+    
+    // Ctrl+L o Cmd+L: Limpiar filtros
+    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+      e.preventDefault();
+      if (el.clearFilters) {
+        el.clearFilters.click();
+      }
+    }
+    
+    // ESC: Limpiar buscador
+    if (e.key === 'Escape' && el.search === document.activeElement) {
+      el.search.value = '';
+      el.search.blur();
+    }
+  });
+  
+  console.log('🚀 Sistema de auditoría inicializado correctamente');
+  console.log('💡 Atajos de teclado:');
+  console.log('   - Ctrl+F: Focus en buscador');
+  console.log('   - Ctrl+L: Limpiar filtros');
+  console.log('   - ESC: Limpiar buscador');
+  console.log('   - Enter: Buscar');
 })();

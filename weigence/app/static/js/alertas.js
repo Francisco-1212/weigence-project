@@ -502,10 +502,13 @@ const Alertas = {
     const alertaId = this.state.alertaActual.id;
 
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
       const response = await fetch(`/api/actualizar_alerta/${alertaId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
           estado: nuevoEstado

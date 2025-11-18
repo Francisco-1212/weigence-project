@@ -375,10 +375,13 @@ document.querySelectorAll(".btn-show-history").forEach(btn => {
 
       console.log("Datos a enviar:", datos); // Para debugging
 
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
       const response = await fetch("/api/movimientos/nuevo", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken
         },
         body: JSON.stringify(datos)
       });

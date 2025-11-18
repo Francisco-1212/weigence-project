@@ -8,6 +8,11 @@ from .decorators import requiere_rol
 @bp.route("/alertas")
 @requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
 def alertas():
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'alertas':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Alertas")
+        session['last_page'] = 'alertas'
     from .utils import obtener_notificaciones
     try:
         # --- Datos base ---

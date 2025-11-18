@@ -10,6 +10,11 @@ from .decorators import requiere_rol
 @bp.route("/dashboard")
 @requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
 def dashboard():
+    from app.utils.eventohumano import registrar_evento_humano
+    if session.get('last_page') != 'dashboard':
+        usuario_nombre = session.get('usuario_nombre', 'Usuario')
+        registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al Dashboard")
+        session['last_page'] = 'dashboard'
     productos = supabase.table("productos").select("*").execute().data
     pesajes = supabase.table("pesajes").select("*").execute().data
     usuarios = supabase.table("usuarios").select("*").execute().data
