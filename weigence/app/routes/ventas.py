@@ -184,7 +184,7 @@ def crear_nueva_venta():
         # Registrar evento de venta en auditoría
         from app.utils.eventohumano import registrar_evento_humano
         usuario_nombre = session.get("usuario_nombre", "Usuario")
-        registrar_evento_humano("venta", f"Venta #{id_venta} registrada por ${total_venta:,.0f}")
+        registrar_evento_humano("venta", f"{usuario_nombre} realizó Venta #{id_venta} por ${total_venta:,.0f}")
         
         # 2. Crear detalles de venta y actualizar inventario
         detalles_venta = []

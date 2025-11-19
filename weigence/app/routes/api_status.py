@@ -78,3 +78,55 @@ def api_log_error():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/api/history')
+@requiere_login
+def api_history():
+    """Retorna historial de eventos del sistema (movimientos, ventas, etc.)"""
+    try:
+        # Obtener eventos de auditoría recientes
+        eventos = supabase.table("auditoria_eventos").select(
+            "timestamp, tipo_evento, detalle, usuario"
+        ).order("timestamp", desc=True).limit(50).execute()
+        
+        # Formatear eventos
+        historial = []
+        for evt in eventos.data:
+            historial.append({
+                'timestamp': evt.get('timestamp'),
+                'message': f"[{evt.get('tipo_evento', 'evento')}] {evt.get('detalle', '')} - {evt.get('usuario', 'Sistema')}"
+            })
+        
+        return jsonify(historial)
+    except Exception as e:
+        print(f"Error obteniendo historial: {e}")
+        return jsonify([])
+
+
+@bp.route('/api/history_errors')
+@requiere_login
+def api_history_errors():
+    """Retorna historial de errores del sistema"""
+    data_dir = Path(__file__).parent / 'data'
+    errors_file = data_dir / 'errors_log.json'
+    
+    try:
+        if errors_file.exists():
+            with open(errors_file, 'r', encoding='utf-8') as f:
+                errores = json.load(f)
+            return jsonify(errores[:50])  # Solo los últimos 50
+        else:
+            return jsonify([])
+    except Exception as e:
+        print(f"Error leyendo errores: {e}")
+        return jsonify([])
+
+
+@bp.route('/api/refresh', methods=['POST'])
+@requiere_login
+def api_refresh():
+    """Actualiza manualmente el timestamp de última actualización"""
+    global last_manual_update
+    last_manual_update = datetime.now()
+    return jsonify({'success': True, 'timestamp': last_manual_update.isoformat()})

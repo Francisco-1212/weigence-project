@@ -11,7 +11,7 @@
 {% block contenido %}
 <div class="p-0 bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] min-h-screen">
 
-  <div class="flex flex-col gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col gap-6 w-full px-4 sm:px-6 lg:px-8 py-8">
 
     <!-- Título -->
     <h2 class="text-3xl font-bold text-left text-neutral-900 dark:text-neutral-100">
@@ -56,17 +56,17 @@
     </section>
 
     <!-- Paneles principales -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
-      <!-- Columna izquierda: Monitoreo -->
-      <div class="lg:col-span-2 flex flex-col gap-6">
+      <!-- Columna izquierda: Monitoreo (3/4 del ancho en XL) -->
+      <div class="xl:col-span-3 flex flex-col gap-6">
 
         <!-- Monitoreo de estantes -->
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
           <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
             Monitoreo de Estantes en Tiempo Real
           </h3>
-          <div id="monitoreo-estantes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          <div id="monitoreo-estantes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
         </div>
 
         <!-- Visión general -->
@@ -74,9 +74,9 @@
           <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
             Visión General del Almacén
           </h3>
-          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] relative w-full aspect-[2/1] rounded-xl overflow-visible almacen-map bg-transparent">
+          <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] relative w-full aspect-[20/3] rounded-xl overflow-visible almacen-map bg-transparent">
 
-            <svg id="svg-almacen" class="relative overflow-visible" viewBox="0 0 400 200">
+            <svg id="svg-almacen" class="relative overflow-visible" viewBox="0 0 600 150">
               <!-- Se rellena dinámicamente desde JS -->
             </svg>
 

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTabErrors = document.getElementById('btn-tab-errors');
   const btnTabMovements = document.getElementById('btn-tab-movements');
   const closeHistoryBtn = document.getElementById('close-history');
+  const closeHistoryFooterBtn = document.getElementById('close-history-footer');
 
   // Estados del sistema
   const states = {
@@ -227,14 +228,13 @@ function updateTimestampText() {
     openHistoryModal('errors');
   }
 
-  // Asociación de eventos
+  // Asociación de eventos
   if (btnRefresh) btnRefresh.addEventListener('click', manualRefresh);
   if (btnShowHistory) btnShowHistory.addEventListener('click', () => openHistoryModal('movements'));
   if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal);
+  if (closeHistoryFooterBtn) closeHistoryFooterBtn.addEventListener('click', closeHistoryModal);
   if (btnTabErrors) btnTabErrors.addEventListener('click', () => activateTab('errors'));
-  if (btnTabMovements) btnTabMovements.addEventListener('click', () => { activateTab('movements'); fetchHistory(); });
-
-  // Inicialización automática
+  if (btnTabMovements) btnTabMovements.addEventListener('click', () => { activateTab('movements'); fetchHistory(); });  // Inicialización automática
   fetchSystemStatus();
   setInterval(fetchSystemStatus, 30000);   // Actualiza estado cada 30s
   setInterval(updateTimestampText, 10000); // Actualiza etiqueta cada 10s

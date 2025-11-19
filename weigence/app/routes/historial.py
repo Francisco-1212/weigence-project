@@ -1,4 +1,4 @@
-from flask import render_template
+from flask import render_template, session
 from .utils import requiere_login
 from . import bp
 from api.conexion_supabase import supabase
@@ -40,6 +40,7 @@ def historial():
             usuario = m.get("usuarios", {}).get("nombre") if isinstance(m.get("usuarios"), dict) else None
 
             movimientos.append({
+                "id_movimiento": m.get("id_movimiento"),
                 "producto": producto or f"Producto {m.get('idproducto','-')}",
                 "tipo_evento": m.get("tipo_evento", "—"),
                 "cantidad": m.get("cantidad", 0),

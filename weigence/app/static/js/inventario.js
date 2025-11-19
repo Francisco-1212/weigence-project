@@ -608,8 +608,15 @@ const WeigenceMonitor = {
   async actualizarEstantes() {
     try {
       const res = await fetch("/api/estantes_estado");
-      const data = await res.json();
+      let data = await res.json();
       if (!Array.isArray(data)) return;
+      
+      // Ordenar estantes numéricamente por id_estante (1, 2, 3, 4, 5, 6)
+      data = data.sort((a, b) => {
+        const numA = parseInt(String(a.id_estante).replace(/\D/g, '')) || 0;
+        const numB = parseInt(String(b.id_estante).replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
 
       const contenedor = document.querySelector("#monitoreo-estantes");
       if (!contenedor) return;
@@ -737,7 +744,7 @@ const WeigenceMonitor = {
       const actualLabels = series.map(s => s.label || '');
       const actualValues = series.map(s => s.consumo);
 
-      // Generar proyección simple: extrapolación lineal basada en últimas 2 medidas
+      // Generar proyección avanzada: tendencia basada en últimas ventas y comparación semanal
       const futurePoints = 7;
       let projValues = [];
       let projLabels = [];
@@ -769,8 +776,38 @@ const WeigenceMonitor = {
           projLabels.push(d.toISOString().split('T')[0]);
         }
 
-        // Extrapolar: si hay al menos 2 puntos usar slope por día; si no, rellenar con último valor
-        if (actualValues.length >= 2) {
+        // Proyección inteligente: promedio móvil ponderado de últimos 7 días + tendencia + comparación semanal
+        if (actualValues.length >= 7) {
+          const last7 = actualValues.slice(-7);
+          const avg7 = last7.reduce((a, b) => a + b, 0) / 7;
+          
+          // Calcular tendencia (regresión lineal simple sobre últimos 7 días)
+          let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+          for (let i = 0; i < last7.length; i++) {
+            sumX += i;
+            sumY += last7[i];
+            sumXY += i * last7[i];
+            sumX2 += i * i;
+          }
+          const n = last7.length;
+          const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+          const intercept = (sumY - slope * sumX) / n;
+          
+          // Proyectar usando tendencia + factor de comparación semanal
+          for (let i = 1; i <= futurePoints; i++) {
+            const trendValue = slope * (n + i - 1) + intercept;
+            // Si hay datos de hace 7 días, usar como referencia
+            const weekAgoIndex = actualValues.length - 7 - i;
+            let projectedValue = trendValue;
+            if (weekAgoIndex >= 0) {
+              const weekAgoValue = actualValues[weekAgoIndex];
+              // Promedio ponderado: 70% tendencia actual, 30% comparación con semana anterior
+              projectedValue = (trendValue * 0.7) + (weekAgoValue * 0.3);
+            }
+            projValues.push(Math.max(0, Math.round(projectedValue * 100) / 100));
+          }
+        } else if (actualValues.length >= 2) {
+          // Si hay menos de 7 días, usar extrapolación lineal simple
           const last = actualValues[actualValues.length - 1];
           const prev = actualValues[actualValues.length - 2];
           const slope = last - prev;
@@ -874,25 +911,33 @@ const WeigenceMonitor = {
             labels: labels,
             datasets: [
               {
-                label: 'Consumo',
+                label: 'Consumo Real',
                 data: actualData,
-                borderColor: '#60a5fa',
-                backgroundColor: 'rgba(96,165,250,0.06)',
-                tension: 0.35,
-                pointRadius: 3,
-                borderWidth: 2,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.1)',
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                borderWidth: 3,
                 fill: true,
                 spanGaps: true
               },
               {
-                label: 'Proyección',
+                label: 'Proyección (7 días)',
                 data: projectionData,
-                borderColor: '#93c5fd',
-                borderDash: [6, 4],
-                backgroundColor: 'rgba(147,197,253,0.03)',
-                tension: 0.2,
-                pointRadius: 0,
-                borderWidth: 1,
+                borderColor: '#f59e0b',
+                borderDash: [8, 4],
+                backgroundColor: 'rgba(245,158,11,0.08)',
+                tension: 0.3,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#f59e0b',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                borderWidth: 2,
                 fill: false,
                 spanGaps: false
               }
@@ -901,12 +946,47 @@ const WeigenceMonitor = {
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { display: true, grid: { display: false } },
-              y: { beginAtZero: true, suggestedMax: suggestedMax }
+            plugins: { 
+              legend: { 
+                display: true,
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  padding: 15,
+                  font: { size: 11, weight: '500' }
+                }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#3b82f6',
+                borderWidth: 1,
+                padding: 10,
+                displayColors: true
+              }
             },
-            elements: { line: { capBezierPoints: true } }
+            scales: {
+              x: { 
+                display: true, 
+                grid: { display: false },
+                ticks: { font: { size: 10 } }
+              },
+              y: { 
+                beginAtZero: true, 
+                suggestedMax: suggestedMax,
+                ticks: { font: { size: 10 } },
+                grid: { color: 'rgba(0,0,0,0.05)' }
+              }
+            },
+            elements: { line: { capBezierPoints: true } },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            }
           }
         });
       } catch (e) {
@@ -926,29 +1006,36 @@ const WeigenceMonitor = {
 
     try {
       const res = await fetch("/api/estantes_estado");
-      const data = await res.json();
+      let data = await res.json();
       if (!Array.isArray(data) || data.length === 0) {
         console.warn("No hay datos de estantes disponibles para renderizar.");
         return;
       }
-      const svg = document.getElementById("svg-almacen");
+      
+      // Ordenar estantes numéricamente por id_estante (1, 2, 3, 4, 5, 6)
+      data = data.sort((a, b) => {
+        const numA = parseInt(String(a.id_estante).replace(/\D/g, '')) || 0;
+        const numB = parseInt(String(b.id_estante).replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
+      
       if (!svg || !Array.isArray(data)) return;
 
       // Limpia el SVG
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // Layout en cuadrícula centrada
-      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : { width: 400, height: 200 };
-      const svgW = vb.width || svg.clientWidth || 400;
-      const svgH = vb.height || svg.clientHeight || 200;
+      // Layout en cuadrícula fija: 3 columnas x 2 filas para 6 estantes
+      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : { width: 600, height: 150 };
+      const svgW = vb.width || svg.clientWidth || 600;
+      const svgH = vb.height || svg.clientHeight || 150;
       const padding = 12;
 
       const n = data.length;
       if (n === 0) return;
 
-      // Calcular columnas según aspecto y número de elementos
-      const cols = Math.max(1, Math.round(Math.sqrt(n * (svgW / svgH))));
-      const rows = Math.ceil(n / cols);
+      // Forzar grid de 3 columnas x 2 filas
+      const cols = 3;
+      const rows = 2;
 
       const cellW = (svgW - padding * 2) / cols;
       const cellH = (svgH - padding * 2) / rows;

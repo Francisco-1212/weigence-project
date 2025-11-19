@@ -1182,7 +1182,7 @@
     showNotification(`Mostrando eventos de ${state.currentUser}`, "success");
   }
 
-  function mostrarUsuariosActivos() {
+  async function mostrarUsuariosActivos() {
     const ahora = Date.now();
     const treintaMin = 30 * 60 * 1000;
     const usuariosActivos = new Map();
@@ -1222,25 +1222,49 @@
       }
     });
     
-    // Obtener todos los usuarios del sistema y clasificar por estado
-    const todosLosUsuarios = new Map();
-    state.logs.forEach(log => {
-      if (log.usuario && log.usuario !== 'Sistema') {
-        const ts = new Date(log.timestamp);
-        if (!todosLosUsuarios.has(log.usuario) || ts > todosLosUsuarios.get(log.usuario).ts) {
-          todosLosUsuarios.set(log.usuario, {
-            nombre: log.usuario,
-            ts: ts,
-            hora: log.hora,
-            activo: usuariosActivos.has(log.usuario)
-          });
-        }
+    // Obtener TODOS los usuarios del sistema desde la base de datos
+    let todosLosUsuariosSistema = [];
+    try {
+      const response = await fetch('/api/usuarios');
+      const data = await response.json();
+      console.log('📊 Respuesta /api/usuarios:', data);
+      if (data.success && data.data) {
+        todosLosUsuariosSistema = data.data;
+        console.log(`✅ Total usuarios en el sistema: ${todosLosUsuariosSistema.length}`, todosLosUsuariosSistema);
       }
-    });
+    } catch (error) {
+      console.error('❌ Error obteniendo usuarios del sistema:', error);
+    }
     
-    const usuariosDesconectados = Array.from(todosLosUsuarios.values())
-      .filter(u => !u.activo)
+    console.log('🟢 Usuarios activos:', Array.from(usuariosActivos.keys()));
+    
+    // Clasificar usuarios por estado (activo/desconectado)
+    const usuariosDesconectados = todosLosUsuariosSistema
+      .filter(u => !usuariosActivos.has(u.nombre))
+      .map(u => {
+        // Buscar la última actividad de este usuario en los logs
+        let ultimaActividad = null;
+        let hora = 'Sin actividad registrada';
+        
+        for (const log of state.logs) {
+          if (log.usuario === u.nombre) {
+            if (!ultimaActividad || new Date(log.timestamp) > ultimaActividad) {
+              ultimaActividad = new Date(log.timestamp);
+              hora = log.hora;
+            }
+          }
+        }
+        
+        return {
+          nombre: u.nombre,
+          ts: ultimaActividad || new Date(u.fecha_registro || Date.now()),
+          hora: hora,
+          rol: u.rol
+        };
+      })
       .sort((a, b) => b.ts - a.ts); // Ordenar por más reciente primero
+    
+    console.log(`🔴 Usuarios desconectados: ${usuariosDesconectados.length}`, usuariosDesconectados);
     
     // Modal informativo - sin filtrado automático
     const modal = document.createElement('div');
