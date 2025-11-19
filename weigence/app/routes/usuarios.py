@@ -250,6 +250,12 @@ def api_crear_usuario():
         
         if hasattr(response, 'data') and response.data:
             logger.info(f"[API-CREAR-USUARIO] ✅ Usuario creado: {rut}")
+            
+            # Registrar evento de auditoría
+            from app.utils.eventohumano import registrar_evento_humano
+            admin_nombre = session.get('usuario_nombre', 'Administrador')
+            registrar_evento_humano("crear_usuario", f"{admin_nombre} creó usuario: {nombre} ({rut}) con rol {rol}")
+            
             return jsonify({
                 'success': True,
                 'message': 'Usuario creado correctamente',
@@ -332,6 +338,14 @@ def api_editar_usuario(rut):
         
         if hasattr(response, 'data') and response.data:
             print(f"[API-EDITAR-USUARIO] ✅ Usuario actualizado: {rut}")
+            
+            # Registrar evento de auditoría
+            from app.utils.eventohumano import registrar_evento_humano
+            admin_nombre = session.get('usuario_nombre', 'Administrador')
+            usuario_editado = existe.data[0].get('nombre', rut)
+            campos = ', '.join(update_data.keys())
+            registrar_evento_humano("editar_usuario", f"{admin_nombre} editó usuario {usuario_editado} ({rut}). Campos: {campos}")
+            
             return jsonify({
                 'success': True,
                 'message': 'Usuario actualizado correctamente'
@@ -377,6 +391,13 @@ def api_eliminar_usuario(rut):
         response = supabase.table("usuarios").delete().eq("rut_usuario", rut).execute()
         
         print(f"[API-ELIMINAR-USUARIO] ✅ Usuario eliminado: {rut}")
+        
+        # Registrar evento de auditoría
+        from app.utils.eventohumano import registrar_evento_humano
+        admin_nombre = session.get('usuario_nombre', 'Administrador')
+        usuario_eliminado = existe.data[0].get('nombre', rut)
+        registrar_evento_humano("eliminar_usuario", f"{admin_nombre} eliminó usuario {usuario_eliminado} ({rut})")
+        
         return jsonify({
             'success': True,
             'message': 'Usuario eliminado correctamente'

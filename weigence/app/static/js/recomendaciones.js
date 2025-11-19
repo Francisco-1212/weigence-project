@@ -35,14 +35,25 @@
     message: card.querySelector('[data-ia-message]'),
     solution: card.querySelector('[data-ia-solution]'),
     mlBadge: card.querySelector('[data-ml-badge]'),
-    mlInsights: card.querySelector('[data-ml-insights]'),
-    mlTrack: card.querySelector('[data-ml-track]'),
-    mlDots: card.querySelector('[data-ml-dots]'),
-    mlPrev: card.querySelector('[data-ml-prev]'),
-    mlNext: card.querySelector('[data-ml-next]'),
-    situacionMensaje: card.querySelector('[data-situacion-mensaje]'),
-    situacionTexto: card.querySelector('[data-situacion-texto]'),
-    carouselState: { currentIndex: 0, totalCards: 0 },
+    // Elementos de módulo
+    moduleContainer: card.querySelector('[data-ia-module]'),
+    moduleIcon: card.querySelector('[data-module-icon]'),
+    moduleName: card.querySelector('[data-module-name]'),
+    // Elementos de severidad
+    severityDetail: card.querySelector('[data-severity-detail]'),
+    severityIndicator: card.querySelector('[data-severity-indicator]'),
+    severityBar: card.querySelector('[data-severity-bar]'),
+    severityText: card.querySelector('[data-severity-text]'),
+    // Navegación entre hallazgos
+    mlNavigation: card.querySelector('[data-ml-navigation]'),
+    navPrev: card.querySelector('[data-nav-prev]'),
+    navNext: card.querySelector('[data-nav-next]'),
+    navCounter: card.querySelector('[data-nav-counter]'),
+    navCurrent: card.querySelector('[data-nav-current]'),
+    navTotal: card.querySelector('[data-nav-total]'),
+    // Estado de navegación
+    mlHallazgos: [],
+    currentHallazgoIndex: 0,
   }));
 
   function obtenerContexto() {
@@ -105,34 +116,132 @@
     if (elements.message) elements.message.textContent = mensaje;
     if (elements.solution) elements.solution.textContent = solucion;
 
-    // Mostrar mensaje de situación si hay uno
-    if (elements.situacionMensaje && situacion_actual) {
-      elements.situacionMensaje.style.display = 'flex';
-      if (elements.situacionTexto) {
-        elements.situacionTexto.textContent = situacion_actual;
-      }
-    } else if (elements.situacionMensaje) {
-      elements.situacionMensaje.style.display = 'none';
-    }
-
     // Mostrar badge ML si detectó anomalía
     if (elements.mlBadge) {
       elements.mlBadge.style.display = ml_anomaly_detected ? 'inline-block' : 'none';
     }
 
-    // Mostrar insights ML con carrusel si detectó anomalía
-    if (elements.mlInsights && ml_anomaly_detected && ml_insights_cards.length > 0) {
-      elements.mlInsights.style.display = 'block';
-      setupCarousel(elements, ml_insights_cards);
-    } else if (elements.mlInsights) {
-      elements.mlInsights.style.display = 'none';
+    // Si hay hallazgos ML, configurar navegación
+    if (ml_anomaly_detected && ml_insights_cards.length > 0) {
+      elements.mlHallazgos = ml_insights_cards;
+      elements.currentHallazgoIndex = 0;
+      mostrarHallazgo(elements, 0);
+      configurarNavegacion(elements);
+    } else {
+      // Ocultar elementos ML si no hay hallazgos
+      if (elements.moduleContainer) elements.moduleContainer.style.display = 'none';
+      if (elements.severityDetail) elements.severityDetail.style.display = 'none';
+      if (elements.mlNavigation) elements.mlNavigation.style.display = 'none';
     }
 
     animateContent(elements);
     elements.card.classList.add('is-visible');
   }
 
-  function setupCarousel(elements, cards) {
+  // Iconos de módulos
+  const moduleIcons = {
+    dashboard: 'dashboard',
+    inventario: 'inventory_2',
+    movimientos: 'swap_horiz',
+    ventas: 'point_of_sale',
+    alertas: 'notifications_active',
+    auditoria: 'shield',
+  };
+
+  // Función para mostrar un hallazgo específico
+  function mostrarHallazgo(elements, index) {
+    const hallazgo = elements.mlHallazgos[index];
+    if (!hallazgo) return;
+
+    // Actualizar título y descripción
+    if (elements.title) elements.title.textContent = hallazgo.titulo || hallazgo.title || 'Hallazgo detectado';
+    if (elements.message) elements.message.textContent = hallazgo.descripcion || hallazgo.description || 'Sin detalles disponibles';
+
+    // Mostrar módulo afectado
+    if (elements.moduleContainer) {
+      const modulo = hallazgo.modulo || 'general';
+      elements.moduleContainer.style.display = 'flex';
+      if (elements.moduleIcon) elements.moduleIcon.textContent = moduleIcons[modulo] || 'dashboard';
+      if (elements.moduleName) {
+        const moduloLabels = {
+          dashboard: 'Dashboard',
+          inventario: 'Inventario',
+          movimientos: 'Movimientos',
+          ventas: 'Ventas',
+          alertas: 'Alertas',
+          auditoria: 'Auditoría'
+        };
+        elements.moduleName.textContent = moduloLabels[modulo] || modulo;
+      }
+    }
+
+    // Mostrar severidad
+    if (elements.severityDetail && hallazgo.ml_severity) {
+      elements.severityDetail.style.display = 'block';
+      const severityLevel = hallazgo.ml_severity.toLowerCase();
+      const severityLabels = { low: 'Baja', medium: 'Media', high: 'Alta', critical: 'Crítica' };
+      const severityColors = { low: '#10b981', medium: '#f59e0b', high: '#f97316', critical: '#ef4444' };
+      
+      if (elements.severityText) elements.severityText.textContent = severityLabels[severityLevel] || 'Media';
+      if (elements.severityBar) {
+        elements.severityBar.style.backgroundColor = severityColors[severityLevel] || '#f59e0b';
+        const widths = { low: '25%', medium: '50%', high: '75%', critical: '100%' };
+        elements.severityBar.style.width = widths[severityLevel] || '50%';
+      }
+    }
+
+    // Plan de acción (si existe)
+    if (elements.solution && hallazgo.plan_accion) {
+      elements.solution.textContent = hallazgo.plan_accion;
+    }
+
+    // Actualizar contador
+    if (elements.navCurrent) elements.navCurrent.textContent = index + 1;
+    if (elements.navTotal) elements.navTotal.textContent = elements.mlHallazgos.length;
+
+    // Actualizar estado de botones
+    if (elements.navPrev) elements.navPrev.disabled = index === 0;
+    if (elements.navNext) elements.navNext.disabled = index === elements.mlHallazgos.length - 1;
+
+    elements.currentHallazgoIndex = index;
+  }
+
+  // Configurar navegación entre hallazgos
+  function configurarNavegacion(elements) {
+    if (!elements.mlNavigation || elements.mlHallazgos.length === 0) return;
+
+    // Mostrar navegación solo si hay más de 1 hallazgo
+    elements.mlNavigation.style.display = elements.mlHallazgos.length > 1 ? 'flex' : 'none';
+
+    // Botón anterior
+    if (elements.navPrev) {
+      elements.navPrev.onclick = () => {
+        const newIndex = Math.max(0, elements.currentHallazgoIndex - 1);
+        mostrarHallazgo(elements, newIndex);
+      };
+    }
+
+    // Botón siguiente
+    if (elements.navNext) {
+      elements.navNext.onclick = () => {
+        const newIndex = Math.min(elements.mlHallazgos.length - 1, elements.currentHallazgoIndex + 1);
+        mostrarHallazgo(elements, newIndex);
+      };
+    }
+
+    // Navegación con teclado
+    elements.card.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' && elements.currentHallazgoIndex > 0) {
+        e.preventDefault();
+        mostrarHallazgo(elements, elements.currentHallazgoIndex - 1);
+      } else if (e.key === 'ArrowRight' && elements.currentHallazgoIndex < elements.mlHallazgos.length - 1) {
+        e.preventDefault();
+        mostrarHallazgo(elements, elements.currentHallazgoIndex + 1);
+      }
+    });
+  }
+
+  function setupCarouselmodulo(elements, cards) {
     if (!elements.mlTrack) return;
 
     // Limpiar carrusel anterior
@@ -144,23 +253,20 @@
     const headerSubtitle = elements.card.querySelector('[data-ml-carousel-subtitle]');
     const counterEl = elements.card.querySelector('[data-ml-counter]');
 
-    // Crear cards
+    // Crear tarjetas (6 módulos: dashboard, inventario, movimientos, ventas, alertas, auditoria)
     cards.forEach((card, index) => {
       const cardEl = document.createElement('div');
       cardEl.className = 'ml-carousel__card';
       cardEl.dataset.cardTitle = card.titulo; // Guardar título para header dinámico
+      cardEl.dataset.cardModulo = card.modulo || 'general'; // Guardar módulo
+      
+      // Estructura de tarjeta: emoji + título + descripción (sin acciones anidadas)
       cardEl.innerHTML = `
         <div class="ml-carousel__card-header">
-          <span class="ml-carousel__icon">${card.icono}</span>
-          <h4 class="ml-carousel__title">${card.titulo}</h4>
+          <span class="ml-carousel__icon">${card.icono || card.emoji || '🔍'}</span>
+          <h4 class="ml-carousel__title">${card.titulo || card.title || 'Hallazgo'}</h4>
         </div>
-        <p class="ml-carousel__description">${card.descripcion}</p>
-        ${card.accion ? `
-          <button class="ml-carousel__action">
-            ${card.accion}
-            <span class="material-symbols-outlined">arrow_forward</span>
-          </button>
-        ` : ''}
+        <p class="ml-carousel__description">${card.descripcion || card.description || 'Sin detalles'}</p>
       `;
       elements.mlTrack.appendChild(cardEl);
 
@@ -180,13 +286,23 @@
 
     // Setup navegación con flechas
     if (elements.mlPrev) {
-      elements.mlPrev.addEventListener('click', () => {
+      // Limpiar listeners anteriores clonando el elemento
+      const newPrev = elements.mlPrev.cloneNode(true);
+      elements.mlPrev.replaceWith(newPrev);
+      elements.mlPrev = newPrev;
+      
+      newPrev.addEventListener('click', () => {
         goToSlide(elements, elements.carouselState.currentIndex - 1);
       });
     }
 
     if (elements.mlNext) {
-      elements.mlNext.addEventListener('click', () => {
+      // Limpiar listeners anteriores clonando el elemento
+      const newNext = elements.mlNext.cloneNode(true);
+      elements.mlNext.replaceWith(newNext);
+      elements.mlNext = newNext;
+      
+      newNext.addEventListener('click', () => {
         goToSlide(elements, elements.carouselState.currentIndex + 1);
       });
     }

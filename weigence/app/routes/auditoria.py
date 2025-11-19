@@ -31,6 +31,8 @@ SUPPORTED_EVENT_TYPES = {
     "detalle_ventas",
     "pesajes",
     "alertas",
+    "alertas_stock",
+    "alertas_sistema",
     "accesos_autorizaciones",
     "eventos_ia",
     "errores_criticos",
@@ -42,6 +44,11 @@ SUPPORTED_EVENT_TYPES = {
     "accesos_a_estantes",
     "lecturas_sensores",
     "login_logout_usuarios",
+    "gestion_usuarios",
+    "modificacion_perfil",
+    "consulta_lectura",
+    "exportacion",
+    "modificacion_datos",
 }
 
 SEVERITY_DEFAULT = {
@@ -200,7 +207,7 @@ def generar_traza_auditoria(*, limit: int = DEFAULT_LIMIT, filtros: Dict[str, st
     limit = limit or DEFAULT_LIMIT
     desde = datetime.now(timezone.utc) - timedelta(hours=horas)
 
-    events, catalog = _gather_audit_events(desde)
+    events, catalog = _gather_audit_events(desde, horas)
     filtered = _apply_filters(events, filtros)
 
     return {
@@ -217,7 +224,7 @@ def generar_traza_auditoria(*, limit: int = DEFAULT_LIMIT, filtros: Dict[str, st
 
 
 
-def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[str, set[str]]]:
+def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[List[Dict[str, Any]], Dict[str, set[str]]]:
     events: List[Dict[str, Any]] = []
     catalog = {"usuarios": set(), "productos": set(), "estantes": set()}
     user_activity = defaultdict(lambda: {"first": None, "last": None, "nombre": None})
@@ -383,7 +390,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
         rows = _supabase_select(
             'detalle_ventas',
             select="""
-                id_detalle,
+                iddetalle,
                 idventa,
                 idproducto,
                 cantidad,
@@ -406,7 +413,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
             precio = row.get('precio_unitario') or 0
             mensaje = f"{cantidad}u de {producto_nombre or 'producto'} (${precio:,.0f} c/u) para venta {row.get('idventa')}"
             add_event(
-                event_id=f"det-{row.get('id_detalle')}",
+                event_id=f"det-{row.get('iddetalle')}",
                 tipo='detalle_ventas',
                 mensaje=mensaje,
                 ts=ts,
@@ -420,7 +427,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
     def collect_pesajes() -> None:
         rows = _supabase_select(
             'pesajes',
-            select='idpesaje,idproducto,peso_unitario,fecha_pesaje,id_sensor',
+            select='idpesaje,idproducto,peso_unitario,fecha_pesaje',
             order_field='fecha_pesaje',
             limit=200,
             since=desde,
@@ -442,14 +449,13 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
                 producto=producto_nombre,
                 producto_id=row.get('idproducto'),
                 fuente='pesajes',
-                metadata={'peso': peso, 'sensor': row.get('id_sensor')},
+                metadata={'peso': peso},
             )
             if row.get('idproducto'):
                 sensor_snapshots[str(row['idproducto'])] = {
                     'ts': ts,
                     'producto': producto_nombre,
                     'peso': peso,
-                    'sensor': row.get('id_sensor'),
                 }
 
     def collect_alertas() -> None:
@@ -580,7 +586,7 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
             )
 
     def collect_auditoria_eventos():
-        """Recolectar eventos de login/logout desde la tabla auditoria_eventos"""
+        """Recolectar eventos de login/logout y acciones de usuarios desde la tabla auditoria_eventos"""
         try:
             # Usar el parámetro 'desde' para filtrar correctamente
             desde_iso = desde.isoformat()
@@ -610,6 +616,15 @@ def _gather_audit_events(desde: datetime) -> tuple[List[Dict[str, Any]], Dict[st
                     # Mapear accion a tipo_evento esperado por frontend
                     if accion in ["login", "logout"]:
                         tipo = "login_logout_usuarios"
+                        nivel = 'INFO'
+                    elif accion in ["crear_usuario", "editar_usuario", "eliminar_usuario"]:
+                        tipo = "gestion_usuarios"
+                        nivel = 'INFO'
+                    elif accion in ["editar_perfil"]:
+                        tipo = "modificacion_perfil"
+                        nivel = 'INFO'
+                    elif accion in ["venta"]:
+                        tipo = "ventas"
                         nivel = 'INFO'
                     elif accion in ["ver", "navegacion", "acceso"]:
                         tipo = "consulta_lectura"

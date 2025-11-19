@@ -105,6 +105,11 @@ def editar():
                 session['usuario_correo'] = correo if correo else session.get('usuario_correo', '')
                 session['usuario_numero_celular'] = numero_celular_formateado if numero_celular_formateado else session.get('usuario_numero_celular', '')
                 session.modified = True
+                
+                # Registrar evento de auditoría
+                from app.utils.eventohumano import registrar_evento_humano
+                registrar_evento_humano("editar_perfil", f"{nombre} editó su perfil")
+                
             return redirect(url_for('main.editar'))
         except Exception as e:  
             flash(f'Error inesperado: {str(e)}', 'danger')

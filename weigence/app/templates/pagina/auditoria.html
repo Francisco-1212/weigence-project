@@ -206,6 +206,58 @@
 * {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
+
+/* ============================================================
+   FLEXBOX PARA ALINEACIÓN DE BLOQUES (Live Audit Trail + IA)
+   ============================================================ */
+
+/* Contenedor padre - grid con flex para igualar alturas */
+.grid.grid-cols-12.gap-6.mt-8 {
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+/* Columna izquierda (Live Audit Trail) */
+.col-span-12.lg\:col-span-8 {
+  flex: 0 0 66.666667%;
+  max-width: 66.666667%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Columna derecha (Bloque IA) */
+.col-span-12.lg\:col-span-4 {
+  flex: 0 0 33.333333%;
+  max-width: 33.333333%;
+  display: flex;
+  flex-direction: column;
+  padding-right: 2rem;
+}
+
+/* Ambos bloques internos ocupan 100% de altura */
+.col-span-12.lg\:col-span-8 > div,
+.col-span-12.lg\:col-span-4 > article {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Responsive: en móviles mantener comportamiento de grid */
+@media (max-width: 1023px) {
+  .grid.grid-cols-12.gap-6.mt-8 {
+    display: grid !important;
+    flex-wrap: wrap;
+  }
+  
+  .col-span-12.lg\:col-span-4 {
+    flex: none;
+    max-width: 100%;
+  }
+}
+</style>
 </style>
 
 <div class="w-full space-y-8 font-sans text-neutral-800 dark:text-[#EAEAEA]">
@@ -270,7 +322,7 @@
     <div class="col-span-12 lg:col-span-8 space-y-6">
 
       <!-- LIVE AUDIT TRAIL -->
-      <div class="rounded-xl border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-xl">
+      <div class="rounded-xl border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-xl h-[630px] flex flex-col">
 
         <!-- HEADER -->
         <div class="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 px-5 py-3 bg-gradient-to-r from-neutral-50 dark:from-white/5 to-transparent">
@@ -313,9 +365,8 @@
         </div>
 
         <!-- TERMINAL - CONSOLA DE LOGS -->
-        <div class="px-4 py-3 bg-gradient-to-b from-neutral-100 to-neutral-50 dark:from-[#0f1014] dark:to-[#1a1b23]">
-          <div id="audit-log-stream" class="
-            h-[480px] overflow-y-auto rounded-lg border p-3
+        <div class="px-4 py-3 bg-gradient-to-b from-neutral-100 to-neutral-50 dark:from-[#0f1014] dark:to-[#1a1b23] flex-1 overflow-hidden">
+          <div id="audit-log-stream" class="h-full overflow-y-auto rounded-lg border p-3
             bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
             border-gray-300 dark:border-neutral-700
             scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-primary/40
@@ -364,7 +415,7 @@
     <div class="col-span-12 lg:col-span-4">
       <article
         id="ai-recomendacion-auditoria"
-        class="ia-recommendation h-full"
+        class="ia-recommendation"
         data-ia-card
         data-severity="info"
         data-ia-status="idle"
@@ -374,84 +425,58 @@
         <div class="ia-recommendation__halo" aria-hidden="true"></div>
 
         <div class="ia-recommendation__body h-full">
+          
+          <!-- Header con badge ML -->
           <div class="ia-recommendation__meta">
             <span class="material-symbols-outlined" data-ia-icon>auto_awesome</span>
             <span data-ia-severity>Analizando entorno</span>
-            <!-- Badge ML cuando detecta anomalía -->
             <span class="ml-badge" data-ml-badge style="display: none;">ML</span>
           </div>
 
+          <!-- Módulo afectado -->
+          <div class="ia-recommendation__module" data-ia-module style="display: none;">
+            <span class="material-symbols-outlined" data-module-icon>dashboard</span>
+            <span data-module-name>Dashboard</span>
+          </div>
+
+          <!-- Título del problema -->
           <h4 class="ia-recommendation__title" data-ia-title>Sincronizando contexto operacional…</h4>
 
+          <!-- Descripción del problema -->
           <p class="ia-recommendation__message" data-ia-message>
             El motor IA correlaciona accesos, alertas y sensores para priorizar incidentes de alto impacto en el inventario.
           </p>
 
-          <!-- Mensaje conversacional de situación -->
-          <div class="situacion-mensaje" data-situacion-mensaje style="display: none;">
-            <span class="material-symbols-outlined">psychology</span>
-            <span data-situacion-texto>Analizando...</span>
+          <!-- Severidad del hallazgo -->
+          <div class="ia-recommendation__severity-detail" data-severity-detail style="display: none;">
+            <span class="ia-recommendation__label">Nivel de criticidad</span>
+            <div class="severity-indicator" data-severity-indicator>
+              <span class="severity-bar" data-severity-bar></span>
+              <span class="severity-text" data-severity-text>Baja</span>
+            </div>
           </div>
 
+          <!-- Plan de acción sugerido -->
           <div class="ia-recommendation__solution">
-            <span class="ia-recommendation__label">Plan sugerido</span>
+            <span class="ia-recommendation__label">Plan de acción sugerido</span>
             <p class="ia-recommendation__solution-text" data-ia-solution>
               Se generará una acción sugerida al confirmarse patrones anómalos.
             </p>
           </div>
-          
-          <!-- Panel ML: Carrusel de Hallazgos -->
-          <div class="ml-insights" data-ml-insights style="display: none;">
-            
-            <!-- Header dinámico del carrusel -->
-            <div class="ml-insights__header">
-              <div class="ml-insights__header-icon">
-                <span class="material-symbols-outlined">psychology</span>
-              </div>
-              <div class="ml-insights__header-content">
-                <h3 class="ml-insights__title" data-ml-carousel-title>¿Qué detectó el sistema?</h3>
-                <p class="ml-insights__subtitle" data-ml-carousel-subtitle>Navegá con las flechas o teclado</p>
-              </div>
-            </div>
-            
-            <!-- Carrusel -->
-            <div class="ml-carousel" role="region" aria-label="Hallazgos del sistema ML">
-              
-              <!-- Botón Anterior -->
-              <button 
-                class="ml-carousel__nav ml-carousel__nav--prev" 
-                data-ml-prev 
-                aria-label="Hallazgo anterior"
-                tabindex="0">
-                <span class="material-symbols-outlined">chevron_left</span>
-              </button>
-              
-              <!-- Contenedor de slides -->
-              <div class="ml-carousel__viewport">
-                <div class="ml-carousel__track" data-ml-track>
-                  <!-- Las tarjetas se insertan aquí dinámicamente -->
-                </div>
-              </div>
-              
-              <!-- Botón Siguiente -->
-              <button 
-                class="ml-carousel__nav ml-carousel__nav--next" 
-                data-ml-next 
-                aria-label="Siguiente hallazgo"
-                tabindex="0">
-                <span class="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
-            
-            <!-- Indicadores de paginación -->
-            <div class="ml-carousel__pagination">
-              <div class="ml-carousel__dots" data-ml-dots role="tablist"></div>
-              <div class="ml-carousel__counter" data-ml-counter aria-live="polite">
-                <span data-ml-current>1</span> / <span data-ml-total>1</span>
-              </div>
-            </div>
-            
+
+          <!-- Navegación entre hallazgos (sin carrusel anidado) -->
+          <div class="ia-recommendation__navigation" data-ml-navigation style="display: none;">
+            <button class="nav-button nav-button--prev" data-nav-prev aria-label="Hallazgo anterior">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span class="nav-counter" data-nav-counter>
+              <span data-nav-current>1</span> / <span data-nav-total>6</span>
+            </span>
+            <button class="nav-button nav-button--next" data-nav-next aria-label="Siguiente hallazgo">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
           </div>
+
         </div>
       </article>
     </div>

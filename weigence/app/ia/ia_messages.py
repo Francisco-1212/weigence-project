@@ -1,54 +1,51 @@
 # app/ia/ia_messages.py
 from typing import Dict, Any
-import random
 from app.ia.config import templates_v2
 
-# --- Mensajes cortos (HEADER) ---
-_HEADER_MESSAGES = {
-    "dashboard": [
-        "Estabilidad general. {n_alerts} alertas activas.",
-        "Indicadores en rango normal. {n_alerts} alertas en seguimiento.",
-        "Sin incidencias críticas. Operación estable."
-    ],
-    "inventario": [
-        "Inventario estable. Críticas: {critical_alerts}, advertencias: {warning_alerts}.",
-        "Variación de peso {weight_change_rate:.2%} vs. día anterior.",
-        "Flujo de reposición regular en estantes."
-    ],
-    "ventas": [
-        "Tendencia de ventas {sales_trend_percent:.1%} vs. histórico.",
-        "Volatilidad controlada ({sales_volatility:.2f}).",
-        "Desempeño comercial dentro del rango esperado."
-    ],
-    "movimientos": [
-        "{movements_per_hour:.2f} movimientos/h. Inactividad {inactivity_hours:.1f} h.",
-        "Flujo operativo regular y sin bloqueos.",
-        "Actividad consistente. Sin inactividad extendida."
-    ],
-    "alertas": [
-        "{critical_alerts} críticas y {warning_alerts} advertencias activas.",
-        "Monitoreo constante. Sin nuevas incidencias graves.",
-        "Condición general bajo control."
-    ],
-    "auditoria": [
-        "Auditoría estable. Sin hallazgos críticos.",
-        "Registros coherentes y controles validados.",
-        "Sistema consistente tras verificación."
-    ],
-    "default": [
-        "Sistema en operación normal.",
-        "Sin anomalías detectadas en el módulo.",
-        "Procesos según lo esperado."
-    ],
-}
-
+# --- Mensajes cortos (HEADER) que resumen el hallazgo ML correspondiente ---
 def get_header_message(page: str, context: Dict[str, Any] | None = None) -> str:
-    mensajes = _HEADER_MESSAGES.get(page, _HEADER_MESSAGES["default"])
-    msg = random.choice(mensajes)
-    try:
-        return msg.format(**(context or {}))
-    except Exception:
-        return msg
+    """
+    Genera mensaje del header según pantalla actual y hallazgos ML.
+    El mensaje debe ser contextual a la página y resumir el hallazgo principal.
+    """
+    ctx = context or {}
+    
+    # Obtener hallazgo ML de la página actual (si existe)
+    ml_insights_cards = ctx.get('ml_insights_cards', [])
+    current_module_finding = None
+    
+    # Buscar hallazgo correspondiente a la página actual
+    for card in ml_insights_cards:
+        if card.get('modulo') == page:
+            current_module_finding = card
+            break
+    
+    # Si hay un hallazgo ML específico para este módulo, usarlo
+    if current_module_finding:
+        titulo = current_module_finding.get('titulo', '')
+        descripcion = current_module_finding.get('descripcion', '')
+        emoji = current_module_finding.get('emoji', '')
+        
+        # Combinar emoji + título + descripción de forma concisa
+        if descripcion:
+            # Tomar primera oración de la descripción (hasta el primer punto)
+            first_sentence = descripcion.split('.')[0].strip()
+            # Quitar el prefijo del módulo del título (ej: "Ventas: " → "")
+            titulo_sin_prefijo = titulo.split(':', 1)[-1].strip() if ':' in titulo else titulo
+            return f"{emoji} {titulo_sin_prefijo}. {first_sentence}."
+        return f"{emoji} {titulo}"
+    
+    # Mensajes por defecto si no hay hallazgo ML
+    default_messages = {
+        "dashboard": "📊 Sistema operando normalmente. Sin anomalías detectadas.",
+        "inventario": "📦 Stock y sensores estables. Sin alertas críticas de inventario.",
+        "ventas": "💰 Desempeño comercial dentro del rango esperado.",
+        "movimientos": "🔄 Flujo operativo regular. Sin inactividad prolongada.",
+        "alertas": "🔔 Sistema de monitoreo bajo control. Sin emergencias activas.",
+        "auditoria": "🕵️ Registros coherentes. Sin inconsistencias detectadas.",
+    }
+    
+    return default_messages.get(page, "✅ Sistema funcionando correctamente.")
 
 # --- Mensajes largos (AUDITORÍA u otros bloques extensos) ---
 def get_detailed_message(page: str, context: Dict[str, Any] | None = None) -> Dict[str, str]:
@@ -62,8 +59,8 @@ def get_detailed_message(page: str, context: Dict[str, Any] | None = None) -> Di
         "auditoria":   templates_v2.AUDIT_TEMPLATES,
     }.get(page, templates_v2.AUDIT_TEMPLATES)
 
-    clave = random.choice(list(catalogo.keys()))
-    tpl = catalogo[clave]
+    clave = list(catalogo.keys())[0] if catalogo else 'default'
+    tpl = catalogo.get(clave, {})
 
     out = {}
     for k, v in tpl.items():

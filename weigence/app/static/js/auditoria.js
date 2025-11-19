@@ -7,7 +7,7 @@
   const API_EXPORT = "/api/auditoria/export";
   const API_RECALIBRAR = "/api/auditoria/recalibrar";
 
-  const REFRESH_INTERVAL = 45000;
+  const REFRESH_INTERVAL = 10000; // 10 segundos para actualización casi en tiempo real
 
   // -----------------------------------------------------------
   //  ELEMENTOS
@@ -52,10 +52,13 @@
   // ===========================================================
   const CATEGORIAS = {
     login_logout_usuarios: { sigla: "AUTH", color: "#3b82f6", nombre: "Autenticación" },
+    gestion_usuarios: { sigla: "USER", color: "#8b5cf6", nombre: "Gestión Usuarios" },
+    modificacion_perfil: { sigla: "PROF", color: "#a855f7", nombre: "Perfil" },
     ventas: { sigla: "VENTA", color: "#10b981", nombre: "Ventas" },
+    detalle_ventas: { sigla: "PROD", color: "#06b6d4", nombre: "Productos" },
     movimientos_inventario: { sigla: "INVT", color: "#f59e0b", nombre: "Inventario" },
     alertas_sistema: { sigla: "ALRT", color: "#ef4444", nombre: "Alertas" },
-    alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" }, // Nueva categoría para stock
+    alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" },
     anomalias_detectadas: { sigla: "ANOM", color: "#dc2626", nombre: "Anomalías" },
     eventos_ia: { sigla: "AI", color: "#8b5cf6", nombre: "IA" },
     pesajes: { sigla: "PESO", color: "#06b6d4", nombre: "Pesajes" },
@@ -63,6 +66,9 @@
     calibraciones: { sigla: "CAL", color: "#14b8a6", nombre: "Calibraciones" },
     accesos_autorizaciones: { sigla: "ACC", color: "#6366f1", nombre: "Accesos" },
     lecturas_sensores: { sigla: "SENS", color: "#84cc16", nombre: "Sensores" },
+    consulta_lectura: { sigla: "NAV", color: "#6366f1", nombre: "Navegación" },
+    exportacion: { sigla: "EXPORT", color: "#14b8a6", nombre: "Exportación" },
+    modificacion_datos: { sigla: "EDIT", color: "#8b5cf6", nombre: "Edición" },
     otros: { sigla: "INFO", color: "#6b7280", nombre: "Otros" }
   };
 
@@ -166,47 +172,73 @@
     
     switch(log.tipo_evento) {
       case 'login_logout_usuarios':
-        // Usar detalle completo del backend, reemplazar usuario plano por marcado
-        if (detalles) {
+        // Detectar si es login o logout basándose en el detalle
+        const esLogout = detalles.toLowerCase().includes('cerr') || 
+                         detalles.toLowerCase().includes('salió') || 
+                         detalles.toLowerCase().includes('logout');
+        const esLogin = detalles.toLowerCase().includes('inic') || 
+                        detalles.toLowerCase().includes('login') ||
+                        detalles.toLowerCase().includes('ingres');
+        
+        if (esLogout) {
+          resultado = `<span style="color: #ef4444;">🚪</span> ${usuarioMarcado} <span style="color: #f87171;">cerró sesión</span>`;
+        } else if (esLogin) {
+          resultado = `<span style="color: #10b981;">🔓</span> ${usuarioMarcado} <span style="color: #34d399;">inició sesión</span>`;
+        } else if (detalles) {
           resultado = detalles.replace(usuario, usuarioMarcado);
         } else {
-          resultado = detalles.toLowerCase().includes('cerr') || detalles.toLowerCase().includes('salió') 
-            ? `${usuarioMarcado} cerró sesión` 
-            : `${usuarioMarcado} inició sesión`;
+          resultado = `${usuarioMarcado} - Autenticación`;
         }
         break;
         
       case 'ventas':
-        // Usar detalle completo del backend
-        resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - Venta`;
+        // Usar detalle completo del backend con ícono de venta
+        resultado = detalles ? `<span style="color: #10b981;">💰</span> ${detalles.replace(usuario, usuarioMarcado)}` : `<span style="color: #10b981;">💰</span> ${usuarioMarcado} - Venta`;
         break;
         
       case 'detalle_ventas':
         const cantMatch = detalles.match(/(\d+)u/);
         const cant = cantMatch ? cantMatch[1] : '';
-        resultado = `${cant}u ${producto || 'producto'}`;
+        resultado = `<span style="color: #06b6d4;">📦</span> ${cant}u ${producto || 'producto'}`;
         break;
       
       case 'consulta_lectura':
       case 'navegacion':
-      case 'modificacion_datos':
-      case 'exportacion':
-        // Si el detalle NO incluye el nombre del usuario, agregarlo al inicio
+        // Icono de navegación
         if (detalles && usuario && usuario !== 'Sistema') {
           const primerasPalabras = detalles.toLowerCase().split(' ').slice(0, 2).join(' ');
           const nombreUsuario = usuario.toLowerCase().split(' ')[0];
           
-          // Verificar si el detalle ya contiene el nombre del usuario
           if (!primerasPalabras.includes(nombreUsuario)) {
-            // Agregar usuario marcado al inicio con primera letra en minúscula
-            resultado = `${usuarioMarcado} ${detalles.charAt(0).toLowerCase() + detalles.slice(1)}`;
+            resultado = `<span style="color: #6366f1;">👁️</span> ${usuarioMarcado} ${detalles.charAt(0).toLowerCase() + detalles.slice(1)}`;
           } else {
-            // Ya tiene el nombre, reemplazar por versión marcada
-            resultado = detalles.replace(usuario, usuarioMarcado);
+            resultado = `<span style="color: #6366f1;">👁️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
           }
         } else {
-          resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - Acción en sistema`;
+          resultado = detalles ? `<span style="color: #6366f1;">👁️</span> ${detalles.replace(usuario, usuarioMarcado)}` : `<span style="color: #6366f1;">👁️</span> ${usuarioMarcado} - Navegación`;
         }
+        break;
+        
+      case 'modificacion_datos':
+      case 'gestion_usuarios':
+        // Iconos para edición de usuarios
+        if (detalles.toLowerCase().includes('cre') && detalles.toLowerCase().includes('usuario')) {
+          resultado = `<span style="color: #10b981;">➕</span> ${detalles.replace(usuario, usuarioMarcado)}`;
+        } else if (detalles.toLowerCase().includes('edit') && detalles.toLowerCase().includes('usuario')) {
+          resultado = `<span style="color: #3b82f6;">✏️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
+        } else if (detalles.toLowerCase().includes('elimin') && detalles.toLowerCase().includes('usuario')) {
+          resultado = `<span style="color: #ef4444;">🗑️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
+        } else {
+          resultado = `<span style="color: #8b5cf6;">📝</span> ${detalles.replace(usuario, usuarioMarcado)}`;
+        }
+        break;
+        
+      case 'modificacion_perfil':
+        resultado = `<span style="color: #8b5cf6;">👤</span> ${detalles.replace(usuario, usuarioMarcado)}`;
+        break;
+        
+      case 'exportacion':
+        resultado = `<span style="color: #14b8a6;">📤</span> ${detalles.replace(usuario, usuarioMarcado)}`;
         break;
         
       case 'movimientos_inventario':
@@ -381,12 +413,47 @@
       const categoria = getCategoriaInfo(log.tipo_evento);
       const severidadColor = logColor(log.nivel);
       
-      // Ajustar color del badge según severidad para alertas de stock
+      // Ajustar color del badge según tipo específico de evento
       let badgeColor = categoria.color;
       let borderColor = categoria.color;
+      let badgeText = categoria.sigla;
       
-      if (log.tipo_evento === 'alertas_stock') {
-        // Stock crítico (rojo) o bajo (amarillo)
+      // LOGIN/LOGOUT: Colores distintivos
+      if (log.tipo_evento === 'login_logout_usuarios') {
+        const detalles = log.detalle || log.mensaje || '';
+        const esLogout = detalles.toLowerCase().includes('cerr') || 
+                         detalles.toLowerCase().includes('salió') || 
+                         detalles.toLowerCase().includes('logout');
+        const esLogin = detalles.toLowerCase().includes('inic') || 
+                        detalles.toLowerCase().includes('login') ||
+                        detalles.toLowerCase().includes('ingres');
+        
+        if (esLogout) {
+          badgeColor = '#ef4444'; // rojo para logout
+          borderColor = '#ef4444';
+          badgeText = 'OUT';
+        } else if (esLogin) {
+          badgeColor = '#10b981'; // verde para login
+          borderColor = '#10b981';
+          badgeText = 'IN';
+        }
+      }
+      // GESTIÓN DE USUARIOS: Colores según acción
+      else if (log.tipo_evento === 'gestion_usuarios' || log.tipo_evento === 'modificacion_datos') {
+        const detalles = log.detalle || log.mensaje || '';
+        if (detalles.toLowerCase().includes('cre')) {
+          badgeColor = '#10b981'; // verde para crear
+          borderColor = '#10b981';
+        } else if (detalles.toLowerCase().includes('elimin')) {
+          badgeColor = '#ef4444'; // rojo para eliminar
+          borderColor = '#ef4444';
+        } else if (detalles.toLowerCase().includes('edit')) {
+          badgeColor = '#3b82f6'; // azul para editar
+          borderColor = '#3b82f6';
+        }
+      }
+      // ALERTAS DE STOCK: Color según severidad
+      else if (log.tipo_evento === 'alertas_stock') {
         if (log.nivel === 'CRIT') {
           badgeColor = '#ef4444'; // rojo
           borderColor = '#ef4444';
@@ -394,8 +461,10 @@
           badgeColor = '#f59e0b'; // amarillo
           borderColor = '#f59e0b';
         }
-      } else if (log.tipo_evento === 'anomalias_detectadas') {
-        badgeColor = '#dc2626'; // rojo oscuro para anomalías
+      } 
+      // ANOMALÍAS: Siempre rojo oscuro
+      else if (log.tipo_evento === 'anomalias_detectadas') {
+        badgeColor = '#dc2626';
         borderColor = '#dc2626';
       }
       
@@ -436,7 +505,7 @@
           letter-spacing: 0.8px;
           font-family: 'Roboto Mono', 'Consolas', monospace;
           text-transform: uppercase;
-        ">${categoria.sigla}</span>
+        ">${badgeText}</span>
         <span class="text-slate-900 dark:text-gray-50" style="flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.1px;">${msg}</span>
       `;
 
@@ -1071,6 +1140,11 @@
     
     const usuariosActivos = new Set();
     
+    // IMPORTANTE: Agregar el usuario actual de la sesión primero
+    if (state.currentUser && state.currentUser !== 'Sistema') {
+      usuariosActivos.add(state.currentUser);
+    }
+    
     state.logs.forEach(log => {
       if (log.tipo_evento !== 'login_logout_usuarios') return;
       
@@ -1113,6 +1187,22 @@
     const treintaMin = 30 * 60 * 1000;
     const usuariosActivos = new Map();
     
+    // IMPORTANTE: Agregar el usuario actual de la sesión primero
+    if (state.currentUser && state.currentUser !== 'Sistema') {
+      usuariosActivos.set(state.currentUser, {
+        nombre: state.currentUser,
+        ultimoLogin: new Date().toISOString(),
+        hora: new Date().toLocaleTimeString('es-CL', { 
+          timeZone: 'America/Santiago',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+      });
+    }
+    
+    // Agregar otros usuarios que hicieron login recientemente
     state.logs.forEach(log => {
       if (log.tipo_evento !== 'login_logout_usuarios') return;
       
@@ -1132,38 +1222,146 @@
       }
     });
     
+    // Obtener todos los usuarios del sistema y clasificar por estado
+    const todosLosUsuarios = new Map();
+    state.logs.forEach(log => {
+      if (log.usuario && log.usuario !== 'Sistema') {
+        const ts = new Date(log.timestamp);
+        if (!todosLosUsuarios.has(log.usuario) || ts > todosLosUsuarios.get(log.usuario).ts) {
+          todosLosUsuarios.set(log.usuario, {
+            nombre: log.usuario,
+            ts: ts,
+            hora: log.hora,
+            activo: usuariosActivos.has(log.usuario)
+          });
+        }
+      }
+    });
+    
+    const usuariosDesconectados = Array.from(todosLosUsuarios.values())
+      .filter(u => !u.activo)
+      .sort((a, b) => b.ts - a.ts); // Ordenar por más reciente primero
+    
     // Modal informativo - sin filtrado automático
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
     modal.innerHTML = `
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
-        <div class="flex items-center justify-between mb-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-gray-800 pb-2 z-10">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white">
             <span class="material-symbols-outlined text-green-500 align-middle">group</span>
-            Usuarios Activos (últimos 30 min)
+            Usuarios del Sistema
           </h3>
           <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 modal-close-btn">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div class="space-y-2">
-          ${usuariosActivos.size === 0 ? 
-            '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No hay usuarios activos</p>' :
-            Array.from(usuariosActivos.values()).map(u => `
-              <div class="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <div>
-                  <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Último login: ${u.hora}</p>
+        
+        <!-- Usuarios Activos -->
+        <div class="mb-4">
+          <h4 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Activos (últimos 30 min) · ${usuariosActivos.size}
+          </h4>
+          <div class="space-y-2">
+            ${usuariosActivos.size === 0 ? 
+              '<p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">No hay usuarios activos</p>' :
+              Array.from(usuariosActivos.values()).map(u => `
+                <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" data-usuario="${u.nombre}">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Último login: ${u.hora}</p>
+                  </div>
+                  <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
                 </div>
-                <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
-              </div>
-            `).join('')
-          }
+              `).join('')
+            }
+          </div>
+        </div>
+        
+        <!-- Usuarios Desconectados (Colapsable) -->
+        <div>
+          <button id="toggle-desconectados" class="w-full flex items-center justify-between text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+            <span class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+              Desconectados · ${usuariosDesconectados.length}
+            </span>
+            <span class="material-symbols-outlined transform transition-transform" id="toggle-icon">
+              expand_more
+            </span>
+          </button>
+          <div id="lista-desconectados" class="space-y-2 hidden">
+            ${usuariosDesconectados.length === 0 ? 
+              '<p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Todos los usuarios están activos</p>' :
+              usuariosDesconectados.map(u => `
+                <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-usuario="${u.nombre}">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Última actividad: ${u.hora}</p>
+                  </div>
+                  <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                </div>
+              `).join('')
+            }
+          </div>
         </div>
       </div>
     `;
     
     document.body.appendChild(modal);
+    
+    // Agregar event listeners a todas las tarjetas de usuario para filtrar
+    const usuarioCards = modal.querySelectorAll('.usuario-card');
+    usuarioCards.forEach(card => {
+      card.onclick = () => {
+        const nombreUsuario = card.getAttribute('data-usuario');
+        if (nombreUsuario) {
+          // Aplicar filtro de usuario
+          state.filtros = { usuario: nombreUsuario };
+          
+          // Limpiar y re-renderizar
+          state.renderedLogIds.clear();
+          el.logStream.innerHTML = "";
+          
+          renderFilterChips();
+          loadLogs();
+          
+          // Cerrar modal
+          modal.remove();
+          
+          // Mostrar notificación
+          showNotification(`Mostrando eventos de ${nombreUsuario}`, "success");
+        }
+      };
+      
+      // Efecto hover visual
+      card.onmouseenter = () => {
+        card.style.transform = 'scale(1.02)';
+        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+      };
+      card.onmouseleave = () => {
+        card.style.transform = 'scale(1)';
+        card.style.boxShadow = 'none';
+      };
+    });
+    
+    // Toggle para usuarios desconectados
+    const toggleBtn = modal.querySelector('#toggle-desconectados');
+    const listaDesconectados = modal.querySelector('#lista-desconectados');
+    const toggleIcon = modal.querySelector('#toggle-icon');
+    
+    if (toggleBtn && listaDesconectados && toggleIcon) {
+      toggleBtn.onclick = () => {
+        const isHidden = listaDesconectados.classList.contains('hidden');
+        if (isHidden) {
+          listaDesconectados.classList.remove('hidden');
+          toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+          listaDesconectados.classList.add('hidden');
+          toggleIcon.style.transform = 'rotate(0deg)';
+        }
+      };
+    }
     
     // Cerrar modal
     const closeBtn = modal.querySelector('.modal-close-btn');
