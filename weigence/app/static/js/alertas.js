@@ -2,8 +2,6 @@
 // Sistema Weigence - Alertas.js
 // ===========================================================
 
-console.log('🚀 [LOAD] Archivo alertas.js cargado');
-
 const Alertas = {
   state: {
     page: 1,
@@ -20,24 +18,10 @@ const Alertas = {
   },
 
   init() {
-    console.log('🔵 [INIT] Iniciando sistema de alertas...');
     this.cacheDOM();
-    console.log('🔵 [INIT] DOM cacheado:', {
-      table: !!this.table,
-      modal: !!this.modal,
-      pageSel: !!this.pageSel,
-      pagePrev: !!this.pagePrev,
-      pageNext: !!this.pageNext,
-      filtroEstado: !!this.filtroEstado,
-      filtroTipo: !!this.filtroTipo,
-      btnExportar: !!this.btnExportar
-    });
     this.refreshRows();
-    console.log('🔵 [INIT] Filas encontradas:', this.state.rows.length);
     this.bindEvents();
-    console.log('🔵 [INIT] Eventos de paginación vinculados');
     this.bindFiltros();
-    console.log('🔵 [INIT] Eventos de filtros vinculados');
     this.applyPagination();
     console.info("✅ Alertas: Sistema inicializado correctamente");
   },
@@ -76,21 +60,16 @@ const Alertas = {
   },
 
   bindEvents() {
-    console.log('🟡 [EVENTS] Vinculando eventos de paginación...');
-    
     // Paginación
     this.pageSel?.addEventListener('change', () => {
-      console.log('🟡 [EVENTS] Cambio de tamaño de página:', this.pageSel.value);
       this.state.pageSize = parseInt(this.pageSel.value) || 10;
       this.state.page = 1;
       this.applyPagination();
     });
 
     this.pagePrev?.addEventListener('click', () => {
-      console.log('🟡 [EVENTS] Click en botón Anterior. Página actual:', this.state.page);
       if (this.state.page > 1) {
         this.state.page--;
-        console.log('🟡 [EVENTS] Nueva página:', this.state.page);
         this.applyPagination();
       }
     });
@@ -98,10 +77,8 @@ const Alertas = {
     this.pageNext?.addEventListener('click', () => {
       const total = this.state.filteredRows.length;
       const pages = Math.max(1, Math.ceil(total / this.state.pageSize));
-      console.log('🟡 [EVENTS] Click en botón Siguiente. Página actual:', this.state.page, 'Total páginas:', pages);
       if (this.state.page < pages) {
         this.state.page++;
-        console.log('🟡 [EVENTS] Nueva página:', this.state.page);
         this.applyPagination();
       }
     });
@@ -133,45 +110,35 @@ const Alertas = {
       const btn = e.target.closest('.btn-gestionar-alerta');
       if (btn) {
         const alertaId = btn.dataset.alertaId;
-        console.log('🟡 [EVENTS] Click en botón Gestionar. ID de alerta:', alertaId);
         this.abrirModal(alertaId);
       }
     });
-    console.log('🟡 [EVENTS] Delegación de eventos para botones Gestionar configurada');
   },
 
   bindFiltros() {
-    console.log('🟢 [FILTROS] Vinculando eventos de filtros...');
-    
     // Aplicar filtros al cambiar cualquier campo
     [this.filtroEstado, this.filtroTipo].forEach(select => {
       select?.addEventListener('change', () => {
-        console.log('🟢 [FILTROS] Cambio en filtro select:', select.id, '=', select.value);
         this.aplicarFiltros();
       });
     });
 
     [this.filtroFechaDesde, this.filtroFechaHasta].forEach(input => {
       input?.addEventListener('change', () => {
-        console.log('🟢 [FILTROS] Cambio en filtro fecha:', input.id, '=', input.value);
         this.aplicarFiltros();
       });
     });
 
     // Limpiar filtros
     this.btnLimpiarFiltros?.addEventListener('click', () => {
-      console.log('🟢 [FILTROS] Click en Limpiar Filtros');
       this.limpiarFiltros();
     });
-    
-    console.log('🟢 [FILTROS] Eventos de filtros vinculados correctamente');
   },
 
   refreshRows() {
     this.state.rows = Array.from(document.querySelectorAll('.alerta-row'));
     this.state.filteredRows = [...this.state.rows];
     this.actualizarContador();
-    console.log(`📊 Total de alertas cargadas: ${this.state.rows.length}`);
   },
 
   aplicarFiltros() {
@@ -181,8 +148,6 @@ const Alertas = {
       fechaDesde: this.filtroFechaDesde?.value || '',
       fechaHasta: this.filtroFechaHasta?.value || ''
     };
-
-    console.log('🔍 Aplicando filtros:', this.state.filtrosActivos);
 
     this.state.filteredRows = this.state.rows.filter(row => {
       // Filtro por estado
@@ -230,8 +195,6 @@ const Alertas = {
     // Resetear a primera página y aplicar paginación
     this.state.page = 1;
     this.applyPagination();
-
-    console.log(`✅ Filtros aplicados: ${this.state.filteredRows.length} de ${this.state.rows.length} alertas`);
   },
 
   limpiarFiltros() {
@@ -262,8 +225,6 @@ const Alertas = {
     // Resetear a primera página y aplicar paginación
     this.state.page = 1;
     this.applyPagination();
-
-    console.log('🧹 Filtros limpiados');
   },
 
   mostrarFiltrosActivos() {
@@ -354,31 +315,19 @@ const Alertas = {
   },
 
   applyPagination() {
-    console.log('🔴 [PAGINATION] Aplicando paginación...');
     const total = this.state.filteredRows.length;
     const size = this.state.pageSize;
     const pages = Math.max(1, Math.ceil(total / size));
     
-    console.log('🔴 [PAGINATION] Estado:', {
-      totalFilas: total,
-      tamañoPagina: size,
-      paginaActual: this.state.page,
-      totalPaginas: pages
-    });
-    
     // Ajustar página si está fuera de rango
     if (this.state.page > pages) {
-      console.log('🔴 [PAGINATION] Ajustando página:', this.state.page, '->', pages);
       this.state.page = pages;
     }
     
     const start = (this.state.page - 1) * size;
     const end = Math.min(start + size, total);
-    
-    console.log('🔴 [PAGINATION] Rango de visualización:', start, '-', end);
 
     // Ocultar todas las filas primero
-    console.log('🔴 [PAGINATION] Ocultando todas las filas...');
     this.state.rows.forEach(row => {
       row.style.display = 'none';
     });
@@ -404,10 +353,8 @@ const Alertas = {
       }
       
       // Mostrar solo las filas de la página actual
-      console.log('🔴 [PAGINATION] Mostrando filas del índice', start, 'al', end - 1);
       for (let i = start; i < end; i++) {
         if (this.state.filteredRows[i]) {
-          console.log('🔴 [PAGINATION] Mostrando fila', i, ':', this.state.filteredRows[i].dataset.titulo);
           this.state.filteredRows[i].style.display = '';
         }
       }
@@ -416,37 +363,26 @@ const Alertas = {
     // Actualizar estadísticas de paginación
     if (this.pageStats) {
       this.pageStats.textContent = `${total > 0 ? start + 1 : 0}–${end} de ${total}`;
-      console.log('🔴 [PAGINATION] Estadísticas actualizadas:', this.pageStats.textContent);
     }
 
     // Actualizar estado de botones de navegación
     if (this.pagePrev) {
       this.pagePrev.disabled = this.state.page === 1;
       this.pagePrev.classList.toggle('opacity-50', this.state.page === 1);
-      console.log('🔴 [PAGINATION] Botón Anterior:', this.pagePrev.disabled ? 'deshabilitado' : 'habilitado');
     }
 
     if (this.pageNext) {
       this.pageNext.disabled = this.state.page >= pages;
       this.pageNext.classList.toggle('opacity-50', this.state.page >= pages);
-      console.log('🔴 [PAGINATION] Botón Siguiente:', this.pageNext.disabled ? 'deshabilitado' : 'habilitado');
     }
-
-    console.log(`📄 Página ${this.state.page}/${pages} - Mostrando ${total > 0 ? start + 1 : 0} a ${end} de ${total}`);
   },
 
   abrirModal(alertaId) {
-    console.log('🟣 [MODAL] Intentando abrir modal para alerta ID:', alertaId);
-    console.log('🟣 [MODAL] Total de filas disponibles:', this.state.rows.length);
-    
     const row = this.state.rows.find(r => r.dataset.id == alertaId);
     if (!row) {
-      console.error('❌ [MODAL] Alerta no encontrada:', alertaId);
-      console.log('🟣 [MODAL] IDs disponibles:', this.state.rows.map(r => r.dataset.id));
+      console.error('❌ Alerta no encontrada:', alertaId);
       return;
     }
-
-    console.log('🟣 [MODAL] Fila encontrada:', row.dataset);
 
     this.state.alertaActual = {
       id: alertaId,
@@ -458,8 +394,6 @@ const Alertas = {
       producto: row.dataset.producto,
       usuario: row.dataset.usuario
     };
-    
-    console.log('🟣 [MODAL] Datos de la alerta:', this.state.alertaActual);
 
     // Llenar modal
     this.modalTitulo.textContent = this.state.alertaActual.titulo;
@@ -482,11 +416,7 @@ const Alertas = {
     this.modalEstado.value = this.state.alertaActual.estado;
 
     if (this.modal) {
-      console.log('🟣 [MODAL] Mostrando modal...');
       this.modal.classList.remove('hidden');
-      console.log('✅ [MODAL] Modal abierto para alerta #', alertaId);
-    } else {
-      console.error('❌ [MODAL] Elemento modal no encontrado en el DOM');
     }
   },
 
@@ -612,7 +542,6 @@ const Alertas = {
       link.click();
 
       mostrarNotificacion(`Reporte exportado: ${rows.length} alertas`, 'success');
-      console.log('✅ Reporte exportado:', rows.length, 'alertas');
     } catch (error) {
       console.error('❌ Error al exportar reporte:', error);
       mostrarNotificacion('Error al exportar el reporte', 'error');
@@ -669,14 +598,10 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 // Inicializar
 // ===========================================================
 
-console.log('🚀 [LOAD] Esperando DOMContentLoaded...');
-
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 [LOAD] DOM cargado, inicializando Alertas...');
   try {
     Alertas.init();
   } catch (error) {
-    console.error('❌ [LOAD] Error al inicializar Alertas:', error);
-    console.error(error.stack);
+    console.error('❌ Error al inicializar Alertas:', error);
   }
 });

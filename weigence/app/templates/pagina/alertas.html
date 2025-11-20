@@ -350,38 +350,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  console.log('🔵 [HTML] Script block ejecutado - INLINE');
-  console.log('🔵 [HTML] Total de alertas en página:', {{ alertas|length }});
-  
-  // Test de carga
-  console.log('🔵 [HTML] URL del JS:', "{{ url_for('static', filename='js/alertas.js') }}");
-  
-  // Verificar que los elementos existen al cargar
-  window.addEventListener('DOMContentLoaded', () => {
-    console.log('🔵 [HTML] DOM verificación:');
-    console.log('  - #alertasTable:', !!document.getElementById('alertasTable'));
-    console.log('  - #modal-gestionar-alerta:', !!document.getElementById('modal-gestionar-alerta'));
-    console.log('  - #alertasPageSize:', !!document.getElementById('alertasPageSize'));
-    console.log('  - #alertasPrevPage:', !!document.getElementById('alertasPrevPage'));
-    console.log('  - #alertasNextPage:', !!document.getElementById('alertasNextPage'));
-    console.log('  - .alerta-row:', document.querySelectorAll('.alerta-row').length);
-    console.log('  - .btn-gestionar-alerta:', document.querySelectorAll('.btn-gestionar-alerta').length);
-  });
-</script>
 <script src="{{ url_for('static', filename='js/alertas.js') }}?v={{ range(1, 10000)|random }}"></script>
-<script>
-  // Verificar si el archivo se cargó
-  setTimeout(() => {
-    if (typeof Alertas === 'undefined') {
-      console.error('❌❌❌ CRÍTICO: alertas.js NO SE CARGÓ');
-      console.error('La variable Alertas no existe en el scope global');
-      console.error('Esto significa que el archivo JS no se ejecutó');
-    } else {
-      console.log('✅✅✅ alertas.js CARGADO CORRECTAMENTE');
-      console.log('Objeto Alertas:', Alertas);
-    }
-  }, 500);
-</script>
 {% endblock %}
 {% endblock %}
