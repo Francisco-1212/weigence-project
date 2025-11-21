@@ -86,7 +86,7 @@ def movimientos():
                 )
             """)
             .order("timestamp", desc=True)
-            .limit(50)
+            .limit(100)  # Aumentado para historial completo
             .execute()
         )
         

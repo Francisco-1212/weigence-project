@@ -4,13 +4,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cerrarBtn = document.getElementById("cerrar-detalle");
   let movimientos = Array.isArray(window.MOVIMIENTOS) ? window.MOVIMIENTOS : [];
   let pinnedMovimiento = null;
+  
+  // Estado de paginación
+  let paginacion = {
+    actual: 1,
+    porPagina: 8,
+    total: movimientos.length
+  };
 
-  console.log("Movimientos cargados:", movimientos);
+  console.log("Movimientos cargados:", movimientos.length, "| Paginación:", paginacion);
 
   const fTipo = document.getElementById("filter-type");
   const fUser = document.getElementById("filter-user");
-  const fLoc = document.getElementById("filter-location");
-  const fDate = document.getElementById("filter-date");
+  const fDateFrom = document.getElementById("filter-date-from");
+  const fDateTo = document.getElementById("filter-date-to");
+  const panelFiltros = document.getElementById("panel-filtros");
+  const btnToggleFilters = document.getElementById("btn-toggle-filters");
+  const btnClearFilters = document.getElementById("btn-clear-filters");
 
   // Leer parámetro id de la URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -22,14 +32,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     cerrarBtn: !!cerrarBtn,
     fTipo: !!fTipo,
     fUser: !!fUser,
-    fLoc: !!fLoc,
-    fDate: !!fDate
+    fDateFrom: !!fDateFrom,
+    fDateTo: !!fDateTo,
+    panelFiltros: !!panelFiltros,
+    btnToggleFilters: !!btnToggleFilters
   });
 
   if (!detalle || !contenedor) {
     console.error("Elementos requeridos no encontrados");
     return;
   }
+
+  // Función para poblar el select de usuarios
+  function cargarUsuariosFiltro() {
+    if (!fUser) return;
+    
+    // Obtener usuarios únicos de los movimientos
+    const usuariosUnicos = [...new Set(movimientos.map(m => m.usuario_nombre))].sort();
+    
+    // Limpiar opciones existentes (excepto la primera "Todos")
+    fUser.innerHTML = '<option value="">Todos los usuarios</option>';
+    
+    // Agregar opciones de usuarios
+    usuariosUnicos.forEach(usuario => {
+      if (usuario && usuario !== "Usuario no registrado") {
+        const option = document.createElement('option');
+        option.value = usuario.toLowerCase();
+        option.textContent = usuario;
+        fUser.appendChild(option);
+      }
+    });
+    
+    console.log("Usuarios cargados en filtro:", usuariosUnicos.length);
+  }
+
+  // Cargar usuarios al inicio
+  cargarUsuariosFiltro();
 
   // Función para mostrar notificaciones toast
   function mostrarToast(mensaje, tipo = 'info') {
@@ -92,11 +130,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderizarMovimientos();
   }
 
-  // Función de renderizado completa
+  // Función de renderizado completa con paginación
   function renderizarMovimientos() {
     console.log("Renderizando movimientos:", {
       cantidadMovimientos: movimientos.length,
-      tienePinned: !!pinnedMovimiento
+      tienePinned: !!pinnedMovimiento,
+      pagina: paginacion.actual,
+      porPagina: paginacion.porPagina
     });
 
     let html = '';
@@ -163,16 +203,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       `;
     }
 
-    // Mostrar solo los 7 más recientes
-    const lista = movimientos.length > 7 ? movimientos.slice(0, 7) : movimientos;
+    // Paginación: calcular movimientos a mostrar
+    const inicio = (paginacion.actual - 1) * paginacion.porPagina;
+    const fin = inicio + paginacion.porPagina;
+    const lista = movimientos.slice(inicio, fin);
+    const totalPaginas = Math.ceil(movimientos.length / paginacion.porPagina);
+    
+    console.log("📄 Paginación:", {
+      paginaActual: paginacion.actual,
+      porPagina: paginacion.porPagina,
+      totalMovimientos: movimientos.length,
+      totalPaginas: totalPaginas,
+      inicio: inicio,
+      fin: fin,
+      itemsEnPagina: lista.length
+    });
 
     html += lista.map((m, i) => {
+  const indexReal = inicio + i; // Índice real en el array completo
   const color = m.tipo_evento === "Añadir" ? "green"
               : m.tipo_evento === "Retirar" ? "red" : "blue";
 
   return `
     <div class="timeline-item relative mb-3 cursor-pointer group"
-         data-index="${i}" 
+         data-index="${indexReal}" 
          data-tipo="${m.tipo_evento}" 
          data-user="${(m.usuario_nombre || '').toLowerCase()}"
          draggable="true">
@@ -215,22 +269,83 @@ document.addEventListener("DOMContentLoaded", async () => {
   `;
 }).join("");
 
-    // Agregar botón de historial si hay más de 7
-    if (movimientos.length > 7) {
+    // Agregar controles de paginación
+    if (totalPaginas > 1) {
       html += `
-        <div class="flex justify-center mt-4">
-          <button class="btn-show-history text-sm text-primary-500 dark:text-primary-400 hover:underline underline-offset-2 focus:outline-none">
-            Ver historial completo (${movimientos.length} registros)
+        <div class="flex items-center justify-between mt-6 pt-4 border-t border-neutral-300 dark:border-[var(--border-dark)]">
+          <button id="btn-prev-page" ${paginacion.actual === 1 ? 'disabled' : ''} 
+                  class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <span class="material-symbols-outlined text-sm">chevron_left</span>
+            <span>Anterior</span>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-neutral-600 dark:text-neutral-400">
+              Página ${paginacion.actual} de ${totalPaginas}
+            </span>
+            <span class="text-xs text-neutral-500 dark:text-neutral-500">
+              (${movimientos.length} total)
+            </span>
+          </div>
+          
+          <button id="btn-next-page" ${paginacion.actual === totalPaginas ? 'disabled' : ''} 
+                  class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <span>Siguiente</span>
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         </div>
       `;
     }
+    
+    // Agregar botón de historial completo
+    html += `
+      <div class="flex justify-center mt-4">
+        <button class="btn-show-history text-sm text-primary-500 dark:text-primary-400 hover:underline underline-offset-2 focus:outline-none flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">history</span>
+          <span>Ver historial completo (${movimientos.length} registros)</span>
+        </button>
+      </div>
+    `;
 
     contenedor.innerHTML = html;
     
+    // Agregar listeners de paginación DESPUÉS de insertar el HTML
+    const btnPrev = document.getElementById('btn-prev-page');
+    const btnNext = document.getElementById('btn-next-page');
+    
+    if (btnPrev) {
+      btnPrev.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log("⬅️ Click en Anterior. Página actual:", paginacion.actual);
+        if (paginacion.actual > 1) {
+          paginacion.actual--;
+          console.log("⬅️ Nueva página:", paginacion.actual);
+          renderizarMovimientos();
+          // Scroll suave al inicio del contenedor
+          contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+    
+    if (btnNext) {
+      btnNext.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log("➡️ Click en Siguiente. Página actual:", paginacion.actual, "Total páginas:", totalPaginas);
+        if (paginacion.actual < totalPaginas) {
+          paginacion.actual++;
+          console.log("➡️ Nueva página:", paginacion.actual);
+          renderizarMovimientos();
+          // Scroll suave al inicio del contenedor
+          contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          console.log("➡️ Ya estás en la última página");
+        }
+      });
+    }
+    
     // El listener para .btn-show-history ya está manejado por historial.js globalmente
 
-    console.log("HTML generado, pinned:", !!pinnedMovimiento);
+    console.log("HTML generado, pinned:", !!pinnedMovimiento, "Página:", paginacion.actual, "Items mostrados:", lista.length);
   }
 
   // Función auxiliar para crear bloques de información
@@ -331,13 +446,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Cargar movimiento desde historial si hay ID
   if (movimientoId) {
-    // Verificar si ya está en los últimos 7
-    const lista = movimientos.length > 7 ? movimientos.slice(0, 7) : movimientos;
-    const encontrado = lista.find(m => m.id_movimiento == movimientoId);
+    // Buscar el movimiento en toda la lista
+    const encontrado = movimientos.find(m => m.id_movimiento == movimientoId);
     
     if (encontrado) {
-      // Está en los últimos 7, seleccionarlo y mostrar detalle
+      // Calcular en qué página está el movimiento
       const idxCompleto = movimientos.indexOf(encontrado);
+      const paginaDelMovimiento = Math.floor(idxCompleto / paginacion.porPagina) + 1;
+      
+      // Ir a esa página
+      paginacion.actual = paginaDelMovimiento;
+      renderizarMovimientos();
       
       // Esperar a que el DOM esté renderizado
       setTimeout(() => {
@@ -381,8 +500,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!item) return;
     
     const idx = Number(item.dataset.index);
-    const lista = movimientos.length > 7 ? movimientos.slice(0, 7) : movimientos;
-    const m = lista[idx];
+    const m = movimientos[idx]; // Usar índice directo del array completo
     
     if (m) {
       // Animación de entrada
@@ -390,8 +508,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       detalle.style.transform = "translateX(10px)";
       
       selectItem(item);
-      const idxCompleto = movimientos.indexOf(m);
-      renderDetalle(idxCompleto);
+      renderDetalle(idx);
       
       setTimeout(() => {
         detalle.style.transition = "opacity 0.3s ease, transform 0.3s ease";
@@ -442,15 +559,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     detalle.style.transform = "translateX(10px)";
     
     const i = Number(e.dataTransfer.getData("text/plain"));
-    const lista = movimientos.length > 7 ? movimientos.slice(0, 7) : movimientos;
-    const m = lista[i];
+    const m = movimientos[i]; // Usar índice directo
     
     if (m) {
       const el = contenedor.querySelector(`.timeline-item[data-index="${i}"]`);
       if (el) selectItem(el);
       
-      const idxCompleto = movimientos.indexOf(m);
-      renderDetalle(idxCompleto);
+      renderDetalle(i);
       
       setTimeout(() => {
         detalle.style.transition = "opacity 0.3s ease, transform 0.3s ease";
@@ -462,17 +577,114 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (cerrarBtn) cerrarBtn.addEventListener("click", resetDetalle);
 
+  // Variable para estado del panel de filtros
+  let filtrosAbiertos = false;
+
+  // --- Toggle de filtros ---
+  if (btnToggleFilters && panelFiltros) {
+    btnToggleFilters.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log("Toggle filtros - Estado actual:", filtrosAbiertos);
+      
+      if (!filtrosAbiertos) {
+        // Mostrar panel
+        console.log("Abriendo panel de filtros");
+        filtrosAbiertos = true;
+        panelFiltros.classList.remove("hidden");
+        // Force reflow
+        void panelFiltros.offsetHeight;
+        panelFiltros.style.maxHeight = "0px";
+        panelFiltros.style.opacity = "0";
+        
+        requestAnimationFrame(() => {
+          panelFiltros.style.maxHeight = "500px";
+          panelFiltros.style.opacity = "1";
+        });
+      } else {
+        // Ocultar panel
+        console.log("Cerrando panel de filtros");
+        filtrosAbiertos = false;
+        panelFiltros.style.maxHeight = "0px";
+        panelFiltros.style.opacity = "0";
+        setTimeout(() => {
+          panelFiltros.classList.add("hidden");
+          panelFiltros.style.maxHeight = "";
+        }, 300);
+      }
+    });
+    
+    // Prevenir que clicks dentro del panel lo cierren
+    panelFiltros.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  // --- Limpiar filtros ---
+  if (btnClearFilters) {
+    btnClearFilters.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (fTipo) fTipo.value = "";
+      if (fUser) fUser.value = "";
+      if (fDateFrom) fDateFrom.value = "";
+      if (fDateTo) fDateTo.value = "";
+      applyFilters();
+      mostrarToast("Filtros limpiados", "info");
+    });
+  }
+
   // --- Filtros dinámicos ---
-  [fTipo, fUser].forEach((el) => el && el.addEventListener("input", applyFilters));
+  // Usar "change" para selects y "input" para inputs de texto/fecha
+  if (fTipo) fTipo.addEventListener("change", applyFilters);
+  if (fUser) fUser.addEventListener("change", applyFilters);
+  if (fDateFrom) fDateFrom.addEventListener("change", applyFilters);
+  if (fDateTo) fDateTo.addEventListener("change", applyFilters);
+  
   function applyFilters() {
     const t = fTipo?.value || "";
     const u = (fUser?.value || "").trim().toLowerCase();
+    const dateFrom = fDateFrom?.value || "";
+    const dateTo = fDateTo?.value || "";
 
-    contenedor.querySelectorAll(".timeline-item").forEach((it) => {
-      const okTipo = !t || it.dataset.tipo === t;
-      const okUser = !u || (it.dataset.user && it.dataset.user.toLowerCase().includes(u));
-      it.classList.toggle("hidden", !(okTipo && okUser));
+    console.log("Aplicando filtros:", { tipo: t, usuario: u, desde: dateFrom, hasta: dateTo });
+
+    // Filtrar el array de movimientos
+    let movimientosFiltrados = movimientos.filter((m) => {
+      // Filtro por tipo
+      if (t && m.tipo_evento !== t) return false;
+      
+      // Filtro por usuario
+      if (u && !m.usuario_nombre.toLowerCase().includes(u)) return false;
+      
+      // Filtro por fecha
+      if (dateFrom || dateTo) {
+        // Extraer fecha del timestamp (formato: "2024-11-20 14:30")
+        const fechaMovimiento = m.timestamp.split(" ")[0]; // "2024-11-20"
+        
+        if (dateFrom && fechaMovimiento < dateFrom) return false;
+        if (dateTo && fechaMovimiento > dateTo) return false;
+      }
+      
+      return true;
     });
+
+    console.log("Movimientos filtrados:", movimientosFiltrados.length, "de", movimientos.length);
+
+    // Guardar movimientos originales y reemplazar temporalmente
+    const movimientosOriginales = movimientos;
+    movimientos = movimientosFiltrados;
+    
+    // Reiniciar paginación
+    paginacion.actual = 1;
+    paginacion.total = movimientosFiltrados.length;
+    
+    // Renderizar con filtros aplicados
+    renderizarMovimientos();
+    
+    // Restaurar movimientos originales
+    movimientos = movimientosOriginales;
   }
 
   // --- Selección visual ---
@@ -1033,5 +1245,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // --- Estado inicial ---
   resetDetalle();
-  applyFilters();
+  // No llamar applyFilters() al inicio para evitar interferencias
 });
