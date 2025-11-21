@@ -667,14 +667,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   btnNew?.addEventListener("click", () => {
     modal?.classList.remove("hidden");
     cargarProductos();
+    
+    // Re-configurar event listeners para inputs cada vez que se abre el modal
+    setTimeout(() => {
+      const formActual = document.getElementById('form-new-mov');
+      const inputCantidad = formActual?.querySelector('#input-cantidad');
+      const inputPesoUnidad = formActual?.querySelector('#input-peso-unidad');
+      const selectProductos = formActual?.querySelector('[name=idproducto]');
+      
+      if (inputCantidad) {
+        inputCantidad.removeEventListener('input', calcularPesoTotal);
+        inputCantidad.addEventListener('input', calcularPesoTotal);
+      }
+      if (inputPesoUnidad) {
+        inputPesoUnidad.removeEventListener('input', calcularPesoTotal);
+        inputPesoUnidad.addEventListener('input', calcularPesoTotal);
+      }
+      if (selectProductos) {
+        selectProductos.removeEventListener('change', actualizarPesoProducto);
+        selectProductos.addEventListener('change', actualizarPesoProducto);
+      }
+    }, 100);
   });
 
-  // Calcular peso total automáticamente
-  const inputCantidad = document.getElementById('input-cantidad');
-  const inputPesoUnidad = document.getElementById('input-peso-unidad');
-  const pesoTotalDisplay = document.getElementById('peso-total-display');
-
+  // Función para calcular peso total automáticamente
   function calcularPesoTotal() {
+    const formActual = document.getElementById('form-new-mov');
+    const inputCantidad = formActual?.querySelector('#input-cantidad');
+    const inputPesoUnidad = formActual?.querySelector('#input-peso-unidad');
+    const pesoTotalDisplay = formActual?.querySelector('#peso-total-display');
+    
     const cantidad = parseFloat(inputCantidad?.value) || 0;
     const pesoUnidad = parseFloat(inputPesoUnidad?.value) || 0;
     const pesoTotal = cantidad * pesoUnidad;
@@ -684,8 +706,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  inputCantidad?.addEventListener('input', calcularPesoTotal);
-  inputPesoUnidad?.addEventListener('input', calcularPesoTotal);
+  // Los event listeners se configurarán cuando se abra el modal
 
   // Cerrar modal
   modal?.querySelectorAll(".close-modal").forEach(btn => {
@@ -700,6 +721,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target === modal) modal.classList.add("hidden");
   });
 
+  // Variable para almacenar productos globalmente
+  let productosCache = [];
+  
   // Función para cargar productos
   function cargarProductos() {
     console.log("📦 Cargando productos...");
@@ -710,17 +734,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       })
       .then(productos => {
         console.log("✅ Productos cargados:", productos);
-        const selectProductos = form.querySelector("[name=idproducto]");
+        productosCache = productos; // Guardar en cache
+        
+        // Buscar el form dinámicamente (puede haber sido clonado)
+        const formActual = document.getElementById("form-new-mov");
+        const selectProductos = formActual?.querySelector("[name=idproducto]");
         if (!selectProductos) {
           console.error("❌ No se encontró el select de productos");
           return;
         }
 
         if (productos && productos.length > 0) {
-          selectProductos.innerHTML = productos.map(p =>
-            `<option value="${p.idproducto}">${p.nombre} (Stock: ${p.stock || 0} unidades)</option>`
-          ).join("");
+          selectProductos.innerHTML = productos.map(p => {
+            // CONVERSIÓN: El peso viene en GRAMOS desde la BD, convertir a KG
+            const pesoEnGramos = p.peso || 0;
+            const pesoEnKg = pesoEnGramos / 1000;
+            
+            return `<option value="${p.idproducto}" data-peso="${pesoEnKg}">${p.nombre} (Stock: ${p.stock || 0} unidades, ${pesoEnKg.toFixed(3)} kg/u)</option>`;
+          }).join("");
           console.log(`✅ ${productos.length} productos agregados al select`);
+          
+          // Auto-llenar peso del primer producto inmediatamente
+          actualizarPesoProducto();
         } else {
           selectProductos.innerHTML = '<option value="">No hay productos disponibles</option>';
           console.warn("⚠️ No hay productos en la base de datos");
@@ -731,16 +766,55 @@ document.addEventListener("DOMContentLoaded", async () => {
         mostrarError("Error al cargar los productos");
       });
   }
+  
+  // Función para actualizar peso cuando cambia el producto
+  function actualizarPesoProducto() {
+    const formActual = document.getElementById("form-new-mov");
+    const selectProductos = formActual?.querySelector("[name=idproducto]");
+    const inputPesoUnidad = formActual?.querySelector('#input-peso-unidad');
+    if (!selectProductos || !inputPesoUnidad) return;
+    
+    const selectedOption = selectProductos.options[selectProductos.selectedIndex];
+    const pesoEnKg = parseFloat(selectedOption.dataset.peso) || 0;
+    
+    inputPesoUnidad.value = pesoEnKg.toFixed(3);
+    calcularPesoTotal();
+    console.log(`🏷️ Peso actualizado: ${pesoEnKg} kg (${(pesoEnKg * 1000).toFixed(0)}g) para ${selectedOption.text}`);
+  }
+  
+  // Los listeners de producto y tipo de evento se configuran en cargarProductos()
 
-  // Agregar event listener para cambios en tipo de movimiento
-  form?.querySelector("[name=tipo_evento]")?.addEventListener("change", cargarProductos);
+  // Variable para prevenir envíos duplicados (global al script)
+  let isSubmitting = false;
+  let lastSubmitTime = 0;
 
-  // Manejar envío del formulario
-  form?.addEventListener("submit", async (e) => {
+  // Función de manejo de submit del formulario
+  async function handleFormSubmit(e) {
     e.preventDefault();
+    e.stopImmediatePropagation(); // Prevenir propagación INMEDIATA del evento
+    
+    const now = Date.now();
+    
+    // Prevenir envíos duplicados - verificar tiempo entre envíos (mínimo 1 segundo)
+    if (isSubmitting || (now - lastSubmitTime) < 1000) {
+      console.log("⚠️ Envío ya en proceso o muy rápido, ignorando duplicado");
+      return false;
+    }
+
+    // Marcar como en proceso
+    isSubmitting = true;
+    lastSubmitTime = now;
 
     try {
-      const formData = new FormData(form);
+      // Buscar el formulario dinámicamente (puede haber sido clonado)
+      const formActual = document.getElementById("form-new-mov");
+      if (!formActual) {
+        console.error("❌ Formulario no encontrado");
+        isSubmitting = false;
+        return;
+      }
+      
+      const formData = new FormData(formActual);
       const datos = {};
 
       // Convertir y validar campos
@@ -753,23 +827,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // NO enviamos id_estante - se calcula automáticamente en el backend
 
+      // Debug: mostrar valores capturados
+      console.log("📋 Valores del formulario:", {
+        tipo_evento: formData.get("tipo_evento"),
+        idproducto: formData.get("idproducto"),
+        cantidad: formData.get("cantidad"),
+        peso_por_unidad: formData.get("peso_por_unidad")
+      });
+      console.log("🔢 Valores convertidos:", datos);
+
       // Validar campos numéricos
       if (isNaN(datos.idproducto) || isNaN(datos.cantidad) || isNaN(datos.peso_por_unidad)) {
+        console.error("❌ Validación fallida:", {
+          idproducto: datos.idproducto,
+          cantidad: datos.cantidad,
+          peso_por_unidad: datos.peso_por_unidad
+        });
         mostrarError("Los campos numéricos son inválidos");
+        isSubmitting = false;
         return;
       }
 
       if (datos.cantidad <= 0) {
         mostrarError("La cantidad debe ser mayor a 0");
+        isSubmitting = false;
         return;
       }
 
       if (datos.peso_por_unidad <= 0) {
         mostrarError("El peso por unidad debe ser mayor a 0");
+        isSubmitting = false;
         return;
       }
 
-      console.log("Enviando movimiento:", datos);
+      console.log("📤 Enviando movimiento:", datos);
 
       // Obtener CSRF token
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -790,18 +881,53 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       // Éxito
+      console.log("✅ Movimiento guardado exitosamente");
       mostrarExito(result.mensaje || "Movimiento registrado correctamente");
-      modal?.classList.add("hidden");
-      form.reset();
-
+      
+      // NO resetear isSubmitting para prevenir múltiples envíos antes de recargar
+      
+      // Cerrar modal y resetear formulario
+      if (modal) modal.classList.add("hidden");
+      
       // Recargar página después de un breve delay
-      setTimeout(() => window.location.reload(), 800);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Error:", error);
       mostrarError(error.message);
+      
+      // Solo resetear la bandera en caso de error para permitir reintento
+      isSubmitting = false;
+      lastSubmitTime = 0;
     }
-  });
+  }
+
+  // Remover todos los listeners previos del formulario (si existen)
+  if (form) {
+    // Clonar el formulario para eliminar todos los event listeners
+    const nuevoForm = form.cloneNode(true);
+    form.parentNode.replaceChild(nuevoForm, form);
+    
+    // Agregar el listener al nuevo formulario
+    nuevoForm.addEventListener("submit", handleFormSubmit, { once: false });
+    console.log("✅ Listener de formulario agregado (sin duplicados)");
+    
+    // Actualizar referencias
+    const btnGuardar = nuevoForm.querySelector('button[type="submit"]');
+    if (btnGuardar) {
+      // Deshabilitar botón al hacer submit para evitar doble clic
+      nuevoForm.addEventListener("submit", function() {
+        btnGuardar.disabled = true;
+        btnGuardar.textContent = "Guardando...";
+        setTimeout(() => {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = "Guardar";
+        }, 2000);
+      }, { once: true });
+    }
+  }
 
   // Funciones de notificación
   function mostrarError(mensaje) {

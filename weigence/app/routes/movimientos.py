@@ -16,7 +16,8 @@ def obtener_movimiento(id_movimiento):
             .select("""
                 *,
                 productos:idproducto (
-                    nombre
+                    nombre,
+                    peso
                 ),
                 estantes:id_estante (
                     nombre
@@ -74,7 +75,8 @@ def movimientos():
             .select("""
                 *,
                 productos:idproducto (
-                    nombre
+                    nombre,
+                    peso
                 ),
                 estantes:id_estante (
                     nombre
@@ -139,7 +141,7 @@ def get_productos():
     try:
         # Modificamos la consulta para usar los nombres correctos de las columnas
         response = supabase.table("productos").select(
-            "idproducto, nombre, stock"
+            "idproducto, nombre, stock, peso"
         ).execute()
         
         return jsonify(response.data)
@@ -242,7 +244,7 @@ def nuevo_movimiento():
             datos['peso_total'] = datos['cantidad'] * datos['peso_por_unidad']
 
         # Obtener información del producto
-        producto_info = supabase.table("productos").select("nombre, stock, id_estante").eq("idproducto", datos["idproducto"]).execute()
+        producto_info = supabase.table("productos").select("nombre, stock, id_estante, peso").eq("idproducto", datos["idproducto"]).execute()
         if not producto_info.data:
             return jsonify({"success": False, "error": "Producto no encontrado"}), 404
         

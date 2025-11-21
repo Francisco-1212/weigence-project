@@ -197,8 +197,8 @@ def crear_nueva_venta():
             
             print(f"📦 Procesando producto ID {idproducto}: {cantidad} unidades a ${precio_unitario}")
             
-            # Obtener información del producto para el estante
-            producto_info = supabase.table("productos").select("id_estante, stock").eq("idproducto", idproducto).execute()
+            # Obtener información del producto (incluyendo peso en GRAMOS)
+            producto_info = supabase.table("productos").select("id_estante, stock, peso").eq("idproducto", idproducto).execute()
             
             if not producto_info.data:
                 print(f"⚠️ Producto ID {idproducto} no encontrado")
@@ -206,6 +206,8 @@ def crear_nueva_venta():
             
             stock_actual = producto_info.data[0].get("stock", 0)
             id_estante = producto_info.data[0].get("id_estante")
+            peso_gramos = producto_info.data[0].get("peso", 0)  # Peso en GRAMOS desde BD
+            peso_kg = peso_gramos / 1000  # Convertir a kilogramos
             
             # Validar stock disponible
             if stock_actual < cantidad:
@@ -224,18 +226,21 @@ def crear_nueva_venta():
             detalles_venta.append(detalle)
             print(f"✅ Detalle agregado: {detalle}")
             
-            # Movimiento de inventario (Retiro)
+            # Movimiento de inventario (Retiro) - incluir peso
+            peso_total = cantidad * peso_kg  # Peso total en kg
             movimiento = {
                 "tipo_evento": "Retirar",
                 "idproducto": idproducto,
                 "id_estante": id_estante,
                 "cantidad": cantidad,
+                "peso_por_unidad": peso_kg,  # Peso por unidad en kg
+                "peso_total": peso_total,     # Peso total en kg
                 "rut_usuario": rut_usuario,
                 "timestamp": datetime.now().isoformat(),
                 "observacion": f"Venta #{id_venta} - Retiro automático por venta"
             }
             movimientos_inventario.append(movimiento)
-            print(f"✅ Movimiento agregado: {movimiento}")
+            print(f"✅ Movimiento agregado: {movimiento} (Peso: {peso_kg:.3f} kg/u, Total: {peso_total:.3f} kg)")
             
             # Actualizar stock del producto
             nuevo_stock = stock_actual - cantidad
