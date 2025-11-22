@@ -25,7 +25,7 @@
       </a>
 
       <!-- Inventario -->
-      {% if session.get('usuario_rol') in ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['operador', 'supervisor', 'administrador'] %}
       <a href="{{ url_for('main.inventario') }}"
         {% if request.endpoint == 'main.inventario' %}
           aria-current="page"
@@ -39,7 +39,7 @@
       {% endif %}
 
       <!-- Movimientos -->
-      {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['operador', 'supervisor', 'administrador'] %}
       <a href="{{ url_for('main.movimientos') }}"
         {% if request.endpoint == 'main.movimientos' %}
           aria-current="page"
@@ -53,7 +53,7 @@
       {% endif %}
 
       <!-- Ventas -->
-      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['operador', 'supervisor', 'administrador'] %}
       <a href="{{ url_for('main.ventas') }}"
         {% if request.endpoint == 'main.ventas' %}
           aria-current="page"
@@ -67,7 +67,7 @@
       {% endif %}
 
       <!-- Alertas -->
-      {% if session.get('usuario_rol') in ['bodeguera', 'supervisor', 'jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['operador', 'supervisor', 'administrador'] %}
       <a href="{{ url_for('main.alertas') }}"
         {% if request.endpoint == 'main.alertas' %}
           aria-current="page"
@@ -87,7 +87,7 @@
       {% endif %}
 
       <!-- Auditoría -->
-      {% if session.get('usuario_rol') in ['supervisor', 'jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['supervisor', 'administrador'] %}
       <a href="{{ url_for('main.auditoria') }}"
         {% if request.endpoint == 'main.auditoria' %}
           aria-current="page"
@@ -101,7 +101,7 @@
       {% endif %}
 
       <!-- Usuarios -->
-      {% if session.get('usuario_rol') in ['jefe', 'administrador'] %}
+      {% if session.get('usuario_rol') in ['supervisor', 'administrador'] %}
       <a href="{{ url_for('main.usuarios') }}"
         {% if request.endpoint == 'main.usuarios' %}
           aria-current="page"

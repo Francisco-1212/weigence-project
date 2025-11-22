@@ -71,8 +71,31 @@
     root.style.animation = 'fadeIn 0.2s ease-out';
   }
 
-  // Exponer función globalmente
+  // Función para mostrar detalles de movimiento
+  function mostrarDetalleMovimiento(idMovimiento) {
+    console.log('📦 Mostrando detalle de movimiento:', idMovimiento);
+    
+    // Cerrar el modal de historial
+    const modalHistorial = document.getElementById('historial-modal');
+    if (modalHistorial) {
+      modalHistorial.remove();
+    }
+    
+    // Verificar si existe la función global para cargar detalles de movimiento
+    if (typeof window.cargarDetallesMovimiento === 'function') {
+      window.cargarDetallesMovimiento(idMovimiento);
+    } else if (typeof window.mostrarPanelDetalles === 'function') {
+      window.mostrarPanelDetalles(idMovimiento);
+    } else {
+      // Fallback: Redirigir a la página de movimientos con el ID
+      console.log('🔄 Redirigiendo a /movimientos?id=' + idMovimiento);
+      window.location.href = `/movimientos?id=${idMovimiento}`;
+    }
+  }
+  
+  // Exponer funciones globalmente
   window.openHistorialModal = openHistorialModal;
+  window.mostrarDetalleMovimiento = mostrarDetalleMovimiento;
 
   // Event delegation para manejar clicks en botones dinámicos también
   document.addEventListener("click", (e) => {
@@ -81,6 +104,17 @@
       e.preventDefault();
       e.stopPropagation();
       openHistorialModal();
+    }
+    
+    // Manejar clicks en filas de movimientos del historial
+    const movimientoRow = e.target.closest('[data-movimiento-id]');
+    if (movimientoRow) {
+      e.preventDefault();
+      e.stopPropagation();
+      const idMovimiento = movimientoRow.getAttribute('data-movimiento-id');
+      if (idMovimiento) {
+        mostrarDetalleMovimiento(idMovimiento);
+      }
     }
   });
 

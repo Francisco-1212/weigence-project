@@ -16,20 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 # Roles disponibles en el sistema
-ROLES_DISPONIBLES = ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador']
+ROLES_DISPONIBLES = ['operador', 'supervisor', 'administrador']
 
 # Permisos por rol (define qué secciones ve cada rol)
 PERMISOS_POR_ROL = {
-    'farmaceutico': ['dashboard', 'inventario', 'perfil'],
-    'bodeguera': ['dashboard', 'inventario', 'movimientos', 'alertas', 'perfil'],
-    'supervisor': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'alertas', 'perfil'],
-    'jefe': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'historial', 'recomendaciones', 'perfil'],
+    'operador': ['dashboard', 'inventario', 'movimientos', 'ventas', 'alertas', 'perfil'],
+    'supervisor': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'historial', 'recomendaciones', 'perfil'],
     'administrador': ['dashboard', 'inventario', 'movimientos', 'auditoria', 'ventas', 'alertas', 'usuarios', 'historial', 'recomendaciones', 'perfil']
 }
 
 
 @bp.route('/usuarios', methods=['GET'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def usuarios():
     """Página principal de gestión de usuarios"""
     from app.utils.eventohumano import registrar_evento_humano
@@ -64,7 +62,7 @@ def usuarios():
 
 
 @bp.route('/api/usuarios', methods=['GET'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def api_obtener_usuarios():
     """API para obtener lista de usuarios (formato JSON)"""
     try:
@@ -99,7 +97,7 @@ def api_obtener_usuarios():
 
 
 @bp.route('/api/usuarios/<rut>', methods=['GET'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def api_obtener_usuario(rut):
     """API para obtener un usuario específico"""
     try:
@@ -150,7 +148,7 @@ def validar_rut(rut):
 
 
 @bp.route('/api/usuarios', methods=['POST'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def api_crear_usuario():
     """API para crear nuevo usuario"""
     try:
@@ -279,7 +277,7 @@ def api_crear_usuario():
 
 
 @bp.route('/api/usuarios/<rut>', methods=['PUT'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def api_editar_usuario(rut):
     """API para editar usuario existente"""
     try:
@@ -368,7 +366,7 @@ def api_editar_usuario(rut):
 
 
 @bp.route('/api/usuarios/<rut>', methods=['DELETE'])
-@requiere_rol('administrador', 'jefe')
+@requiere_rol('administrador', 'supervisor')
 def api_eliminar_usuario(rut):
     """API para eliminar usuario"""
     try:
@@ -411,3 +409,95 @@ def api_eliminar_usuario(rut):
             'success': False,
             'error': f'Error inesperado: {str(e)}'
         }), 500
+
+
+# ============================================================================
+# RASTREO DE USUARIOS CONECTADOS
+# ============================================================================
+
+from app.utils.sesiones_activas import (
+    registrar_usuario_activo,
+    actualizar_heartbeat,
+    eliminar_usuario,
+    obtener_usuarios_conectados,
+    obtener_total_conectados
+)
+
+@bp.route('/api/usuarios/conectados', methods=['GET'])
+@requiere_rol('administrador', 'supervisor')
+def api_usuarios_conectados():
+    """API para obtener lista de usuarios actualmente conectados"""
+    try:
+        from datetime import datetime
+        ahora = datetime.now().strftime('%H:%M:%S')
+        
+        # Obtener usuarios conectados con limpieza automática de inactivos
+        usuarios_ruts, detalles = obtener_usuarios_conectados(timeout_minutos=2)
+        
+        logger.info(f"[API-CONECTADOS] 📊 [{ahora}] Consulta recibida")
+        logger.info(f"[API-CONECTADOS] 👥 Total conectados: {len(usuarios_ruts)}")
+        logger.info(f"[API-CONECTADOS] 📋 RUTs: {usuarios_ruts}")
+        logger.info(f"[API-CONECTADOS] 📝 Detalles: {detalles}")
+        
+        response_data = {
+            'success': True,
+            'conectados': usuarios_ruts,
+            'total': len(usuarios_ruts),
+            'detalles': detalles
+        }
+        
+        print(f"\n[API-CONECTADOS] 📤 Enviando respuesta: {response_data}\n")
+        
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        logger.error(f"[API-CONECTADOS] ❌ Error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'conectados': []
+        }), 500
+
+
+@bp.route('/api/usuarios/heartbeat', methods=['POST'])
+def api_usuario_heartbeat():
+    """Endpoint para que el frontend notifique que el usuario sigue conectado"""
+    try:
+        from datetime import datetime
+        ahora = datetime.now().strftime('%H:%M:%S')
+        
+        if not session.get('usuario_logueado'):
+            logger.warning(f"[API-HEARTBEAT] ⚠️ [{ahora}] Intento sin autenticación")
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+        
+        rut = session.get('usuario_id')
+        nombre = session.get('usuario_nombre')
+        rol = session.get('usuario_rol')
+        
+        print(f"\n[API-HEARTBEAT] 💓 [{ahora}] Recibido de: {nombre} ({rut})")
+        
+        if rut:
+            actualizar_heartbeat(rut, nombre, rol)
+            total = obtener_total_conectados()
+            
+            logger.info(f"[API-HEARTBEAT] ✓ [{ahora}] {nombre} ({rut}) - Total conectados: {total}")
+            print(f"[API-HEARTBEAT] ✅ Heartbeat procesado exitosamente\n")
+        else:
+            logger.warning(f"[API-HEARTBEAT] ⚠️ No hay RUT en sesión")
+        
+        response_data = {
+            'success': True,
+            'usuario': nombre,
+            'rut': rut,
+            'total_conectados': obtener_total_conectados()
+        }
+        
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        logger.error(f"[API-HEARTBEAT] ❌ Error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500

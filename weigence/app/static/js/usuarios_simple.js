@@ -27,6 +27,65 @@ document.addEventListener('DOMContentLoaded', function() {
     form: !!form
   });
   
+  // Variable global para usuarios conectados
+  let usuariosConectados = [];
+  
+  // Función: Cargar usuarios conectados
+  function cargarUsuariosConectados() {
+    const ahora = new Date().toLocaleTimeString();
+    console.log(`[USUARIOS-CONECTADOS] 🔄 [${ahora}] Solicitando lista de usuarios conectados...`);
+    
+    fetch('/api/usuarios/conectados')
+      .then(response => {
+        console.log('[USUARIOS-CONECTADOS] 📡 Respuesta recibida, status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          const anteriorConectados = usuariosConectados.length;
+          usuariosConectados = data.conectados || [];
+          
+          console.log(`[USUARIOS-CONECTADOS] ✓ [${ahora}] Actualización exitosa:`, {
+            total: data.total,
+            anterior: anteriorConectados,
+            actual: usuariosConectados.length,
+            conectados: usuariosConectados,
+            detalles: data.detalles
+          });
+          
+          if (usuariosConectados.length !== anteriorConectados) {
+            console.log(`[USUARIOS-CONECTADOS] 🔔 Cambio detectado: ${anteriorConectados} → ${usuariosConectados.length}`);
+          }
+          
+          // Recargar la tabla para actualizar estados
+          cargarUsuarios();
+        } else {
+          console.error('[USUARIOS-CONECTADOS] ❌ Error en respuesta:', data);
+        }
+      })
+      .catch(error => {
+        console.error('[USUARIOS-CONECTADOS] ❌ Error de red:', error);
+      });
+  }
+  
+  // Función: Enviar heartbeat (desde página de usuarios)
+  function enviarHeartbeat() {
+    const ahora = new Date().toLocaleTimeString();
+    fetch('/api/usuarios/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log(`[USUARIOS-HEARTBEAT] ✓ [${ahora}] Heartbeat local enviado - Total conectados: ${data.total_conectados}`);
+        }
+      })
+      .catch(error => {
+        console.error('[USUARIOS-HEARTBEAT] ❌ Error:', error);
+      });
+  }
+  
   // Función: Cargar usuarios
   function cargarUsuarios() {
     console.log('[USUARIOS] Cargando usuarios...');
@@ -39,46 +98,65 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!data.success) {
           tablaBody.innerHTML = `
             <tr>
-              <td colspan="7" class="px-6 py-4 text-center text-red-500">
+              <td colspan="8" class="px-6 py-4 text-center text-red-500">
                 Error: ${data.error}
               </td>
             </tr>
           `;
+          actualizarEstadisticas([], []);
           return;
         }
         
         if (!data.data || data.data.length === 0) {
           tablaBody.innerHTML = `
             <tr>
-              <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                No hay usuarios registrados
+              <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <div class="flex flex-col items-center gap-3">
+                  <span class="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600">group_off</span>
+                  <p class="font-medium">No hay usuarios registrados</p>
+                </div>
               </td>
             </tr>
           `;
+          actualizarEstadisticas([], []);
           return;
         }
+        
+        // Filtrar usuarios activos basándose en la lista de conectados
+        const usuariosActivos = data.data.filter(u => 
+          usuariosConectados.includes(u.rut_usuario)
+        );
+        
+        // Actualizar estadísticas
+        actualizarEstadisticas(data.data, usuariosActivos);
         
         // Mostrar usuarios
         tablaBody.innerHTML = data.data.map(usuario => {
           const rolMinuscula = usuario.rol?.toLowerCase() || 'usuario';
+          const estaConectado = usuariosConectados.includes(usuario.rut_usuario);
+          
           return `
-          <tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${usuario.rut_usuario}</td>
-            <td class="px-6 py-4 text-sm text-gray-900 dark:text-white font-medium">${usuario.nombre}</td>
-            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${usuario.correo}</td>
+          <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+            <td class="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100 font-mono">${usuario.rut_usuario}</td>
+            <td class="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100 font-medium">${usuario.nombre}</td>
+            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${usuario.correo}</td>
             <td class="px-6 py-4 text-sm">
               <span class="px-3 py-1 rounded-full text-xs font-medium ${obtenerColorRol(rolMinuscula)}">
                 ${formatearRol(rolMinuscula)}
               </span>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${usuario['numero celular'] || '-'}</td>
-            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${formatearFecha(usuario.fecha_registro)}</td>
-            <td class="px-6 py-4 text-right space-x-2">
-              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition">
-                ✏️ Editar
-              </button>
-              <button onclick="eliminarUsuario('${usuario.rut_usuario}', '${usuario.nombre}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition">
-                🗑️ Eliminar
+            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${usuario['numero celular'] || '-'}</td>
+            <td class="px-6 py-4 text-sm">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estaConectado ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}">
+                <span class="w-1.5 h-1.5 rounded-full ${estaConectado ? 'bg-green-600 dark:bg-green-400 animate-pulse' : 'bg-gray-600 dark:bg-gray-400'} mr-1.5"></span>
+                ${estaConectado ? 'Conectado' : 'Desconectado'}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${formatearFecha(usuario.fecha_registro)}</td>
+            <td class="px-6 py-4 text-right">
+              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-sm">edit</span>
+                Editar
               </button>
             </td>
           </tr>
@@ -91,12 +169,31 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('[USUARIOS] Error:', error);
         tablaBody.innerHTML = `
           <tr>
-            <td colspan="7" class="px-6 py-4 text-center text-red-500">
+            <td colspan="8" class="px-6 py-4 text-center text-red-500">
               Error al cargar usuarios: ${error.message}
             </td>
           </tr>
         `;
+        actualizarEstadisticas([], []);
       });
+  }
+  
+  // Función: Actualizar estadísticas
+  function actualizarEstadisticas(todosLosUsuarios, usuariosConectados) {
+    const total = todosLosUsuarios.length;
+    const conectados = usuariosConectados.length;
+    const desconectados = total - conectados;
+    // Contar solo usuarios con rol 'administrador'
+    const admins = todosLosUsuarios.filter(u => 
+      u.rol?.toLowerCase() === 'administrador'
+    ).length;
+    
+    // Actualizar contadores
+    document.getElementById('total-usuarios').textContent = total;
+    document.getElementById('usuarios-activos').textContent = conectados;
+    document.getElementById('usuarios-inactivos').textContent = desconectados;
+    document.getElementById('usuarios-admin').textContent = admins;
+    document.getElementById('usuarios-count-badge').textContent = total;
   }
   
   // Función: Abrir modal para crear
@@ -163,33 +260,33 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   };
   
-  // Función: Eliminar usuario
-  window.eliminarUsuario = function(rut, nombre) {
-    if (!confirm(`¿Estás seguro de que deseas eliminar a ${nombre}?`)) {
-      return;
-    }
-    
-    console.log('[USUARIOS] Eliminando usuario:', rut);
-    
-    fetch(`/api/usuarios/${rut}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          console.log('[USUARIOS] Usuario eliminado');
-          alert('✅ Usuario eliminado correctamente');
-          cargarUsuarios();
-        } else {
-          alert('❌ Error: ' + data.error);
-        }
-      })
-      .catch(error => {
-        console.error('[USUARIOS] Error:', error);
-        alert('❌ Error al eliminar usuario');
-      });
-  };
+  // Función: Eliminar usuario (DESHABILITADA - botón eliminado de la interfaz)
+  // window.eliminarUsuario = function(rut, nombre) {
+  //   if (!confirm(`¿Estás seguro de que deseas eliminar a ${nombre}?`)) {
+  //     return;
+  //   }
+  //   
+  //   console.log('[USUARIOS] Eliminando usuario:', rut);
+  //   
+  //   fetch(`/api/usuarios/${rut}`, {
+  //     method: 'DELETE',
+  //     headers: { 'Content-Type': 'application/json' }
+  //   })
+  //     .then(response => response.json())
+  //     .then(data => {
+  //       if (data.success) {
+  //         console.log('[USUARIOS] Usuario eliminado');
+  //         alert('✅ Usuario eliminado correctamente');
+  //         cargarUsuarios();
+  //       } else {
+  //         alert('❌ Error: ' + data.error);
+  //       }
+  //     })
+  //     .catch(error => {
+  //       console.error('[USUARIOS] Error:', error);
+  //       alert('❌ Error al eliminar usuario');
+  //     });
+  // };
   
   // Función: Guardar usuario (crear o editar)
   function guardarUsuario(e) {
@@ -307,10 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Utilidades
   function obtenerColorRol(rol) {
     const colores = {
-      'farmaceutico': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      'bodeguera': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+      'operador': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       'supervisor': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      'jefe': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       'administrador': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     };
     const colorPorRol = colores[rol?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
@@ -320,13 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function formatearRol(rol) {
     const roles = {
-      'farmaceutico': 'Farmacéutico',
-      'bodeguera': 'Bodeguera',
+      'operador': 'Operador',
       'supervisor': 'Supervisor',
-      'jefe': 'Jefe',
       'administrador': 'Administrador'
     };
-    return roles[rol] || rol;
+    return roles[rol] || rol.charAt(0).toUpperCase() + rol.slice(1);
   }
   
   function formatearFecha(fecha) {
@@ -380,6 +473,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Cargar usuarios al iniciar
-  cargarUsuarios();
-  console.log('[USUARIOS] Inicialización completada');
+  cargarUsuariosConectados();
+  
+  // Enviar heartbeat cada 20 segundos
+  enviarHeartbeat(); // Enviar inmediatamente
+  setInterval(enviarHeartbeat, 20000); // Cada 20 segundos
+  
+  // Actualizar usuarios conectados cada 5 segundos para detección en tiempo real
+  setInterval(cargarUsuariosConectados, 5000); // Cada 5 segundos
+  
+  console.log('[USUARIOS] Inicialización completada - Heartbeat: 20s, Actualización: 5s');
 });

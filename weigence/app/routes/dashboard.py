@@ -8,7 +8,7 @@ from .utils import requiere_login, agrupar_notificaciones_por_fecha
 from .decorators import requiere_rol
 
 @bp.route("/dashboard")
-@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
+@requiere_rol('operador', 'supervisor', 'administrador')
 def dashboard():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'dashboard':

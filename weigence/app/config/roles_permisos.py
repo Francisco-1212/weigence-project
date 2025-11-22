@@ -8,10 +8,8 @@ Archivo: app/config/roles_permisos.py
 # ============================================================================
 
 ROLES_DISPONIBLES = [
-    'farmaceutico',
-    'bodeguera', 
+    'operador',
     'supervisor',
-    'jefe',
     'administrador'
 ]
 
@@ -20,29 +18,17 @@ ROLES_DISPONIBLES = [
 # ============================================================================
 
 DESCRIPCION_ROLES = {
-    'farmaceutico': {
-        'nombre_completo': 'Farmacéutico',
-        'descripcion': 'Personal de farmacia. Acceso limitado a consultas de inventario y ventas.',
-        'color': 'gray',
-        'icono': '💊'
-    },
-    'bodeguera': {
-        'nombre_completo': 'Bodeguera',
-        'descripcion': 'Personal de bodega. Gestión de movimientos y alertas de pesas.',
+    'operador': {
+        'nombre_completo': 'Operador',
+        'descripcion': 'Personal operativo. Acceso a dashboard, inventario, movimientos, ventas y alertas.',
         'color': 'blue',
-        'icono': '📦'
+        'icono': '👤'
     },
     'supervisor': {
         'nombre_completo': 'Supervisor',
-        'descripcion': 'Supervisión de operaciones y auditoría.',
+        'descripcion': 'Supervisión completa. Acceso total a todas las funcionalidades del sistema.',
         'color': 'yellow',
         'icono': '👔'
-    },
-    'jefe': {
-        'nombre_completo': 'Jefe',
-        'descripcion': 'Gestión completa incluyendo usuarios y reportes.',
-        'color': 'blue',
-        'icono': '👨‍💼'
     },
     'administrador': {
         'nombre_completo': 'Administrador',
@@ -57,27 +43,15 @@ DESCRIPCION_ROLES = {
 # ============================================================================
 
 PERMISOS_POR_ROL = {
-    'farmaceutico': [
-        'dashboard',
-        'inventario',
-        'perfil'
-    ],
-    'bodeguera': [
+    'operador': [
         'dashboard',
         'inventario',
         'movimientos',
+        'ventas',
         'alertas',
         'perfil'
     ],
     'supervisor': [
-        'dashboard',
-        'inventario',
-        'movimientos',
-        'alertas',
-        'auditoria',
-        'perfil'
-    ],
-    'jefe': [
         'dashboard',
         'inventario',
         'movimientos',
@@ -120,34 +94,34 @@ RUTAS_PUBLICAS = [
 
 RUTAS_PROTEGIDAS = {
     # Dashboard - Todos los usuarios autenticados
-    'main.dashboard': ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'],
+    'main.dashboard': ['operador', 'supervisor', 'administrador'],
     
-    # Inventario
-    'main.inventario': ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'],
+    # Inventario - Todos
+    'main.inventario': ['operador', 'supervisor', 'administrador'],
     
-    # Movimientos - Bodeguera, Supervisor, Jefe, Admin
-    'main.movimientos': ['bodeguera', 'supervisor', 'jefe', 'administrador'],
+    # Movimientos - Todos
+    'main.movimientos': ['operador', 'supervisor', 'administrador'],
     
-    # Ventas - Solo Jefe y Admin
-    'main.ventas': ['jefe', 'administrador'],
+    # Ventas - Todos
+    'main.ventas': ['operador', 'supervisor', 'administrador'],
     
-    # Alertas - Bodeguera, Supervisor, Jefe, Admin
-    'main.alertas': ['bodeguera', 'supervisor', 'jefe', 'administrador'],
+    # Alertas - Todos
+    'main.alertas': ['operador', 'supervisor', 'administrador'],
     
-    # Auditoría - Supervisor, Jefe, Admin
-    'main.auditoria': ['supervisor', 'jefe', 'administrador'],
+    # Auditoría - Solo Supervisor y Admin
+    'main.auditoria': ['supervisor', 'administrador'],
     
-    # Usuarios (CRUD) - Solo Jefe y Admin
-    'main.usuarios': ['jefe', 'administrador'],
+    # Usuarios (CRUD) - Solo Supervisor y Admin
+    'main.usuarios': ['supervisor', 'administrador'],
     
-    # Historial - Jefe y Admin
-    'main.historial': ['jefe', 'administrador'],
+    # Historial - Solo Supervisor y Admin
+    'main.historial': ['supervisor', 'administrador'],
     
-    # Recomendaciones IA - Jefe y Admin
-    'main.recomendaciones_ai': ['jefe', 'administrador'],
+    # Recomendaciones IA - Solo Supervisor y Admin
+    'main.recomendaciones_ai': ['supervisor', 'administrador'],
     
     # Perfil - Todos
-    'main.perfil': ['farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador'],
+    'main.perfil': ['operador', 'supervisor', 'administrador'],
 }
 
 # ============================================================================
@@ -155,48 +129,34 @@ RUTAS_PROTEGIDAS = {
 # ============================================================================
 
 ACCIONES_POR_ROL = {
-    'farmaceutico': {
+    'operador': {
         'inventario': {
             'ver': True,
-            'crear': False,
-            'editar': False,
+            'crear': True,
+            'editar': True,
             'eliminar': False,
             'ver_vencimientos': True,
             'ver_stock': True,
             'registrar_ventas': True
         },
         'movimientos': {
-            'ver': False,
-            'crear': False,
-            'editar': False,
-            'eliminar': False
-        },
-        'usuarios': {
-            'ver': False,
-            'crear': False,
-            'editar': False,
-            'eliminar': False
-        },
-        'perfil': {
             'ver': True,
-            'editar': True
-        }
-    },
-    
-    'bodeguera': {
-        'inventario': {
+            'crear': True,
+            'editar': True,
+            'eliminar': False
+        },
+        'ventas': {
             'ver': True,
             'crear': True,
             'editar': True,
             'eliminar': False,
-            'ver_vencimientos': True,
-            'ver_stock': True,
-            'registrar_ventas': False
+            'ver_reportes': True,
+            'exportar': False
         },
-        'movimientos': {
+        'alertas': {
             'ver': True,
-            'crear': True,
-            'editar': True,
+            'crear': False,
+            'editar': False,
             'eliminar': False
         },
         'usuarios': {
@@ -212,39 +172,6 @@ ACCIONES_POR_ROL = {
     },
     
     'supervisor': {
-        'inventario': {
-            'ver': True,
-            'crear': True,
-            'editar': True,
-            'eliminar': False,
-            'ver_vencimientos': True,
-            'ver_stock': True,
-            'registrar_ventas': False
-        },
-        'movimientos': {
-            'ver': True,
-            'crear': True,
-            'editar': True,
-            'eliminar': False
-        },
-        'auditoria': {
-            'ver': True,
-            'descargar': False,
-            'exportar': False
-        },
-        'usuarios': {
-            'ver': False,
-            'crear': False,
-            'editar': False,
-            'eliminar': False
-        },
-        'perfil': {
-            'ver': True,
-            'editar': True
-        }
-    },
-    
-    'jefe': {
         'inventario': {
             'ver': True,
             'crear': True,
@@ -266,12 +193,12 @@ ACCIONES_POR_ROL = {
             'editar': True,
             'eliminar': True,
             'ver_reportes': True,
-            'exportar': False
+            'exportar': True
         },
         'auditoria': {
             'ver': True,
-            'descargar': False,
-            'exportar': False
+            'descargar': True,
+            'exportar': True
         },
         'usuarios': {
             'ver': True,
@@ -282,8 +209,12 @@ ACCIONES_POR_ROL = {
         },
         'historial': {
             'ver': True,
-            'descargar': False,
-            'exportar': False
+            'descargar': True,
+            'exportar': True
+        },
+        'recomendaciones': {
+            'ver': True,
+            'configurar': True
         },
         'perfil': {
             'ver': True,

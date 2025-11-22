@@ -52,23 +52,14 @@
   // ===========================================================
   const CATEGORIAS = {
     login_logout_usuarios: { sigla: "AUTH", color: "#3b82f6", nombre: "Autenticación" },
-    gestion_usuarios: { sigla: "USER", color: "#8b5cf6", nombre: "Gestión Usuarios" },
-    modificacion_perfil: { sigla: "PROF", color: "#a855f7", nombre: "Perfil" },
     ventas: { sigla: "VENTA", color: "#10b981", nombre: "Ventas" },
     detalle_ventas: { sigla: "PROD", color: "#06b6d4", nombre: "Productos" },
     movimientos_inventario: { sigla: "INVT", color: "#f59e0b", nombre: "Inventario" },
+    retiros_programados: { sigla: "RETIRO", color: "#f59e0b", nombre: "Retiros" },
+    retiros_fuera_de_horario: { sigla: "RETIRO", color: "#ef4444", nombre: "Retiros" },
+    errores_criticos: { sigla: "ERR", color: "#dc2626", nombre: "Errores" },
     alertas_sistema: { sigla: "ALRT", color: "#ef4444", nombre: "Alertas" },
     alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" },
-    anomalias_detectadas: { sigla: "ANOM", color: "#dc2626", nombre: "Anomalías" },
-    eventos_ia: { sigla: "AI", color: "#8b5cf6", nombre: "IA" },
-    pesajes: { sigla: "PESO", color: "#06b6d4", nombre: "Pesajes" },
-    errores_criticos: { sigla: "ERR", color: "#dc2626", nombre: "Errores Críticos" },
-    calibraciones: { sigla: "CAL", color: "#14b8a6", nombre: "Calibraciones" },
-    accesos_autorizaciones: { sigla: "ACC", color: "#6366f1", nombre: "Accesos" },
-    lecturas_sensores: { sigla: "SENS", color: "#84cc16", nombre: "Sensores" },
-    consulta_lectura: { sigla: "NAV", color: "#6366f1", nombre: "Navegación" },
-    exportacion: { sigla: "EXPORT", color: "#14b8a6", nombre: "Exportación" },
-    modificacion_datos: { sigla: "EDIT", color: "#8b5cf6", nombre: "Edición" },
     otros: { sigla: "INFO", color: "#6b7280", nombre: "Otros" }
   };
 
@@ -168,7 +159,6 @@
     let resultado = '';
     // Usuario con estilo badge simple (sin RUT inline)
     const usuarioMarcado = `<span class="user-highlight">${usuario}</span>`;
-    const usuarioCorto = usuario;
     
     switch(log.tipo_evento) {
       case 'login_logout_usuarios':
@@ -202,61 +192,20 @@
         resultado = `<span style="color: #06b6d4;">📦</span> ${cant}u ${producto || 'producto'}`;
         break;
       
-      case 'consulta_lectura':
-      case 'navegacion':
-        // Icono de navegación
-        if (detalles && usuario && usuario !== 'Sistema') {
-          const primerasPalabras = detalles.toLowerCase().split(' ').slice(0, 2).join(' ');
-          const nombreUsuario = usuario.toLowerCase().split(' ')[0];
-          
-          if (!primerasPalabras.includes(nombreUsuario)) {
-            resultado = `<span style="color: #6366f1;">👁️</span> ${usuarioMarcado} ${detalles.charAt(0).toLowerCase() + detalles.slice(1)}`;
-          } else {
-            resultado = `<span style="color: #6366f1;">👁️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-          }
-        } else {
-          resultado = detalles ? `<span style="color: #6366f1;">👁️</span> ${detalles.replace(usuario, usuarioMarcado)}` : `<span style="color: #6366f1;">👁️</span> ${usuarioMarcado} - Navegación`;
-        }
-        break;
-        
-      case 'modificacion_datos':
-      case 'gestion_usuarios':
-        // Iconos para edición de usuarios
-        if (detalles.toLowerCase().includes('cre') && detalles.toLowerCase().includes('usuario')) {
-          resultado = `<span style="color: #10b981;">➕</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        } else if (detalles.toLowerCase().includes('edit') && detalles.toLowerCase().includes('usuario')) {
-          resultado = `<span style="color: #3b82f6;">✏️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        } else if (detalles.toLowerCase().includes('elimin') && detalles.toLowerCase().includes('usuario')) {
-          resultado = `<span style="color: #ef4444;">🗑️</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        } else {
-          resultado = `<span style="color: #8b5cf6;">📝</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        }
-        break;
-        
-      case 'modificacion_perfil':
-        resultado = `<span style="color: #8b5cf6;">👤</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        break;
-        
-      case 'exportacion':
-        resultado = `<span style="color: #14b8a6;">📤</span> ${detalles.replace(usuario, usuarioMarcado)}`;
-        break;
-        
       case 'movimientos_inventario':
       case 'retiros_programados':
       case 'retiros_fuera_de_horario':
-      case 'accesos_a_estantes':
         // Usar detalle completo del backend si existe
         resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : `${usuarioMarcado} - ${producto || 'Movimiento'} ${estante ? '@' + estante : ''}`;
         break;
         
       case 'alertas_sistema':
       case 'alertas_stock':
-      case 'anomalias_detectadas':
         // Hacer más descriptivas las alertas mostrando el detalle completo
         if (detalles) {
           // Si es alerta de stock, mostrar producto y detalles
           if (producto && (detalles.toLowerCase().includes('stock') || detalles.toLowerCase().includes('bajo') || detalles.toLowerCase().includes('agotado'))) {
-            resultado = `📦 ${producto}: ${detalles}`;
+            resultado = `⚠️ ${producto}: ${detalles}`;
           } else {
             resultado = `⚠️ ${detalles}${estante ? ' @' + estante : ''}`;
           }
@@ -265,34 +214,12 @@
         }
         break;
         
-      case 'eventos_ia':
-        resultado = `IA: ${detalles.substring(0, 40)}`;
-        break;
-        
       case 'errores_criticos':
-        resultado = `ERROR: ${detalles.substring(0, 40)}`;
-        break;
-        
-      case 'lecturas_sensores':
-        resultado = `Sensor${estante ? ' @' + estante : ''}`;
-        break;
-        
-      case 'pesajes':
-        resultado = rut 
-          ? `${usuarioMarcado} - Pesaje ${producto || ''}`
-          : `<span class="user-highlight">Sistema</span> - Pesaje automático ${producto || ''}`;
-        break;
-        
-      case 'calibraciones':
-        resultado = rut ? `${usuarioMarcado} - Calibración` : `${usuarioMarcado} - Calibración automática`;
-        break;
-        
-      case 'inactividad':
-        resultado = `Sin actividad detectada`;
+        resultado = `❌ ${detalles.substring(0, 50)}`;
         break;
         
       default:
-        resultado = rut ? usuarioMarcado : usuarioMarcado;
+        resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : usuarioMarcado;
     }
     
     // Truncar a 90 caracteres máximo (sin contar tags HTML)
@@ -461,11 +388,11 @@
           badgeColor = '#f59e0b'; // amarillo
           borderColor = '#f59e0b';
         }
-      } 
-      // ANOMALÍAS: Siempre rojo oscuro
-      else if (log.tipo_evento === 'anomalias_detectadas') {
-        badgeColor = '#dc2626';
-        borderColor = '#dc2626';
+      }
+      // RETIROS FUERA DE HORARIO: Color rojo
+      else if (log.tipo_evento === 'retiros_fuera_de_horario') {
+        badgeColor = '#ef4444';
+        borderColor = '#ef4444';
       }
       
       // Mensaje con formato HTML enriquecido
@@ -523,7 +450,17 @@
         line.style.background = '';
       };
 
-      line.onclick = () => {
+      line.onclick = (e) => {
+        // Prevenir propagación
+        e.stopPropagation();
+        
+        console.log('🖱️ Click en log:', {
+          tipo: log.tipo_evento,
+          usuario: log.usuario,
+          hora: log.hora,
+          detalle: log.detalle
+        });
+        
         // Efecto ripple al hacer clic
         const ripple = document.createElement("span");
         ripple.style.cssText = `
@@ -538,13 +475,19 @@
           pointer-events: none;
         `;
         const rect = line.getBoundingClientRect();
-        ripple.style.left = event.clientX - rect.left + 'px';
-        ripple.style.top = event.clientY - rect.top + 'px';
+        ripple.style.left = e.clientX - rect.left + 'px';
+        ripple.style.top = e.clientY - rect.top + 'px';
         line.style.position = 'relative';
         line.appendChild(ripple);
         setTimeout(() => ripple.remove(), 600);
         
-        mostrarDetalleLog(log);
+        // Mostrar el modal con los detalles
+        try {
+          mostrarDetalleLog(log);
+        } catch (error) {
+          console.error('❌ Error mostrando detalle del log:', error);
+          showNotification('Error al mostrar detalles', 'error');
+        }
       };
 
       cont.appendChild(line); // Insertar al final para que los más recientes queden abajo
@@ -560,10 +503,10 @@
       }
     });
 
-    // Scroll automático hacia abajo solo si estaba en el fondo
-    if (isAtBottom) {
+    // Auto-scroll: Siempre mantener el scroll al fondo para mostrar los más recientes
+    requestAnimationFrame(() => {
       cont.scrollTop = cont.scrollHeight;
-    }
+    });
   }
 
   function updateStats(stats) {
@@ -577,13 +520,17 @@
   }
 
   function mostrarDetalleLog(log) {
+    console.log('📋 Mostrando detalle de log:', log);
+    
     const categoria = getCategoriaInfo(log.tipo_evento);
     const severidadColor = logColor(log.nivel);
     
     const modal = document.createElement("div");
     modal.className = "fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4";
+    modal.style.animation = "fadeIn 0.2s ease-out";
+    
     modal.innerHTML = `
-      <div class="bg-gradient-to-br from-white to-neutral-50 dark:from-gray-900 dark:to-gray-800 border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl">
+      <div class="bg-gradient-to-br from-white to-neutral-50 dark:from-gray-900 dark:to-gray-800 border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl" style="animation: slideUp 0.3s ease-out;">
         <div class="flex items-center justify-between border-b border-neutral-300 dark:border-gray-700 pb-4">
           <div class="flex items-center gap-4">
             <div style="
@@ -601,7 +548,7 @@
               <p class="text-neutral-600 dark:text-gray-400 text-sm font-mono">${log.fecha} · ${log.hora}</p>
             </div>
           </div>
-          <button class="text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white transition-colors text-2xl font-bold" onclick="this.closest('.fixed').remove()">
+          <button class="close-modal-btn text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white transition-colors text-2xl font-bold">
             ✕
           </button>
         </div>
@@ -663,18 +610,67 @@
           </div>
         </div>
         
-        <button onclick="this.closest('.fixed').remove()" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-base transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+        <button class="close-modal-btn w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-base transition-all transform hover:scale-[1.02] active:scale-[0.98]">
           CERRAR
         </button>
       </div>
     `;
     
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+    // Agregar animaciones CSS si no existen
+    if (!document.getElementById('modal-animations')) {
+      const style = document.createElement('style');
+      style.id = 'modal-animations';
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    // Event listeners para cerrar el modal
+    const closeButtons = modal.querySelectorAll('.close-modal-btn');
+    closeButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        modal.style.animation = "fadeOut 0.2s ease-in";
+        setTimeout(() => modal.remove(), 200);
+      };
     });
     
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.animation = "fadeOut 0.2s ease-in";
+        setTimeout(() => modal.remove(), 200);
+      }
+    });
+    
+    // Agregar animación de fadeOut
+    if (!document.getElementById('fadeout-animation')) {
+      const style = document.createElement('style');
+      style.id = 'fadeout-animation';
+      style.textContent = `
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
     document.body.appendChild(modal);
+    console.log('✅ Modal de detalles creado y agregado al DOM');
   }
 
   // ===========================================================
@@ -701,9 +697,6 @@
     params.set('limit', limit);
     
     const url = `${API_LOGS}?${params.toString()}`;
-    
-    console.log(`🔍 Petición: ${url}`);
-    console.log(`📊 Rango temporal: ${state.horasRango} horas | Límite: ${limit} eventos`);
 
     try {
       const startTime = Date.now();
@@ -742,27 +735,11 @@
 
       state.logs = data.logs.map(normalize);
 
-      // Mostrar feedback de cuántos eventos se cargaron
-      console.log(`📄 Cargados ${state.logs.length} eventos (rango: ${state.horasRango}h, límite: ${limit})`);
-      if (state.logs.length > 0) {
-        const primerEvento = new Date(state.logs[state.logs.length - 1].timestamp);
-        const ultimoEvento = new Date(state.logs[0].timestamp);
-        console.log(`📅 Primer evento: ${primerEvento.toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
-        console.log(`📅 Último evento: ${ultimoEvento.toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
-        
-        // Verificar si alcanzamos el límite
-        if (state.logs.length >= limit) {
-          console.warn(`⚠️ Se alcanzó el límite de ${limit} eventos. Puede haber más eventos en este rango.`);
-        }
-      } else {
-        console.log('⚠️ No hay eventos en este rango temporal');
-      }
-
       // Actualizar métricas del sistema
       if (data.meta?.system) {
-        el.mem.textContent = data.meta.system.mem || "--";
-        el.cpu.textContent = data.meta.system.cpu || "--";
-        el.latency.textContent = `${loadTime}ms`;
+        if (el.mem) el.mem.textContent = data.meta.system.mem || "--";
+        if (el.cpu) el.cpu.textContent = data.meta.system.cpu || "--";
+        if (el.latency) el.latency.textContent = `${loadTime}ms`;
       }
 
       // Actualizar contador de usuarios activos
@@ -1034,14 +1011,14 @@
       return;
     }
     
-    console.log(`🔗 Conectando ${botonesHeader.length} botones de filtro de fecha`);
-    
     botonesHeader.forEach(btn => {
+      // Evitar listeners duplicados
+      if (btn.dataset.listenerAdded === 'true') return;
+      btn.dataset.listenerAdded = 'true';
+      
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const rango = btn.getAttribute('data-rango');
-        
-        console.log(`👆 Click en botón: ${rango}`);
         
         // Remover clase activa de todos los botones
         botonesHeader.forEach(b => {
@@ -1063,8 +1040,6 @@
         }
       });
     });
-    
-    console.log('✅ Botones de filtro de fecha conectados correctamente');
   }
 
   // ===========================================================
@@ -1078,7 +1053,6 @@
       if (el.currentUserDisplay) {
         el.currentUserDisplay.textContent = userFromMeta.split(' ')[0];
       }
-      console.log('✅ Usuario actual detectado desde meta:', userFromMeta);
       return;
     }
     
@@ -1091,8 +1065,6 @@
       return timeB - timeA; // Más recientes primero
     });
     
-    console.log('🔍 Detectando usuario actual:', loginLogs.slice(0, 3));
-    
     // Buscar el login más reciente sin un logout posterior
     for (let log of loginLogs) {
       const esLogin = log.detalle.toLowerCase().includes('inició') || 
@@ -1102,7 +1074,6 @@
         if (el.currentUserDisplay) {
           el.currentUserDisplay.textContent = log.usuario.split(' ')[0];
         }
-        console.log('✅ Usuario actual detectado:', log.usuario);
         return;
       }
     }
@@ -1121,7 +1092,6 @@
       if (el.currentUserDisplay) {
         el.currentUserDisplay.textContent = eventosRecientes[0].usuario.split(' ')[0];
       }
-      console.log('✅ Usuario actual detectado desde eventos:', eventosRecientes[0].usuario);
       return;
     }
     
@@ -1130,7 +1100,6 @@
     if (el.currentUserDisplay) {
       el.currentUserDisplay.textContent = 'Mi usuario';
     }
-    console.log('⚠️ No se detectó usuario actual');
   }
 
   function updateActiveUserCount() {
@@ -1230,13 +1199,10 @@
       console.log('📊 Respuesta /api/usuarios:', data);
       if (data.success && data.data) {
         todosLosUsuariosSistema = data.data;
-        console.log(`✅ Total usuarios en el sistema: ${todosLosUsuariosSistema.length}`, todosLosUsuariosSistema);
       }
     } catch (error) {
       console.error('❌ Error obteniendo usuarios del sistema:', error);
     }
-    
-    console.log('🟢 Usuarios activos:', Array.from(usuariosActivos.keys()));
     
     // Clasificar usuarios por estado (activo/desconectado)
     const usuariosDesconectados = todosLosUsuariosSistema
@@ -1263,8 +1229,6 @@
         };
       })
       .sort((a, b) => b.ts - a.ts); // Ordenar por más reciente primero
-    
-    console.log(`🔴 Usuarios desconectados: ${usuariosDesconectados.length}`, usuariosDesconectados);
     
     // Modal informativo - sin filtrado automático
     const modal = document.createElement('div');
@@ -1475,6 +1439,14 @@
   // ===========================================================
   //  ARRANQUE
   // ===========================================================
+  
+  // Prevenir inicialización múltiple
+  if (window.auditoriaInitialized) {
+    console.warn('⚠️ Sistema de auditoría ya inicializado, evitando duplicados');
+    return;
+  }
+  window.auditoriaInitialized = true;
+  
   loadLogs();
   conectarBotonesHeaderFiltros(); // Conectar botones del header
   
@@ -1487,8 +1459,8 @@
   
   setInterval(loadLogs, REFRESH_INTERVAL);
   
-  // Atajos de teclado para mejor UX
-  document.addEventListener('keydown', (e) => {
+  // Atajos de teclado para mejor UX (solo una vez)
+  const handleKeydown = (e) => {
     // Ctrl+F o Cmd+F: Focus en buscador
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
       e.preventDefault();
@@ -1511,7 +1483,9 @@
       el.search.value = '';
       el.search.blur();
     }
-  });
+  };
+  
+  document.addEventListener('keydown', handleKeydown);
   
   console.log('🚀 Sistema de auditoría inicializado correctamente');
   console.log('💡 Atajos de teclado:');

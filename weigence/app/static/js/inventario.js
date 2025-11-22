@@ -1025,9 +1025,9 @@ const WeigenceMonitor = {
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
       // Layout en cuadrícula fija: 3 columnas x 2 filas para 6 estantes
-      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : { width: 600, height: 150 };
+      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : { width: 600, height: 165 };
       const svgW = vb.width || svg.clientWidth || 600;
-      const svgH = vb.height || svg.clientHeight || 150;
+      const svgH = vb.height || svg.clientHeight || 165;
       const padding = 12;
 
       const n = data.length;

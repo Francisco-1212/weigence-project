@@ -5,7 +5,7 @@ from api.conexion_supabase import supabase
 from .decorators import requiere_rol
 
 @bp.route("/historial")
-@requiere_rol('jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def historial():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'historial':

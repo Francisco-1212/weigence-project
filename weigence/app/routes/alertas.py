@@ -6,7 +6,7 @@ from .utils import requiere_login
 from .decorators import requiere_rol
 
 @bp.route("/alertas")
-@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
+@requiere_rol('operador', 'supervisor', 'administrador')
 def alertas():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'alertas':

@@ -7,7 +7,7 @@ from .decorators import requiere_rol
 
 
 @bp.route("/ventas")
-@requiere_rol('jefe', 'administrador')
+@requiere_rol('operador', 'supervisor', 'administrador')
 def ventas():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'ventas':

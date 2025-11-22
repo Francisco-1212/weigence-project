@@ -81,6 +81,15 @@ def login():
                 registrar_evento_humano("login", f"{session['usuario_nombre']} inició sesión")
                 logger.info(f"[LOGIN] ✓ Evento de auditoría registrado para: {session['usuario_nombre']}")
                 
+                # Registrar usuario como conectado
+                from app.utils.sesiones_activas import registrar_usuario_activo
+                registrar_usuario_activo(
+                    session['usuario_id'],
+                    session['usuario_nombre'],
+                    session['usuario_rol']
+                )
+                logger.info(f"[LOGIN] ✓ Usuario {session['usuario_id']} registrado como conectado")
+                
                 # Guardar el estado de "Recordarme"
                 if recordarme == "on":
                     # SESIÓN PERMANENTE: 30 días
@@ -168,9 +177,16 @@ def logout():
     # Registrar evento de logout antes de limpiar sesión
     from app.utils.eventohumano import registrar_evento_humano
     usuario_nombre = session.get("usuario_nombre", "Usuario desconocido")
+    usuario_rut = session.get("usuario_id")
     logger.info(f"[LOGOUT] Usuario cerrando sesión: {usuario_nombre}")
     registrar_evento_humano("logout", f"{usuario_nombre} cerró sesión")
     logger.info(f"[LOGOUT] ✓ Evento de auditoría registrado para: {usuario_nombre}")
+    
+    # Eliminar usuario de la lista de conectados
+    if usuario_rut:
+        from app.utils.sesiones_activas import eliminar_usuario
+        if eliminar_usuario(usuario_rut):
+            logger.info(f"[LOGOUT] Usuario {usuario_rut} eliminado de usuarios conectados")
     
     session.clear()
     flash("Sesión cerrada correctamente", "info")

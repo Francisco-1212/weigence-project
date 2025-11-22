@@ -84,6 +84,50 @@
     <script src="{{ url_for('static', filename='js/ia-icons.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit-profile-modal.js') }}"></script>
     
+    <!-- Script global de heartbeat para rastrear usuarios conectados -->
+    <script>
+      // Enviar heartbeat cada 15 segundos para indicar que el usuario está conectado
+      {% if session.get('usuario_logueado') %}
+      function enviarHeartbeatGlobal() {
+        const ahora = new Date().toLocaleTimeString();
+        fetch('/api/usuarios/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+          console.log('[HEARTBEAT-GLOBAL] 📡 Respuesta recibida:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            console.log(`[HEARTBEAT-GLOBAL] ✓ [${ahora}] Heartbeat confirmado - Usuario: {{ session.get("usuario_nombre") }} ({{ session.get("usuario_id") }}) - Total conectados: ${data.total_conectados}`);
+          } else {
+            console.error('[HEARTBEAT-GLOBAL] ❌ Error en respuesta:', data);
+          }
+        })
+        .catch(error => {
+          console.error('[HEARTBEAT-GLOBAL] ❌ Error de red:', error);
+        });
+      }
+      
+      // Enviar inmediatamente al cargar la página
+      console.log('[HEARTBEAT-GLOBAL] 🚀 Iniciando sistema de rastreo...');
+      console.log('[HEARTBEAT-GLOBAL] 👤 Usuario actual: {{ session.get("usuario_nombre") }} ({{ session.get("usuario_id") }})');
+      enviarHeartbeatGlobal();
+      
+      // Enviar cada 15 segundos
+      const heartbeatInterval = setInterval(enviarHeartbeatGlobal, 15000);
+      console.log('[HEARTBEAT-GLOBAL] ⏰ Intervalo configurado: cada 15 segundos');
+      
+      // Enviar heartbeat antes de cerrar/recargar la página
+      window.addEventListener('beforeunload', function() {
+        enviarHeartbeatGlobal();
+      });
+      {% else %}
+      console.log('[HEARTBEAT-GLOBAL] ⚠️ Usuario no autenticado, heartbeat deshabilitado');
+      {% endif %}
+    </script>
+    
     <!-- Bloque para scripts específicos de cada página -->
     {% block scripts %}{% endblock %}
 

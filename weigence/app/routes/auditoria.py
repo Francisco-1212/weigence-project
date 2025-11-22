@@ -62,8 +62,8 @@ SEVERITY_DEFAULT = {
 }
 
 
-@bp.route('/auditoria')
-@requiere_rol('supervisor', 'jefe', 'administrador')
+@bp.route("/auditoria")
+@requiere_rol('supervisor', 'administrador')
 def auditoria():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'auditoria':
@@ -75,7 +75,7 @@ def auditoria():
 
 
 @bp.route('/api/auditoria/live-trail')
-@requiere_rol('supervisor', 'jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def api_auditoria_live_trail():
     filtros = _extract_filters(request.args)
     limit = _safe_int(request.args.get('limit'), DEFAULT_LIMIT)
@@ -91,7 +91,7 @@ def api_auditoria_live_trail():
     })
 
 @bp.route('/api/auditoria/logs')
-@requiere_rol('supervisor', 'jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def api_auditoria_logs():
     """
     Endpoint simple para la nueva Terminal de Investigación.
@@ -125,7 +125,7 @@ def api_auditoria_logs():
         }), 200  # Devolver 200 pero con ok: False para que el frontend lo maneje
 
 @bp.route('/api/auditoria/export', methods=['POST'])
-@requiere_rol('supervisor', 'jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def api_export_auditoria():
     payload = request.get_json(silent=True) or {}
     formato = (payload.get('formato') or 'csv').lower()
@@ -182,7 +182,7 @@ def api_export_auditoria():
 
 
 @bp.route('/api/auditoria/recalibrar', methods=['POST'])
-@requiere_rol('supervisor', 'jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def api_recalibrar_sensores():
     payload = request.get_json(silent=True) or {}
     usuario = session.get('usuario_nombre') or session.get('usuario_id') or 'sistema'

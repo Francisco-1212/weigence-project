@@ -61,7 +61,7 @@ def obtener_movimiento(id_movimiento):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @bp.route("/movimientos")
-@requiere_rol('bodeguera', 'supervisor', 'jefe', 'administrador')
+@requiere_rol('operador', 'supervisor', 'administrador')
 def movimientos():
     from app.utils.eventohumano import registrar_evento_humano
     if session.get('last_page') != 'movimientos':

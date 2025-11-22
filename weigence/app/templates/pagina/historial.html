@@ -58,7 +58,7 @@
             <tbody class="bg-white dark:bg-[var(--card-bg-dark)] divide-y divide-neutral-200 dark:divide-[var(--border-dark)]">
               {% for m in movimientos %}
               <tr class="hover:bg-neutral-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer" 
-                  onclick="window.location.href='/movimientos?id={{ m.id_movimiento }}'">
+                  data-movimiento-id="{{ m.id_movimiento }}">
                 <td class="p-3 font-medium text-neutral-900 dark:text-white">{{ m.producto }}</td>
                 <td class="p-3">
                   {% if m.tipo_evento == 'Añadir' %}

@@ -18,7 +18,7 @@ from .utils.logger import setup_logging, get_logger
 # Cargar variables de entorno
 load_dotenv()
 
-# Inicializar extensiones
+# Inicializar extensiones (a nivel de módulo para que puedan importarse)
 csrf = CSRFProtect()
 limiter = Limiter(
     key_func=get_remote_address,

@@ -475,8 +475,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Exponer función globalmente para el botón X
+  // Exponer funciones globalmente
   window.removerPinned = removerPinned;
+  window.cargarDetallesMovimiento = cargarMovimientoPinned;
+  window.mostrarPanelDetalles = cargarMovimientoPinned;
 
   // --- Click y Drag & Drop ---
   contenedor.addEventListener("click", (e) => {

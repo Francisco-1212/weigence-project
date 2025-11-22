@@ -41,7 +41,7 @@ def _error_response(message: str, *, status: int = 500, detail: str | None = Non
 # ============================================================
 
 @bp.route('/api/recomendacion/<contexto>', methods=['GET', 'POST'])
-@requiere_rol('jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def api_recomendacion(contexto: str):
     """Endpoint general para obtener recomendaciones IA según el contexto."""
     try:
