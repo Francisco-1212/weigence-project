@@ -1,577 +1,14 @@
 ﻿{% extends "base.html" %}
 {% block title %}Auditoría Inteligente - Weigence{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auditoria.css') }}?v=9.1">
+{% endblock %}
+
 {% block top %}{% include "componentes/header.html" %}{% endblock %}
 {% block sidebar %}{% include "componentes/sidebar.html" %}{% endblock %}
 
 {% block contenido %}
-
-<style>
-/* Estilos modernos para la terminal de auditoría */
-#audit-log-stream::-webkit-scrollbar {
-  width: 8px;
-}
-
-#audit-log-stream::-webkit-scrollbar-track {
-  background: #000000;
-  border-radius: 0px;
-}
-
-#audit-log-stream::-webkit-scrollbar-thumb {
-  background: #00ff00;
-  border-radius: 0px;
-  border: none;
-}
-
-#audit-log-stream::-webkit-scrollbar-thumb:hover {
-  background: #00ff88;
-}
-
-.log-entry {
-  animation: fadeInLog 0.3s ease-out;
-}
-
-@keyframes fadeInLog {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Estilos modernos para la terminal de auditoría */
-#audit-log-stream::-webkit-scrollbar {
-  width: 10px;
-}
-
-#audit-log-stream::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 5px;
-}
-
-#audit-log-stream::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.4);
-  border-radius: 5px;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-}
-
-#audit-log-stream::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.7);
-}
-
-.log-entry {
-  animation: fadeInLog 0.3s ease-out;
-}
-
-@keyframes fadeInLog {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Resaltado de usuarios - estilo badge con fuente monospace */
-.user-highlight {
-  background: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
-  border: 1.5px solid rgba(59, 130, 246, 0.35);
-  padding: 3px 9px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.1px;
-  display: inline-block;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.dark .user-highlight {
-  background: rgba(59, 130, 246, 0.18);
-  color: #60a5fa;
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.log-entry:hover .user-highlight {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.5);
-  transform: scale(1.03);
-}
-
-.dark .log-entry:hover .user-highlight {
-  background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
-}
-
-/* Efectos de hover mejorados */
-.log-entry {
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.log-entry::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: inherit;
-  transition: width 0.2s ease;
-}
-
-.log-entry:hover::before {
-  width: 5px;
-}
-
-.log-entry:hover {
-  transform: translateX(2px) scale(1.01);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-/* Efecto de pulsación para el indicador de estado */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 5px #10b98144, 0 0 10px #10b98122;
-  }
-  50% {
-    box-shadow: 0 0 10px #10b98166, 0 0 20px #10b98144;
-  }
-}
-
-#audit-stream-status {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Contenedor de logs: los nuevos se añaden abajo y el scroll empieza desde arriba */
-#audit-log-stream {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Los logs empiezan desde arriba */
-}
-
-/* Mensaje vacío centrado */
-#audit-log-empty {
-  margin: auto; /* Centra vertical y horizontalmente cuando está vacío */
-}
-
-/* Animación de carga de consola */
-@keyframes console-loading {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
-}
-
-.console-loading {
-  animation: console-loading 1.5s ease-in-out infinite;
-}
-
-/* Animaciones para notificaciones toast */
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(100px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOutRight {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(100px);
-  }
-}
-
-/* Efecto de focus en el buscador */
-#audit-search:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  transform: scale(1.01);
-  transition: all 0.2s ease;
-}
-
-/* Efecto ripple al hacer clic */
-@keyframes ripple {
-  0% {
-    transform: scale(0);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(20);
-    opacity: 0;
-  }
-}
-
-/* Transiciones suaves para modo oscuro */
-* {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-/* ============================================================
-   FLEXBOX PARA ALINEACIÓN DE BLOQUES (Live Audit Trail + IA)
-   ============================================================ */
-
-/* Contenedor padre - grid con flex para igualar alturas */
-.grid.grid-cols-12.gap-6.mt-8 {
-  display: flex !important;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 1.5rem;
-}
-
-/* Columna izquierda (Live Audit Trail) */
-.col-span-12.lg\:col-span-8 {
-  flex: 0 0 66.666667%;
-  max-width: 66.666667%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Columna derecha (Bloque IA) */
-.col-span-12.lg\:col-span-4 {
-  flex: 0 0 33.333333%;
-  max-width: 33.333333%;
-  display: flex;
-  flex-direction: column;
-  padding-right: 2rem;
-}
-
-/* Ambos bloques internos ocupan 100% de altura */
-.col-span-12.lg\:col-span-8 > div,
-.col-span-12.lg\:col-span-4 > article {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Asegurar que el panel IA se alinee correctamente */
-.col-span-12.lg\:col-span-4 {
-  display: flex;
-}
-
-/* Responsive: en móviles mantener comportamiento de grid */
-@media (max-width: 1023px) {
-  .grid.grid-cols-12.gap-6.mt-8 {
-    display: grid !important;
-    flex-wrap: wrap;
-  }
-  
-  .col-span-12.lg\:col-span-4 {
-    flex: none;
-    max-width: 100%;
-  }
-}
-
-/* ============================================================
-   RESPONSIVE DESIGN - MOBILE FIRST
-   ============================================================ */
-
-/* Mobile (hasta 640px) */
-@media (max-width: 640px) {
-  /* Espaciado general */
-  .w-full.space-y-8 {
-    padding: 0 0.5rem;
-  }
-
-  .w-full.space-y-8 > * + * {
-    margin-top: 1rem !important;
-  }
-
-  /* Tarjeta superior más compacta */
-  section.rounded-lg {
-    border-radius: 0.5rem;
-  }
-
-  section.rounded-lg .p-2 {
-    padding: 0.75rem;
-  }
-
-  /* Buscador y controles */
-  .flex.flex-wrap.items-center.gap-2 {
-    gap: 0.5rem;
-  }
-
-  #audit-search {
-    height: 40px;
-    font-size: 14px;
-  }
-
-  /* Filtros activos más compactos */
-  #audit-active-filters {
-    gap: 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  /* Terminal más compacta pero usable */
-  .rounded-xl.border.border-gray-300 {
-    height: 450px !important;
-    border-radius: 0.75rem;
-  }
-
-  /* Padding del terminal */
-  .px-4.py-3 {
-    padding: 0.75rem !important;
-  }
-
-  /* Log entries más compactas */
-  .log-entry {
-    font-size: 0.7rem;
-    padding: 0.4rem;
-    line-height: 1.4;
-  }
-
-  .user-highlight {
-    font-size: 0.65rem;
-    padding: 2px 6px;
-  }
-
-  /* Bloque IA compacto */
-  .ia-recommendation {
-    margin-top: 1rem;
-    padding: 1rem;
-  }
-
-  .ia-recommendation__body {
-    height: 450px !important; /* Altura ajustada para móvil */
-  }
-
-  .ia-recommendation__title {
-    font-size: 0.95rem;
-    line-height: 1.3;
-  }
-
-  .ia-recommendation__message {
-    font-size: 0.8rem;
-    line-height: 1.5;
-  }
-
-  .ia-recommendation__meta {
-    gap: 0.5rem;
-    font-size: 0.7rem;
-  }
-
-  .ia-recommendation__solution-text {
-    font-size: 0.8rem;
-  }
-
-  /* Navegación IA */
-  .nav-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  /* Grid principal */
-  .grid.grid-cols-12.gap-6 {
-    gap: 1rem;
-  }
-}
-
-/* Tablet (641px - 1023px) */
-@media (min-width: 641px) and (max-width: 1023px) {
-  /* Espaciado mejorado */
-  .w-full.space-y-8 {
-    padding: 0 1rem;
-  }
-
-  /* Grid de controles optimizado */
-  .flex.flex-wrap.items-center.gap-2 {
-    gap: 0.5rem;
-  }
-
-  /* Terminal altura media */
-  .rounded-xl.border.border-gray-300,
-  .rounded-lg.sm\:rounded-xl {
-    height: 520px !important;
-  }
-
-  /* Stats visibles pero compactas */
-  #audit-quick-stats {
-    gap: 0.75rem;
-  }
-
-  /* Bloque IA */
-  .ia-recommendation {
-    padding: 1.25rem;
-  }
-
-  .ia-recommendation__body {
-    height: 520px !important; /* Altura ajustada para tablet */
-  }
-
-  .ia-recommendation__title {
-    font-size: 1.05rem;
-  }
-
-  .ia-recommendation__message {
-    font-size: 0.9rem;
-  }
-
-  /* Footer compacto */
-  .flex.gap-6.font-mono {
-    gap: 1rem;
-  }
-
-  /* Grid principal */
-  .grid.grid-cols-12.gap-6,
-  .grid.grid-cols-1.lg\:grid-cols-12 {
-    gap: 1.25rem;
-  }
-}
-
-/* Desktop pequeño (1024px - 1279px) */
-@media (min-width: 1024px) and (max-width: 1279px) {
-  /* Ajustar padding */
-  .col-span-12.lg\:col-span-4 {
-    padding-right: 0;
-  }
-
-  /* Terminal altura estándar */
-  .rounded-xl.border.border-gray-300 {
-    height: 550px !important;
-  }
-
-  /* Texto más compacto */
-  .ia-recommendation__title {
-    font-size: 1.1rem;
-  }
-}
-
-/* Desktop grande (1280px+) */
-@media (min-width: 1280px) {
-  /* Aprovechar espacio extra */
-  .w-full.space-y-8 {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
-
-  /* Terminal más alta */
-  .rounded-xl.border.border-gray-300,
-  .rounded-lg.sm\:rounded-xl {
-    height: 680px !important;
-  }
-
-  /* Texto más legible */
-  .log-entry {
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-
-  /* IA más espaciosa */
-  .ia-recommendation {
-    padding: 2rem;
-  }
-
-  .ia-recommendation__body {
-    height: 680px !important; /* Altura igual al terminal */
-  }
-
-  .ia-recommendation__title {
-    font-size: 1.25rem;
-  }
-}
-
-/* Extra pequeño (hasta 375px) */
-@media (max-width: 375px) {
-  /* Ajustes para móviles pequeños */
-  .w-full.space-y-8 {
-    padding: 0 0.25rem;
-  }
-
-  /* Terminal compacta */
-  .rounded-lg.sm\:rounded-xl {
-    height: 380px !important;
-  }
-
-  /* Texto más pequeño */
-  .log-entry {
-    font-size: 0.65rem;
-    padding: 0.3rem;
-  }
-
-  .user-highlight {
-    font-size: 0.6rem;
-    padding: 1px 4px;
-  }
-
-  /* Botones más compactos */
-  button {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.75rem;
-  }
-
-  /* IA compacta */
-  .ia-recommendation {
-    padding: 0.75rem;
-  }
-
-  .ia-recommendation__body {
-    height: 380px !important; /* Altura ajustada para pantallas muy pequeñas */
-  }
-
-  .ia-recommendation__title {
-    font-size: 0.85rem;
-  }
-
-  .ia-recommendation__message {
-    font-size: 0.75rem;
-  }
-}
-
-/* Landscape móvil */
-@media (max-width: 896px) and (orientation: landscape) {
-  .rounded-xl.border.border-gray-300 {
-    height: 350px !important;
-  }
-
-  .ia-recommendation {
-    margin-top: 0.5rem;
-  }
-}
-
-/* Touch-friendly - áreas táctiles más grandes */
-@media (pointer: coarse) {
-  button {
-    min-height: 44px;
-    padding: 0.5rem 1rem;
-  }
-
-  .nav-button {
-    min-width: 44px;
-    min-height: 44px;
-  }
-}
-
-/* Print styles */
-@media print {
-  .flex.flex-wrap.items-center.gap-2,
-  #audit-stream-status,
-  .ia-recommendation__navigation {
-    display: none !important;
-  }
-
-  .rounded-xl.border.border-gray-300 {
-    height: auto !important;
-    border: 1px solid #000;
-  }
-
-  #audit-log-stream {
-    overflow: visible !important;
-  }
-}
-</style>
 
 <div class="w-full space-y-8 font-sans text-neutral-800 dark:text-[#EAEAEA]">
 
@@ -645,7 +82,7 @@
     <div class="col-span-1 lg:col-span-8 space-y-4 sm:space-y-6">
 
       <!-- LIVE AUDIT TRAIL -->
-      <div class="rounded-lg sm:rounded-xl border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-xl h-[450px] sm:h-[550px] lg:h-[630px] flex flex-col">
+      <div class="rounded-lg sm:rounded-xl border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-xl h-[400px] sm:h-[480px] lg:h-[580px] xl:h-[620px] flex flex-col">
 
         <!-- HEADER RESPONSIVO -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-300 dark:border-neutral-700 px-3 sm:px-5 py-3 bg-gradient-to-r from-neutral-50 dark:from-white/5 to-transparent gap-3 sm:gap-0">
@@ -692,8 +129,8 @@
         </div>
 
         <!-- TERMINAL - CONSOLA DE LOGS RESPONSIVA -->
-        <div class="px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-b from-neutral-100 to-neutral-50 dark:from-[#0f1014] dark:to-[#1a1b23] flex-1 overflow-hidden">
-          <div id="audit-log-stream" class="h-full overflow-y-auto rounded-md sm:rounded-lg border p-2 sm:p-3
+        <div class="px-3 sm:px-4 pt-2 sm:pt-3 pb-2 sm:pb-3 bg-gradient-to-b from-neutral-100 to-neutral-50 dark:from-[#0f1014] dark:to-[#1a1b23] flex-1 overflow-hidden flex flex-col">
+          <div id="audit-log-stream" class="flex-1 overflow-y-auto rounded-md sm:rounded-lg border
             bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
             border-gray-300 dark:border-neutral-700
             scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-primary/40
@@ -754,58 +191,97 @@
       >
         <div class="ia-recommendation__halo" aria-hidden="true"></div>
 
-        <div class="ia-recommendation__body h-full">
+        <div class="ia-recommendation__body">
           
           <div class="ia-recommendation__content">
-            <!-- Header con badge ML -->
+            <!-- Header Premium con Badge -->
             <div class="ia-recommendation__meta">
-              <span class="material-symbols-outlined text-base sm:text-lg" data-ia-icon>auto_awesome</span>
-              <span data-ia-severity class="text-xs sm:text-sm">Analizando entorno</span>
-              <span class="ml-badge text-xs" data-ml-badge style="display: none;">ML</span>
+              <span class="material-symbols-outlined text-lg sm:text-xl" data-ia-icon style="animation: pulse 2s ease-in-out infinite;">sensors</span>
+              <span data-ia-severity class="text-xs sm:text-sm font-bold tracking-wider uppercase">IA Advisor</span>
+              <span class="ml-badge text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold" data-ml-badge style="display: none;">Pro</span>
             </div>
 
-            <!-- Módulo afectado -->
-            <div class="ia-recommendation__module" data-ia-module style="display: none;">
-              <span class="material-symbols-outlined text-sm sm:text-base" data-module-icon>dashboard</span>
-              <span data-module-name class="text-xs sm:text-sm">Dashboard</span>
+            <!-- Sección de Estado del Sistema -->
+            <div class="flex items-center gap-2 mt-3 mb-4">
+              <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <span class="text-xs font-semibold opacity-80">Sistema de Recomendaciones Activo</span>
             </div>
 
-            <!-- Título del problema -->
-            <h4 class="ia-recommendation__title text-base sm:text-lg lg:text-xl" data-ia-title>Sincronizando contexto operacional…</h4>
+            <!-- Título Impactante -->
+            <h4 class="ia-recommendation__title text-lg sm:text-xl lg:text-2xl font-black leading-tight mb-4" data-ia-title>
+              <span class="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Asistente Inteligente
+              </span><br>
+              <span class="text-white dark:text-white">Vigilando Tu Ecosistema</span>
+            </h4>
 
-            <!-- Descripción del problema -->
-            <p class="ia-recommendation__message text-sm sm:text-base" data-ia-message>
-              El motor IA correlaciona accesos, alertas y sensores para priorizar incidentes de alto impacto en el inventario.
-            </p>
+            <!-- Módulo afectado - Rediseñado -->
+            <div class="ia-recommendation__module flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 mb-3" data-ia-module style="display: none;">
+              <span class="material-symbols-outlined text-sm" data-module-icon>hub</span>
+              <span class="text-xs font-semibold">Módulo:</span>
+              <span data-module-name class="text-xs font-bold text-blue-400">Dashboard</span>
+            </div>
 
-            <!-- Severidad del hallazgo -->
-            <div class="ia-recommendation__severity-detail" data-severity-detail style="display: none;">
-              <span class="ia-recommendation__label text-xs sm:text-sm">Nivel de criticidad</span>
-              <div class="severity-indicator" data-severity-indicator>
-                <span class="severity-bar" data-severity-bar></span>
-                <span class="severity-text text-xs sm:text-sm" data-severity-text>Baja</span>
+            <!-- Descripción con Personalidad -->
+            <div class="ia-recommendation__message text-sm sm:text-base leading-relaxed mb-4" data-ia-message>
+              <p class="mb-3">
+                <span class="inline-block px-2 py-1 bg-blue-500/20 rounded text-blue-300 text-xs font-bold mb-2">¿Qué hago?</span><br>
+                Analizo continuamente cada acción en tu sistema, buscando patrones sospechosos, comportamientos anómalos y oportunidades de mejora.
+              </p>
+              
+              <p class="mb-3">
+                <span class="inline-block px-2 py-1 bg-purple-500/20 rounded text-purple-300 text-xs font-bold mb-2">¿Cómo te ayudo?</span><br>
+                Cuando detecte algo importante, te daré <strong>recomendaciones precisas</strong> para actuar antes de que se convierta en un problema.
+              </p>
+
+              <div class="flex items-start gap-2 p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/20">
+                <span class="material-symbols-outlined text-blue-400 text-sm mt-0.5">lightbulb</span>
+                <p class="text-xs italic opacity-90">
+                  <strong class="text-blue-300">Tip:</strong> Cada insight que genero está basado en machine learning y análisis predictivo en tiempo real.
+                </p>
               </div>
             </div>
 
-            <!-- Plan de acción sugerido -->
-            <div class="ia-recommendation__solution">
-              <span class="ia-recommendation__label text-xs sm:text-sm">Plan de acción sugerido</span>
-              <p class="ia-recommendation__solution-text text-sm sm:text-base" data-ia-solution>
-                Se generará una acción sugerida al confirmarse patrones anómalos.
+            <!-- Severidad - Rediseñado -->
+            <div class="ia-recommendation__severity-detail" data-severity-detail style="display: none;">
+              <div class="flex items-center justify-between mb-2">
+                <span class="ia-recommendation__label text-xs font-bold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">priority_high</span>
+                  Nivel de Prioridad
+                </span>
+                <span class="severity-text text-xs font-bold px-2 py-1 rounded-full" data-severity-text>Baja</span>
+              </div>
+              <div class="severity-indicator w-full h-2 bg-white/10 rounded-full overflow-hidden" data-severity-indicator>
+                <span class="severity-bar block h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-500" data-severity-bar style="width: 30%"></span>
+              </div>
+            </div>
+
+            <!-- Plan de Acción - Rediseñado -->
+            <div class="ia-recommendation__solution mt-auto pt-4 border-t border-white/10">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-yellow-400 text-base">rocket_launch</span>
+                <span class="ia-recommendation__label text-xs font-bold text-yellow-400 uppercase tracking-wide">Plan de Acción</span>
+              </div>
+              <p class="ia-recommendation__solution-text text-sm leading-relaxed" data-ia-solution>
+                <strong class="text-white">Esperando datos suficientes...</strong><br>
+                Pronto comenzaré a generar recomendaciones inteligentes basadas en la actividad de tu sistema.
               </p>
             </div>
           </div>
 
-          <!-- Navegación entre hallazgos (sin carrusel anidado) -->
-          <div class="ia-recommendation__navigation" data-ml-navigation style="display: none;">
-            <button class="nav-button nav-button--prev" data-nav-prev aria-label="Hallazgo anterior">
-              <span class="material-symbols-outlined">chevron_left</span>
+          <!-- Navegación Mejorada -->
+          <div class="ia-recommendation__navigation border-t border-white/10" data-ml-navigation style="display: none;">
+            <button class="nav-button nav-button--prev hover:scale-110 transition-transform" data-nav-prev aria-label="Anterior" title="Insight anterior">
+              <span class="material-symbols-outlined">navigate_before</span>
             </button>
-            <span class="nav-counter text-xs sm:text-sm" data-nav-counter>
-              <span data-nav-current>1</span> / <span data-nav-total>6</span>
-            </span>
-            <button class="nav-button nav-button--next" data-nav-next aria-label="Siguiente hallazgo">
-              <span class="material-symbols-outlined">chevron_right</span>
+            <div class="nav-counter flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">analytics</span>
+              <span class="text-xs font-bold" data-nav-counter>
+                Insight <span data-nav-current class="text-blue-400">1</span>/<span data-nav-total>6</span>
+              </span>
+            </div>
+            <button class="nav-button nav-button--next hover:scale-110 transition-transform" data-nav-next aria-label="Siguiente" title="Siguiente insight">
+              <span class="material-symbols-outlined">navigate_next</span>
             </button>
           </div>
 

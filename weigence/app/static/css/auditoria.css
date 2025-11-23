@@ -1,0 +1,557 @@
+/* ============================================================
+   AUDITORÍA INTELIGENTE - ESTILOS CONSOLIDADOS
+   Todos los estilos para la página de auditoría
+   ============================================================ */
+
+/* ============================================================
+   TERMINAL DE AUDITORÍA - ESTILOS MODERNOS
+   ============================================================ */
+
+/* Scrollbar personalizado para terminal */
+#audit-log-stream::-webkit-scrollbar {
+  width: 10px;
+}
+
+#audit-log-stream::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+#audit-log-stream::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+#audit-log-stream::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* Animación de entrada de logs */
+.log-entry {
+  animation: fadeInLog 0.3s ease-out;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Efectos de hover en logs */
+.log-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: inherit;
+  transition: width 0.2s ease;
+}
+
+.log-entry:hover::before {
+  width: 5px;
+}
+
+.log-entry:hover {
+  transform: translateX(2px) scale(1.01);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Resaltado de usuarios - badge estilo */
+.user-highlight {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1.5px solid rgba(59, 130, 246, 0.35);
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.1px;
+  display: inline-block;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .user-highlight {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.log-entry:hover .user-highlight {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.03);
+}
+
+.dark .log-entry:hover .user-highlight {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+/* ============================================================
+   CONTENEDOR DE LOGS
+   ============================================================ */
+
+/* Contenedor de logs: flex-start para que empiecen desde arriba */
+#audit-log-stream {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0.5rem;
+}
+
+/* Mensaje vacío centrado */
+#audit-log-empty {
+  margin: auto;
+}
+
+/* ============================================================
+   INDICADORES Y ANIMACIONES
+   ============================================================ */
+
+/* Efecto de pulsación para el indicador de estado */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px #10b98144, 0 0 10px #10b98122;
+  }
+  50% {
+    box-shadow: 0 0 10px #10b98166, 0 0 20px #10b98144;
+  }
+}
+
+#audit-stream-status {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Animación de carga de consola */
+@keyframes console-loading {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.console-loading {
+  animation: console-loading 1.5s ease-in-out infinite;
+}
+
+/* Animaciones para notificaciones toast */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Efecto ripple al hacer clic */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(20);
+    opacity: 0;
+  }
+}
+
+/* ============================================================
+   CONTROLES Y BÚSQUEDA
+   ============================================================ */
+
+/* Efecto de focus en el buscador */
+#audit-search:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: scale(1.01);
+  transition: all 0.2s ease;
+}
+
+/* ============================================================
+   TRANSICIONES GENERALES
+   ============================================================ */
+
+/* Transiciones suaves para modo oscuro */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ============================================================
+   LAYOUT FLEXBOX - ALINEACIÓN DE BLOQUES
+   ============================================================ */
+
+/* Contenedor padre - grid con flex para igualar alturas */
+.grid.grid-cols-12.gap-6.mt-8 {
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+/* Columna izquierda (Live Audit Trail) */
+.col-span-12.lg\:col-span-8 {
+  flex: 0 0 66.666667%;
+  max-width: 66.666667%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Columna derecha (Bloque IA) */
+.col-span-12.lg\:col-span-4 {
+  flex: 0 0 33.333333%;
+  max-width: 33.333333%;
+  display: flex;
+  flex-direction: column;
+  padding-right: 2rem;
+}
+
+/* Terminal ocupa altura definida en media queries */
+.col-span-12.lg\:col-span-8 > div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Panel IA también respeta media queries */
+.col-span-12.lg\:col-span-4 > article {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN - MOBILE FIRST
+   ============================================================ */
+
+/* Mobile (hasta 640px) */
+@media (max-width: 640px) {
+  /* Ajustar padding de logs para móviles */
+  #audit-log-stream {
+    padding: 0.375rem;
+  }
+
+  /* Espaciado general */
+  .w-full.space-y-8 {
+    padding: 0 0.5rem;
+  }
+
+  .w-full.space-y-8 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  /* Tarjeta superior más compacta */
+  section.rounded-lg {
+    border-radius: 0.5rem;
+  }
+
+  section.rounded-lg .p-2 {
+    padding: 0.75rem;
+  }
+
+  /* Buscador y controles */
+  .flex.flex-wrap.items-center.gap-2 {
+    gap: 0.5rem;
+  }
+
+  #audit-search {
+    height: 40px;
+    font-size: 14px;
+  }
+
+  /* Filtros activos más compactos */
+  #audit-active-filters {
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Terminal usa clases Tailwind: h-[450px] */
+
+  /* Padding del terminal */
+  .px-4.py-3 {
+    padding: 0.75rem !important;
+  }
+
+  /* Log entries más compactas */
+  .log-entry {
+    font-size: 0.7rem;
+    padding: 0.4rem;
+    line-height: 1.4;
+  }
+
+  .user-highlight {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  /* Bloque IA compacto - Misma altura que el terminal */
+  .ia-recommendation {
+    margin-top: 1rem;
+    padding: 1rem;
+  }
+
+  .ia-recommendation__body {
+    height: 400px !important;
+  }
+
+  .ia-recommendation__title {
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .ia-recommendation__meta {
+    gap: 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .ia-recommendation__solution-text {
+    font-size: 0.8rem;
+  }
+
+  /* Navegación IA */
+  .nav-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Grid principal */
+  .grid.grid-cols-12.gap-6 {
+    gap: 1rem;
+  }
+
+  /* Grid responsive en móviles */
+  .grid.grid-cols-12.gap-6.mt-8 {
+    display: grid !important;
+    flex-wrap: wrap;
+  }
+  
+  .col-span-12.lg\:col-span-4 {
+    flex: none;
+    max-width: 100%;
+  }
+}
+
+/* Tablet (641px - 1023px) */
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* Espaciado mejorado */
+  .w-full.space-y-8 {
+    padding: 0 1rem;
+  }
+
+  /* Grid de controles optimizado */
+  .flex.flex-wrap.items-center.gap-2 {
+    gap: 0.5rem;
+  }
+
+  /* Terminal usa clases Tailwind: sm:h-[520px] */
+
+  /* Stats visibles pero compactas */
+  #audit-quick-stats {
+    gap: 0.75rem;
+  }
+
+  /* Bloque IA - Misma altura que el terminal */
+  .ia-recommendation {
+    padding: 1.25rem;
+  }
+
+  .ia-recommendation__body {
+    height: 480px !important;
+  }
+
+  .ia-recommendation__title {
+    font-size: 1.05rem;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.9rem;
+  }
+
+  /* Footer compacto */
+  .flex.gap-6.font-mono {
+    gap: 1rem;
+  }
+
+  /* Grid principal */
+  .grid.grid-cols-12.gap-6,
+  .grid.grid-cols-1.lg\:grid-cols-12 {
+    gap: 1.25rem;
+  }
+
+  /* Grid responsive en tablets */
+  .grid.grid-cols-12.gap-6.mt-8 {
+    display: grid !important;
+    flex-wrap: wrap;
+  }
+  
+  .col-span-12.lg\:col-span-4 {
+    flex: none;
+    max-width: 100%;
+  }
+}
+
+/* Desktop pequeño (1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* Ajustar padding */
+  .col-span-12.lg\:col-span-4 {
+    padding-right: 0;
+  }
+
+  /* Terminal usa clases Tailwind: lg:h-[580px] */
+
+  .ia-recommendation__body {
+    height: 580px !important;
+  }
+
+  /* Texto más compacto */
+  .ia-recommendation__title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Desktop grande (1280px+) */
+@media (min-width: 1280px) {
+  /* Aprovechar espacio extra */
+  .w-full.space-y-8 {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Terminal usa clases Tailwind: xl:h-[620px] */
+
+  .ia-recommendation__body {
+    height: 620px !important;
+  }
+
+  /* Texto más legible en terminal */
+  .log-entry {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* IA más espaciosa */
+  .ia-recommendation {
+    padding: 2rem;
+  }
+
+  .ia-recommendation__title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Extra pequeño (hasta 375px) */
+@media (max-width: 375px) {
+  /* Ajustes para móviles pequeños */
+  .w-full.space-y-8 {
+    padding: 0 0.25rem;
+  }
+
+  /* Terminal usa clases Tailwind: h-[400px] pero más compacto */
+
+  .ia-recommendation__body {
+    height: 350px !important;
+  }
+
+  /* Texto más pequeño */
+  .log-entry {
+    font-size: 0.65rem;
+    padding: 0.3rem;
+  }
+
+  .user-highlight {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+
+  /* Botones más compactos */
+  button {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  /* IA compacta */
+  .ia-recommendation {
+    padding: 0.75rem;
+  }
+
+  .ia-recommendation__title {
+    font-size: 0.85rem;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape móvil */
+@media (max-width: 896px) and (orientation: landscape) {
+  /* Terminal usa clases Tailwind pero ajustado */
+
+  .ia-recommendation__body {
+    height: 320px !important;
+  }
+
+  .ia-recommendation {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Touch-friendly - áreas táctiles más grandes */
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+  }
+
+  .nav-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+
+@media print {
+  .flex.flex-wrap.items-center.gap-2,
+  #audit-stream-status,
+  .ia-recommendation__navigation {
+    display: none !important;
+  }
+
+  .rounded-xl.border.border-gray-300 {
+    height: auto !important;
+    border: 1px solid #000;
+  }
+
+  #audit-log-stream {
+    overflow: visible !important;
+  }
+}

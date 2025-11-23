@@ -8,6 +8,8 @@
   border-radius: 20px;
   padding: 2px;              /* grosor del borde */
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Borde IA fluido, inteligente, con luz asimétrica */
@@ -83,7 +85,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Permitir scroll si el contenido es muy largo */
+  gap: 1rem;
+  overflow-y: auto;
+  min-height: 0; /* Permite que flex funcione correctamente */
 }
 
 /* Scrollbar personalizada para el contenido IA */
@@ -128,12 +132,13 @@
   position: relative;
   z-index: 2;
   border-radius: inherit;
-  height: 630px; /* Altura fija para todas las tarjetas del carrusel */
+  /* Altura controlada por media queries en auditoria.css */
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* empuja la navegación abajo */
+  justify-content: space-between;
 
-  padding: 1.75rem;
+  padding: 1.25rem 1.25rem 1rem;
 
   background: var(--card-bg-light);
   box-shadow:
@@ -165,7 +170,8 @@
 
 /* Título */
 .ia-recommendation__title {
-  margin-top: .5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.3;
@@ -173,16 +179,18 @@
 
 /* Mensaje */
 .ia-recommendation__message {
-  margin-top: .7rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
   font-size: .95rem;
-  line-height: 1.55;
+  line-height: 1.65;
   opacity: .92;
   white-space: pre-line;
 }
 
 /* Solución */
 .ia-recommendation__solution {
-  margin-top: 1rem;
+  margin-top: auto;
+  margin-bottom: 0;
   padding-top: 1rem;
   border-top: 1px solid rgba(150,150,150,0.2);
 }
@@ -195,21 +203,22 @@
 }
 
 .ia-recommendation__solution-text {
-  margin-top: .4rem;
+  margin-top: 0.6rem;
   font-size: .92rem;
-  line-height: 1.55;
+  line-height: 1.65;
 }
 
 
 /* Contenedor de las flechas */
 .ia-recommendation__navigation {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
+  margin-top: 0;
+  padding-top: 0.75rem;
   border-top: 1px solid rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 /* Fondo oscuro */
