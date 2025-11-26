@@ -158,7 +158,7 @@
     
     let resultado = '';
     // Usuario con estilo badge simple (sin RUT inline)
-    const usuarioMarcado = `<span class="user-highlight">${usuario}</span>`;
+    const usuarioMarcado = `<span class="audit-user-highlight">${usuario}</span>`;
     
     switch(log.tipo_evento) {
       case 'login_logout_usuarios':
@@ -399,7 +399,7 @@
       const msg = formatearMensajeRico(log);
 
       const line = document.createElement("div");
-      line.className = "log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150";
+      line.className = "audit-log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150";
       
       line.style.cssText = `
         display: flex;
@@ -1102,33 +1102,19 @@
     }
   }
 
-  function updateActiveUserCount() {
-    // Contar usuarios que hicieron login en los últimos 30 minutos
-    const ahora = Date.now();
-    const treintaMin = 30 * 60 * 1000;
-    
-    const usuariosActivos = new Set();
-    
-    // IMPORTANTE: Agregar el usuario actual de la sesión primero
-    if (state.currentUser && state.currentUser !== 'Sistema') {
-      usuariosActivos.add(state.currentUser);
-    }
-    
-    state.logs.forEach(log => {
-      if (log.tipo_evento !== 'login_logout_usuarios') return;
+  async function updateActiveUserCount() {
+    try {
+      const response = await fetch('/api/auditoria/usuarios-activos');
+      const data = await response.json();
       
-      const timestamp = new Date(log.timestamp).getTime();
-      const esReciente = ahora - timestamp < treintaMin;
-      const esLogin = log.detalle.toLowerCase().includes('inició') || 
-                     log.detalle.toLowerCase().includes('inicio');
-      
-      if (esReciente && esLogin && log.usuario && log.usuario !== 'Sistema') {
-        usuariosActivos.add(log.usuario);
+      if (data && el.activeUserCount) {
+        el.activeUserCount.textContent = data.total_activos || 0;
       }
-    });
-    
-    if (el.activeUserCount) {
-      el.activeUserCount.textContent = usuariosActivos.size;
+    } catch (error) {
+      console.error('Error al actualizar contador de usuarios activos:', error);
+      if (el.activeUserCount) {
+        el.activeUserCount.textContent = '0';
+      }
     }
   }
 
@@ -1152,89 +1138,33 @@
   }
 
   async function mostrarUsuariosActivos() {
-    const ahora = Date.now();
-    const treintaMin = 30 * 60 * 1000;
-    const usuariosActivos = new Map();
-    
-    // IMPORTANTE: Agregar el usuario actual de la sesión primero
-    if (state.currentUser && state.currentUser !== 'Sistema') {
-      usuariosActivos.set(state.currentUser, {
-        nombre: state.currentUser,
-        ultimoLogin: new Date().toISOString(),
-        hora: new Date().toLocaleTimeString('es-CL', { 
-          timeZone: 'America/Santiago',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        })
-      });
-    }
-    
-    // Agregar otros usuarios que hicieron login recientemente
-    state.logs.forEach(log => {
-      if (log.tipo_evento !== 'login_logout_usuarios') return;
-      
-      const timestamp = new Date(log.timestamp).getTime();
-      const esReciente = ahora - timestamp < treintaMin;
-      const esLogin = log.detalle.toLowerCase().includes('inició') || 
-                     log.detalle.toLowerCase().includes('inicio');
-      
-      if (esReciente && esLogin && log.usuario && log.usuario !== 'Sistema') {
-        if (!usuariosActivos.has(log.usuario)) {
-          usuariosActivos.set(log.usuario, {
-            nombre: log.usuario,
-            ultimoLogin: log.timestamp,
-            hora: log.hora
-          });
-        }
-      }
-    });
-    
-    // Obtener TODOS los usuarios del sistema desde la base de datos
-    let todosLosUsuariosSistema = [];
     try {
-      const response = await fetch('/api/usuarios');
+      // Obtener datos de usuarios activos desde la API
+      const response = await fetch('/api/auditoria/usuarios-activos');
       const data = await response.json();
-      console.log('📊 Respuesta /api/usuarios:', data);
-      if (data.success && data.data) {
-        todosLosUsuariosSistema = data.data;
+      
+      if (!response.ok || data.error) {
+        showNotification('Error al cargar usuarios activos', 'error');
+        return;
       }
+      
+      const usuariosActivos = data.activos.filter(u => u.activo);
+      const usuariosDesconectados = data.activos.filter(u => !u.activo);
+      
+      console.log('📊 Usuarios activos:', usuariosActivos.length);
+      console.log('📊 Usuarios desconectados:', usuariosDesconectados.length);
+      
     } catch (error) {
-      console.error('❌ Error obteniendo usuarios del sistema:', error);
+      console.error('❌ Error al cargar usuarios activos:', error);
+      showNotification('Error al cargar usuarios activos', 'error');
+      return;
     }
-    
-    // Clasificar usuarios por estado (activo/desconectado)
-    const usuariosDesconectados = todosLosUsuariosSistema
-      .filter(u => !usuariosActivos.has(u.nombre))
-      .map(u => {
-        // Buscar la última actividad de este usuario en los logs
-        let ultimaActividad = null;
-        let hora = 'Sin actividad registrada';
-        
-        for (const log of state.logs) {
-          if (log.usuario === u.nombre) {
-            if (!ultimaActividad || new Date(log.timestamp) > ultimaActividad) {
-              ultimaActividad = new Date(log.timestamp);
-              hora = log.hora;
-            }
-          }
-        }
-        
-        return {
-          nombre: u.nombre,
-          ts: ultimaActividad || new Date(u.fecha_registro || Date.now()),
-          hora: hora,
-          rol: u.rol
-        };
-      })
-      .sort((a, b) => b.ts - a.ts); // Ordenar por más reciente primero
     
     // Modal informativo - sin filtrado automático
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
     modal.innerHTML = `
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-gray-800 pb-2 z-10">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white">
             <span class="material-symbols-outlined text-green-500 align-middle">group</span>
@@ -1249,20 +1179,36 @@
         <div class="mb-4">
           <h4 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Activos (últimos 30 min) · ${usuariosActivos.size}
+            Activos (últimos 30 min) · ${usuariosActivos.length}
           </h4>
           <div class="space-y-2">
-            ${usuariosActivos.size === 0 ? 
+            ${usuariosActivos.length === 0 ? 
               '<p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">No hay usuarios activos</p>' :
-              Array.from(usuariosActivos.values()).map(u => `
-                <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" data-usuario="${u.nombre}">
-                  <div>
-                    <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Último login: ${u.hora}</p>
+              usuariosActivos.map(u => {
+                const colorRol = {
+                  'administrador': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+                  'supervisor': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+                  'vendedor': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+                  'farmaceutico': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                }[u.rol] || 'bg-gray-100 dark:bg-gray-700/30 text-gray-700 dark:text-gray-300';
+                
+                return `
+                  <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" data-usuario="${u.nombre_completo}">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900 dark:text-white">${u.nombre_completo}</p>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${colorRol}">${u.rol}</span>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">${u.correo}</p>
+                      <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                        <span class="material-symbols-outlined text-xs align-middle">schedule</span>
+                        ${u.tiempo_relativo}
+                      </p>
+                    </div>
+                    <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
                   </div>
-                  <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
-                </div>
-              `).join('')
+                `;
+              }).join('')
             }
           </div>
         </div>
@@ -1281,15 +1227,31 @@
           <div id="lista-desconectados" class="space-y-2 hidden">
             ${usuariosDesconectados.length === 0 ? 
               '<p class="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">Todos los usuarios están activos</p>' :
-              usuariosDesconectados.map(u => `
-                <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-usuario="${u.nombre}">
-                  <div>
-                    <p class="font-semibold text-gray-900 dark:text-white">${u.nombre}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Última actividad: ${u.hora}</p>
+              usuariosDesconectados.map(u => {
+                const colorRol = {
+                  'administrador': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+                  'supervisor': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+                  'vendedor': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+                  'farmaceutico': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                }[u.rol] || 'bg-gray-100 dark:bg-gray-700/30 text-gray-700 dark:text-gray-300';
+                
+                return `
+                  <div class="usuario-card cursor-pointer flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-usuario="${u.nombre_completo}">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900 dark:text-white">${u.nombre_completo}</p>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${colorRol}">${u.rol}</span>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">${u.correo}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span class="material-symbols-outlined text-xs align-middle">schedule</span>
+                        ${u.tiempo_relativo}
+                      </p>
+                    </div>
+                    <span class="w-3 h-3 rounded-full bg-gray-400"></span>
                   </div>
-                  <span class="w-3 h-3 rounded-full bg-gray-400"></span>
-                </div>
-              `).join('')
+                `;
+              }).join('')
             }
           </div>
         </div>
@@ -1448,6 +1410,7 @@
   window.auditoriaInitialized = true;
   
   loadLogs();
+  updateActiveUserCount(); // Cargar contador inicial
   conectarBotonesHeaderFiltros(); // Conectar botones del header
   
   // Scroll inicial al fondo después de cargar
@@ -1458,6 +1421,7 @@
   }, 200);
   
   setInterval(loadLogs, REFRESH_INTERVAL);
+  setInterval(updateActiveUserCount, REFRESH_INTERVAL); // Actualizar cada 10 segundos
   
   // Atajos de teclado para mejor UX (solo una vez)
   const handleKeydown = (e) => {

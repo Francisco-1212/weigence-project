@@ -1,4 +1,4 @@
-from app import create_app
+from app import create_app, socketio_instance
 from livereload import Server
 import sys
 
@@ -14,7 +14,15 @@ def serve_with_retry(server: Server, host: str = "127.0.0.1", start_port: int = 
     for _ in range(max_tries):
         try:
             print(f"Iniciando servidor en http://{host}:{port}")
-            server.serve(port=port, host=host, debug=True)
+            
+            # Si SocketIO está disponible, usarlo para servir
+            if socketio_instance:
+                print("🔥 Modo: Flask + SocketIO (WebSocket habilitado)")
+                socketio_instance.run(app, host=host, port=port, debug=True, allow_unsafe_werkzeug=True)
+            else:
+                print("⚠️  Modo: Flask sin WebSocket")
+                server.serve(port=port, host=host, debug=True)
+            
             return
         except OSError as e:
             # WinError 10048 -> address already in use on Windows
@@ -27,10 +35,21 @@ def serve_with_retry(server: Server, host: str = "127.0.0.1", start_port: int = 
 
 
 if __name__ == "__main__":
-    server = Server(app.wsgi_app)
-    server.watch("app/templates/**/*.*")     # recarga al cambiar HTML/Jinja
-    server.watch("app/static/**/*.*")        # recarga al cambiar CSS/JS
-    server.watch("app/routes/**/*.py")  # recarga al cambiar rutas
-    # Intentar arrancar evitando crash si el puerto 5000 ya está en uso
-    serve_with_retry(server, host="127.0.0.1", start_port=5000, max_tries=10)
+    # Si NO hay SocketIO, usar livereload normal
+    if not socketio_instance:
+        server = Server(app.wsgi_app)
+        server.watch("app/templates/**/*.*")
+        server.watch("app/static/**/*.*")
+        server.watch("app/routes/**/*.py")
+        serve_with_retry(server, host="127.0.0.1", start_port=5000, max_tries=10)
+    else:
+        # Con SocketIO, servir directamente (livereload no compatible con socketio.run)
+        try:
+            socketio_instance.run(app, host="127.0.0.1", port=5000, debug=True, allow_unsafe_werkzeug=True)
+        except OSError as e:
+            if getattr(e, "winerror", None) == 10048:
+                print("Puerto 5000 en uso, intentando 5001...")
+                socketio_instance.run(app, host="127.0.0.1", port=5001, debug=True, allow_unsafe_werkzeug=True)
+            else:
+                raise
 

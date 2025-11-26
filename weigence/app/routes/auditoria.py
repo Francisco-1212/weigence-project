@@ -7,6 +7,7 @@ import logging
 import uuid
 import zipfile
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -70,7 +71,8 @@ def auditoria():
         usuario_nombre = session.get('usuario_nombre', 'Usuario')
         registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al módulo Auditoría")
         session['last_page'] = 'auditoria'
-    snapshot = generar_traza_auditoria(limit=80)
+    # Carga inicial rápida: solo 30 eventos de las últimas 6 horas
+    snapshot = generar_traza_auditoria(limit=30, horas=6)
     return render_template('pagina/auditoria.html', audit_snapshot=snapshot)
 
 
@@ -179,6 +181,94 @@ def api_export_auditoria():
         as_attachment=True,
         download_name=f'audit-trail-{stamp}.csv'
     )
+
+
+@bp.route('/api/auditoria/usuarios-activos')
+@requiere_rol('supervisor', 'administrador')
+def api_usuarios_activos():
+    """
+    Obtiene los usuarios activos con su última actividad.
+    Usa el sistema de heartbeat en tiempo real para determinar usuarios conectados.
+    """
+    try:
+        from app.utils.sesiones_activas import obtener_usuarios_conectados
+        
+        # Obtener usuarios conectados del sistema de heartbeat (últimos 30 minutos para ser más permisivo)
+        usuarios_conectados_ruts, detalles_conectados = obtener_usuarios_conectados(timeout_minutos=30)
+        
+        logger.info(f"Usuarios conectados desde heartbeat: {len(usuarios_conectados_ruts)} - {usuarios_conectados_ruts}")
+        
+        # Consultar todos los usuarios de la base de datos
+        usuarios_result = supabase.table('usuarios')\
+            .select('rut_usuario, nombre, apellido, correo, rol')\
+            .execute()
+        
+        if not usuarios_result.data:
+            return jsonify({
+                'activos': [],
+                'total_activos': 0,
+                'total_usuarios': 0
+            })
+        
+        usuarios_con_actividad = []
+        ahora = datetime.now()
+        
+        for usuario in usuarios_result.data:
+            rut = usuario.get('rut_usuario')
+            es_activo = rut in usuarios_conectados_ruts
+            tiempo_relativo = 'Sin actividad reciente'
+            ultima_actividad_iso = None
+            
+            if es_activo and rut in detalles_conectados:
+                # Usuario activo con heartbeat
+                ultima_act_str = detalles_conectados[rut].get('ultima_actividad')
+                if ultima_act_str:
+                    try:
+                        dt_actividad = datetime.fromisoformat(ultima_act_str)
+                        ultima_actividad_iso = ultima_act_str
+                        
+                        # Calcular tiempo relativo
+                        delta = ahora - dt_actividad
+                        
+                        if delta.total_seconds() < 60:
+                            tiempo_relativo = 'Ahora mismo'
+                        elif delta.total_seconds() < 3600:
+                            minutos = int(delta.total_seconds() / 60)
+                            tiempo_relativo = f'Hace {minutos} min'
+                        else:
+                            tiempo_relativo = 'Hace menos de 1 h'
+                    except Exception as e:
+                        logger.error(f"Error procesando ultima_actividad del heartbeat: {e}")
+                        tiempo_relativo = 'Activo ahora'
+            
+            usuarios_con_actividad.append({
+                'rut': rut,
+                'nombre': usuario.get('nombre', ''),
+                'apellido': usuario.get('apellido', ''),
+                'correo': usuario.get('correo', ''),
+                'rol': usuario.get('rol', ''),
+                'nombre_completo': f"{usuario.get('nombre', '')} {usuario.get('apellido', '')}",
+                'ultima_actividad': ultima_actividad_iso,
+                'tiempo_relativo': tiempo_relativo,
+                'activo': es_activo
+            })
+        
+        # Ordenar: activos primero, luego por nombre
+        usuarios_con_actividad.sort(key=lambda x: (not x['activo'], x['nombre']))
+        
+        activos_count = len(usuarios_conectados_ruts)
+        
+        logger.info(f"Total usuarios: {len(usuarios_con_actividad)}, Activos: {activos_count}")
+        
+        return jsonify({
+            'activos': usuarios_con_actividad,
+            'total_activos': activos_count,
+            'total_usuarios': len(usuarios_con_actividad)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error al obtener usuarios activos: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @bp.route('/api/auditoria/recalibrar', methods=['POST'])
@@ -313,7 +403,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
                 usuarios:rut_usuario ( nombre )
             """,
             order_field='timestamp',
-            limit=250,
+            limit=100,
             since=desde,
         )
         for row in rows:
@@ -365,7 +455,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
             'ventas',
             select='idventa,total,fecha_venta,rut_usuario',
             order_field='fecha_venta',
-            limit=120,
+            limit=50,
             since=desde,
         )
         for row in rows:
@@ -399,7 +489,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
                 productos:idproducto ( nombre )
             """,
             order_field='fecha_detalle',
-            limit=200,
+            limit=80,
             since=desde,
         )
         for row in rows:
@@ -429,7 +519,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
             'pesajes',
             select='idpesaje,idproducto,peso_unitario,fecha_pesaje',
             order_field='fecha_pesaje',
-            limit=200,
+            limit=60,
             since=desde,
         )
         for row in rows:
@@ -463,7 +553,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
             'alertas',
             select='id,tipo_color,titulo,descripcion,estado,fecha_creacion,idproducto,idusuario',
             order_field='fecha_creacion',
-            limit=120,
+            limit=50,
             since=desde,
         )
         for row in rows:
@@ -512,7 +602,7 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
             'ia_auditoria_logs',
             select='id,modulo,resultado,confianza,fecha',
             order_field='fecha',
-            limit=80,
+            limit=40,
             since=desde,
         )
         for row in rows:
@@ -721,16 +811,27 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
                 if inserted >= 3:
                     break
 
-    collect_movimientos()
-    collect_ventas()
-    collect_detalle_ventas()
-    collect_pesajes()
-    collect_alertas()
-    # collect_eventos_ia()  # ← DESHABILITADO: no mostrar eventos IA en consola
+    # Ejecutar consultas en paralelo para reducir latencia
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [
+            executor.submit(collect_movimientos),
+            executor.submit(collect_ventas),
+            executor.submit(collect_detalle_ventas),
+            executor.submit(collect_pesajes),
+            executor.submit(collect_alertas),
+            executor.submit(collect_auditoria_eventos),
+        ]
+        # Esperar a que todas terminen
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(f"Error en consulta paralela: {e}")
+    
+    # Ejecutar después de las consultas principales
     collect_error_logs()
     collect_calibraciones()
     collect_sensor_snapshots()
-    collect_auditoria_eventos()  # ← Eventos reales: login, logout, ventas manuales, etc.
     # build_login_logout()  # ← DESHABILITADO: genera eventos duplicados con timestamps incorrectos
     build_inactividad()
 

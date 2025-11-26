@@ -31,6 +31,16 @@ PERMISOS_POR_ROL = {
 def usuarios():
     """Página principal de gestión de usuarios"""
     from app.utils.eventohumano import registrar_evento_humano
+    from app.utils.sesiones_activas import registrar_usuario_activo
+    
+    # Registrar al usuario actual como activo al entrar a la página
+    rut = session.get('usuario_id')
+    nombre = session.get('usuario_nombre')
+    rol = session.get('usuario_rol')
+    if rut and nombre:
+        registrar_usuario_activo(rut, nombre, rol)
+        print(f"[USUARIOS-ROUTE] ✓ Usuario registrado al cargar página: {nombre} ({rut})")
+    
     if session.get('last_page') != 'usuarios':
         usuario_nombre = session.get('usuario_nombre', 'Usuario')
         registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó a Gestión de Usuarios")

@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let usuariosConectados = [];
   
   // Función: Cargar usuarios conectados
-  function cargarUsuariosConectados() {
+  function cargarUsuariosConectados(forzarRecarga = true) {
     const ahora = new Date().toLocaleTimeString();
     console.log(`[USUARIOS-CONECTADOS] 🔄 [${ahora}] Solicitando lista de usuarios conectados...`);
     
@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(data => {
         if (data.success) {
           const anteriorConectados = usuariosConectados.length;
+          const anteriorRuts = [...usuariosConectados];
           usuariosConectados = data.conectados || [];
           
           console.log(`[USUARIOS-CONECTADOS] ✓ [${ahora}] Actualización exitosa:`, {
@@ -53,12 +54,18 @@ document.addEventListener('DOMContentLoaded', function() {
             detalles: data.detalles
           });
           
-          if (usuariosConectados.length !== anteriorConectados) {
+          // Detectar cambios en la lista de usuarios
+          const huboChangios = usuariosConectados.length !== anteriorConectados ||
+                             JSON.stringify(usuariosConectados.sort()) !== JSON.stringify(anteriorRuts.sort());
+          
+          if (huboChangios) {
             console.log(`[USUARIOS-CONECTADOS] 🔔 Cambio detectado: ${anteriorConectados} → ${usuariosConectados.length}`);
           }
           
-          // Recargar la tabla para actualizar estados
-          cargarUsuarios();
+          // Recargar la tabla para actualizar estados solo si hubo cambios o es forzado
+          if (huboChangios || forzarRecarga) {
+            cargarUsuarios();
+          }
         } else {
           console.error('[USUARIOS-CONECTADOS] ❌ Error en respuesta:', data);
         }
@@ -71,9 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Función: Enviar heartbeat (desde página de usuarios)
   function enviarHeartbeat() {
     const ahora = new Date().toLocaleTimeString();
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     fetch('/api/usuarios/heartbeat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      }
     })
       .then(response => response.json())
       .then(data => {
@@ -127,6 +138,13 @@ document.addEventListener('DOMContentLoaded', function() {
           usuariosConectados.includes(u.rut_usuario)
         );
         
+        console.log('[USUARIOS] 📊 Estadísticas:', {
+          totalUsuarios: data.data.length,
+          conectados: usuariosConectados.length,
+          listaConectados: usuariosConectados,
+          usuariosActivos: usuariosActivos.map(u => u.rut_usuario)
+        });
+        
         // Actualizar estadísticas
         actualizarEstadisticas(data.data, usuariosActivos);
         
@@ -137,26 +155,26 @@ document.addEventListener('DOMContentLoaded', function() {
           
           return `
           <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
-            <td class="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100 font-mono">${usuario.rut_usuario}</td>
-            <td class="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100 font-medium">${usuario.nombre}</td>
-            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${usuario.correo}</td>
-            <td class="px-6 py-4 text-sm">
-              <span class="px-3 py-1 rounded-full text-xs font-medium ${obtenerColorRol(rolMinuscula)}">
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-sm text-neutral-900 dark:text-neutral-100">
+              <div class="font-medium">${usuario.nombre}</div>
+              <div class="text-xs text-neutral-500 dark:text-neutral-400 sm:hidden">${usuario.rut_usuario}</div>
+            </td>
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 hidden sm:table-cell">${usuario.correo}</td>
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-sm">
+              <span class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${obtenerColorRol(rolMinuscula)}">
                 ${formatearRol(rolMinuscula)}
               </span>
             </td>
-            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${usuario['numero celular'] || '-'}</td>
-            <td class="px-6 py-4 text-sm">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estaConectado ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}">
-                <span class="w-1.5 h-1.5 rounded-full ${estaConectado ? 'bg-green-600 dark:bg-green-400 animate-pulse' : 'bg-gray-600 dark:bg-gray-400'} mr-1.5"></span>
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-sm hidden md:table-cell">
+              <span class="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${estaConectado ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}">
+                <span class="w-1.5 h-1.5 rounded-full ${estaConectado ? 'bg-green-600 dark:bg-green-400 animate-pulse' : 'bg-gray-600 dark:bg-gray-400'} mr-1"></span>
                 ${estaConectado ? 'Conectado' : 'Desconectado'}
               </span>
             </td>
-            <td class="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">${formatearFecha(usuario.fecha_registro)}</td>
-            <td class="px-6 py-4 text-right">
-              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-right">
+              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
                 <span class="material-symbols-outlined text-sm">edit</span>
-                Editar
+                <span class="hidden sm:inline">Editar</span>
               </button>
             </td>
           </tr>
@@ -472,15 +490,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Cargar usuarios al iniciar
-  cargarUsuariosConectados();
+  // Cargar usuarios al iniciar - con espera para asegurar que el heartbeat global se registre primero
+  console.log('[USUARIOS] Esperando 800ms para asegurar registro de heartbeat global...');
+  setTimeout(() => {
+    console.log('[USUARIOS] Iniciando carga de datos...');
+    cargarUsuariosConectados(true); // Forzar recarga inicial
+  }, 800);
   
-  // Enviar heartbeat cada 20 segundos
+  // Enviar heartbeat cada 10 segundos (más frecuente)
   enviarHeartbeat(); // Enviar inmediatamente
-  setInterval(enviarHeartbeat, 20000); // Cada 20 segundos
+  setInterval(enviarHeartbeat, 10000); // Cada 10 segundos
   
-  // Actualizar usuarios conectados cada 5 segundos para detección en tiempo real
-  setInterval(cargarUsuariosConectados, 5000); // Cada 5 segundos
+  // Actualizar usuarios conectados cada 3 segundos para detección en tiempo real
+  setInterval(() => cargarUsuariosConectados(false), 3000); // No forzar recarga cada vez, solo si hay cambios
   
-  console.log('[USUARIOS] Inicialización completada - Heartbeat: 20s, Actualización: 5s');
+  console.log('[USUARIOS] Inicialización completada - Heartbeat: 10s, Actualización: 3s');
 });

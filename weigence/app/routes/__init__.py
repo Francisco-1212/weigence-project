@@ -7,5 +7,5 @@ bp = Blueprint("main", __name__, url_prefix="")
 from . import (
     login, dashboard, inventario, ventas, movimientos, alertas, 
     api_status, auditoria, historial, perfil,
-    recomendaciones_ai, usuarios
+    recomendaciones_ai, usuarios, chat
 )

@@ -1,0 +1,150 @@
+/* ============================================================
+   CHAT FLOTANTE - WEIGENCE
+   ============================================================ */
+
+/* Animación slide-up */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Contenedor principal */
+#chat-float-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+/* Panel mini chat */
+#chat-mini-panel {
+  width: 90vw;
+  max-width: 420px;
+  height: 600px;
+  max-height: 80vh;
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Solo mostrar cuando NO tiene la clase hidden */
+#chat-mini-panel:not(.hidden) {
+  display: flex;
+}
+
+.dark #chat-mini-panel {
+  background: rgb(23, 23, 23);
+  border-color: rgba(55, 65, 81, 0.6);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Lista de usuarios */
+#mini-chat-usuarios {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+  min-height: 0;
+}
+
+/* Scrollbar */
+#mini-chat-usuarios::-webkit-scrollbar {
+  width: 6px;
+}
+
+#mini-chat-usuarios::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark #mini-chat-usuarios::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+#mini-chat-usuarios::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+}
+
+#mini-chat-usuarios::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Item de usuario */
+.usuario-mini-item {
+  padding: 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(249, 250, 251, 0.5);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.usuario-mini-item:hover {
+  background: rgba(249, 250, 251, 1);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.dark .usuario-mini-item {
+  background: rgba(31, 41, 55, 0.4);
+  border-color: rgba(55, 65, 81, 0.6);
+}
+
+.dark .usuario-mini-item:hover {
+  background: rgba(55, 65, 81, 0.8);
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+/* Avatar colores */
+.avatar-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.avatar-green { background: linear-gradient(135deg, #10b981, #059669); }
+.avatar-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.avatar-pink { background: linear-gradient(135deg, #ec4899, #db2777); }
+.avatar-yellow { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.avatar-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.avatar-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.avatar-teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.avatar-cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.avatar-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  #chat-float-container {
+    bottom: 1rem;
+    right: 1rem;
+  }
+  
+  #chat-mini-panel {
+    width: calc(100vw - 2rem);
+    height: 500px;
+  }
+}

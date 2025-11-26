@@ -11,67 +11,67 @@
 {% block contenido %}
 <div class="p-0 bg-[var(--bg-light)] dark:bg-[var(--bg-dark)] min-h-screen">
 
-  <div class="flex flex-col gap-6 w-full px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col gap-3 sm:gap-4 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
 
     <!-- Título -->
-    <h2 class="text-3xl font-bold text-left text-neutral-900 dark:text-neutral-100">
+    <h2 class="text-2xl sm:text-3xl font-bold text-left text-neutral-900 dark:text-neutral-100">
       Inventario
     </h2>
 
     <!-- Tarjetas métricas -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div class="flex flex-col gap-1.5 sm:gap-2 rounded-lg p-3 sm:p-4 lg:p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
         <div class="flex items-center justify-between">
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Total de Productos</p>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">inventory_2</span>
+          <p class="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm font-medium">Total Productos</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400 text-lg sm:text-xl">inventory_2</span>
         </div>
-        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ productos|length }}</p>
+        <p class="text-neutral-900 dark:text-neutral-100 text-2xl sm:text-3xl font-bold">{{ productos|length }}</p>
       </div>
 
-      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+      <div class="flex flex-col gap-1.5 sm:gap-2 rounded-lg p-3 sm:p-4 lg:p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
         <div class="flex items-center justify-between">
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Stock Disponible</p>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">widgets</span>
+          <p class="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm font-medium">Stock Total</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400 text-lg sm:text-xl">widgets</span>
         </div>
-        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas['total_stock'] }}</p>
+        <p class="text-neutral-900 dark:text-neutral-100 text-2xl sm:text-3xl font-bold">{{ estadisticas['total_stock'] }}</p>
       </div>
 
-      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+      <div class="flex flex-col gap-1.5 sm:gap-2 rounded-lg p-3 sm:p-4 lg:p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
         <div class="flex items-center justify-between">
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Valor Total</p>
-          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">attach_money</span>
+          <p class="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm font-medium">Valor Total</p>
+          <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400 text-lg sm:text-xl">attach_money</span>
         </div>
-        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">
+        <p class="text-neutral-900 dark:text-neutral-100 text-2xl sm:text-3xl font-bold">
           ${{ "{:,.0f}".format(estadisticas['total_valor']).replace(',', '.') }}
         </p>
       </div>
 
-      <div class="flex flex-col gap-2 rounded-lg p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
+      <div class="flex flex-col gap-1.5 sm:gap-2 rounded-lg p-3 sm:p-4 lg:p-5 border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
         <div class="flex items-center justify-between">
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Bajo Stock</p>
-          <span class="material-symbols-outlined text-[var(--warning-500)]">warning</span>
+          <p class="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm font-medium">Bajo Stock</p>
+          <span class="material-symbols-outlined text-[var(--warning-500)] text-lg sm:text-xl">warning</span>
         </div>
-        <p class="text-neutral-900 dark:text-neutral-100 text-3xl font-bold">{{ estadisticas.get('bajo_stock', 0) }}</p>
+        <p class="text-neutral-900 dark:text-neutral-100 text-2xl sm:text-3xl font-bold">{{ estadisticas.get('bajo_stock', 0) }}</p>
       </div>
     </section>
 
     <!-- Paneles principales -->
-    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-4">
 
       <!-- Columna izquierda: Monitoreo (3/4 del ancho en XL) -->
-      <div class="xl:col-span-3 flex flex-col gap-6">
+      <div class="xl:col-span-3 flex flex-col gap-3 sm:gap-4">
 
         <!-- Monitoreo de estantes -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4">
+          <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-3">
             Monitoreo de Estantes en Tiempo Real
           </h3>
-          <div id="monitoreo-estantes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
+          <div id="monitoreo-estantes" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3"></div>
         </div>
 
         <!-- Visión general -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5 relative">
-          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4 relative">
+          <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-3">
             Visión General del Almacén
           </h3>
           <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] relative w-full aspect-[20/3.3] rounded-xl overflow-visible almacen-map bg-transparent">
@@ -97,17 +97,17 @@
       </div>
 
       <!-- Columna derecha: Alertas y proyección -->
-      <div class="flex flex-col gap-6">
+      <div class="flex flex-col gap-3 sm:gap-4">
 
         <!-- Alertas -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-          <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4">
+          <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-3">
             Alertas y Acciones Sugeridas
           </h3>
 
-          <div id="alertas-sugeridas" class="flex flex-col gap-3">
+          <div id="alertas-sugeridas" class="flex flex-col gap-2">
             {% for alerta in alertas_sugeridas[:3] %}
-              <div class="flex items-start gap-3 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3
+              <div class="flex items-start gap-2 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 sm:p-2.5
                           bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
                 <span class="material-symbols-outlined 
                             {% if alerta.color == 'rojo' %}text-red-500{% elif alerta.color == 'amarilla' %}text-yellow-500{% else %}text-green-500{% endif %} 
@@ -124,14 +124,14 @@
         </div>
 
         <!-- Proyección -->
-        <div class="panel bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-5">
-          <div class="flex items-center justify-between gap-3 mb-4">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
+        <div class="panel bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4">
+          <div class="flex items-center justify-between gap-3 mb-2 sm:mb-3">
+            <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100">
               Proyección de Consumo
             </h3>
             <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Actualización dinámica</span>
           </div>
-          <div class="relative h-64">
+          <div class="relative h-48 sm:h-56">
             <canvas id="chartProyeccion" class="absolute inset-0 w-full h-full"></canvas>
           </div>
         </div>
@@ -139,22 +139,23 @@
     </div>
 
       <!-- Filtros y acciones -->
-      <div class="flex flex-wrap justify-between items-center gap-4">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div id="filtroEstado" class="flex gap-2 items-center flex-wrap">
-        <button class="px-3 py-1.5 text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--primary-color)] text-white filtro-btn" data-status="todos">Todos</button>
-        <button class="px-3 py-1.5 text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="agotado">Sin Stock</button>
-        <button class="px-3 py-1.5 text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="bajo">Bajo Stock</button>
-        <button class="px-3 py-1.5 text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="normal">Normal</button>
+        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--primary-color)] text-white filtro-btn" data-status="todos">Todos</button>
+        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="agotado">Sin Stock</button>
+        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="bajo">Bajo Stock</button>
+        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="normal">Normal</button>
       </div>
 
-        <div class="flex gap-3">
-          <button id="addProductBtn" class="flex items-center justify-center rounded-lg h-10 bg-[var(--primary-color)] text-white gap-2 text-sm font-bold px-4 hover:bg-[var(--primary-600)] transition-colors">
+        <div class="flex gap-2 sm:gap-3">
+          <button id="addProductBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 bg-[var(--primary-color)] text-white gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold px-3 sm:px-4 hover:bg-[var(--primary-600)] transition-colors flex-1 sm:flex-initial">
             <span class="material-symbols-outlined text-base">add</span>
-            <span>Agregar Producto</span>
+            <span class="hidden sm:inline">Agregar Producto</span>
+            <span class="sm:hidden">Agregar</span>
           </button>
-          <button id="exportBtn" class="flex items-center justify-center rounded-lg h-10 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] gap-2 text-sm font-medium px-4 transition-colors">
+          <button id="exportBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 transition-colors">
             <span class="material-symbols-outlined text-base">file_download</span>
-            <span>Exportar</span>
+            <span class="hidden sm:inline">Exportar</span>
           </button>
         </div>
       </div>
@@ -162,18 +163,18 @@
       <!-- Tabla de productos -->
       <div class="overflow-x-auto bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-gray-300 dark:border-neutral-700">
         <div class="max-h-[60vh] overflow-auto"></div>
-        <table id="productTable" class="w-full text-sm text-left text-neutral-700 dark:text-neutral-300">
+        <table id="productTable" class="w-full text-xs sm:text-sm text-left text-neutral-700 dark:text-neutral-300">
            <thead class="sticky top-0 z-10 text-xs uppercase bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-b border-gray-300 dark:border-neutral-700">
             <tr>
-              <th class="px-6 py-3 font-semibold">ID/Código</th>
-              <th class="px-6 py-3 font-semibold">Nombre</th>
-              <th class="px-6 py-3 font-semibold">Categoría</th>
-              <th class="px-6 py-3 font-semibold">Stock</th>
-              <th class="px-6 py-3 font-semibold">Peso Unitario</th>
-              <th class="px-6 py-3 font-semibold">Peso Total</th>
-              <th class="px-6 py-3 font-semibold">Estado</th>
-              <th class="px-6 py-3 font-semibold">Última Actualización</th>
-              <th class="px-6 py-3 font-semibold text-center">Acciones</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold whitespace-nowrap">Código</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold">Nombre</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold hidden md:table-cell">Categoría</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold">Stock</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold hidden lg:table-cell">Peso Unit.</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold hidden xl:table-cell">Peso Total</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold hidden sm:table-cell">Estado</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold hidden xl:table-cell">Última Act.</th>
+              <th class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 font-semibold text-center">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-300 dark:divide-neutral-700">
@@ -185,51 +186,53 @@
                 data-name="{{ p.nombre|lower }}"
                 data-date="{{ p.fecha_modificacion }}"
                 data-estante="{{ p.codigo_estante or p.id_estante }}">
-              <td class="px-6 py-4 font-medium">{{ p.codigo or p.idproducto }}</td>
-              <td class="px-6 py-4">{{ p.nombre }}</td>
-              <td class="px-6 py-4">{{ p.categoria }}</td>
-              <td class="px-6 py-4">{{ p.stock }} unidades</td>
-              <td class="px-6 py-4">{{ p.peso }}g</td>
-              <td class="px-6 py-4">{{ '%.2f' % (p.peso * p.stock) }}g</td>
-              <td class="px-6 py-4">
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 font-medium whitespace-nowrap">{{ p.codigo or p.idproducto }}</td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4">
+                <div class="max-w-[120px] sm:max-w-none truncate">{{ p.nombre }}</div>
+              </td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 hidden md:table-cell">{{ p.categoria }}</td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">{{ p.stock }}</td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 hidden lg:table-cell whitespace-nowrap">{{ p.peso }}g</td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 hidden xl:table-cell whitespace-nowrap">{{ '%.2f' % (p.peso * p.stock) }}g</td>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 hidden sm:table-cell">
                 {% if p.stock == 0 %}
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400">
-                    <span class="material-symbols-outlined text-base mr-1">close</span> Sin Stock
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm mr-1">close</span> Sin Stock
                   </span>
                 {% elif p.stock < 10 %}
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400">
-                    <span class="material-symbols-outlined text-base mr-1">hourglass_top</span> Bajo
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm mr-1">hourglass_top</span> Bajo
                   </span>
                 {% else %}
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400">
-                    <span class="material-symbols-outlined text-base mr-1">check</span> Normal
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm mr-1">check</span> Normal
                   </span>
                 {% endif %}
               </td>
-              <td class="px-6 py-4">
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 hidden xl:table-cell whitespace-nowrap text-xs">
                 {% if p.fecha_modificacion %}
                   {{ p.fecha_modificacion.replace('T', ' ').split('.')[0] }}
                 {% else %}
                   N/A
                 {% endif %}
               </td>
-              <td class="px-6 py-4">
-                <div class="flex gap-2 justify-center">
-                  <button class="p-2 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary-color)] gestionar-btn" title="Editar" data-producto='{{ p | tojson }}'>
-                    <span class="material-symbols-outlined">edit</span>
+              <td class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4">
+                <div class="flex gap-1 sm:gap-2 justify-center">
+                  <button class="p-1 sm:p-2 text-neutral-600 dark:text-neutral-400 hover:text-[var(--primary-color)] gestionar-btn" title="Editar" data-producto='{{ p | tojson }}'>
+                    <span class="material-symbols-outlined text-lg sm:text-xl">edit</span>
                   </button>
-                  <button class="p-2 text-neutral-600 dark:text-neutral-400 hover:text-[var(--danger-500)] gestionar-btn" title="Eliminar" data-producto='{{ p | tojson }}'>
-                    <span class="material-symbols-outlined">delete</span>
+                  <button class="p-1 sm:p-2 text-neutral-600 dark:text-neutral-400 hover:text-[var(--danger-500)] gestionar-btn" title="Eliminar" data-producto='{{ p | tojson }}'>
+                    <span class="material-symbols-outlined text-lg sm:text-xl">delete</span>
                   </button>
-                  <button class="p-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-100 gestionar-btn" title="Historial" data-producto='{{ p | tojson }}'>
-                    <span class="material-symbols-outlined">history</span>
+                  <button class="p-1 sm:p-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-100 gestionar-btn hidden sm:inline-flex" title="Historial" data-producto='{{ p | tojson }}'>
+                    <span class="material-symbols-outlined text-lg sm:text-xl">history</span>
                   </button>
                 </div>
               </td>
             </tr>
             {% else %}
             <tr id="noProductsRow">
-              <td colspan="9" class="px-6 py-4 text-center text-sm text-neutral-600 dark:text-neutral-400">No hay productos registrados</td>
+              <td colspan="9" class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">No hay productos registrados</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -237,24 +240,25 @@
       </div>
       <!-- Controles de paginación -->
       <div id="pager"
-          class="flex flex-wrap items-center justify-between gap-3 py-3 px-4 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-t border-gray-300 dark:border-neutral-700">
-        <div class="flex items-center gap-2 text-sm">
-          <span class="text-neutral-600 dark:text-neutral-400">Filas por página</span>
-          <select id="pageSize" class="h-9 px-2 rounded-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
-                                      border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100">
+          class="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 py-2 sm:py-3 px-3 sm:px-4 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border-t border-gray-300 dark:border-neutral-700">
+        <div class="flex items-center gap-2 text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start">
+          <span class="text-neutral-600 dark:text-neutral-400 hidden sm:inline">Filas por página</span>
+          <span class="text-neutral-600 dark:text-neutral-400 sm:hidden">Filas:</span>
+          <select id="pageSize" class="h-8 sm:h-9 px-2 rounded-md bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
+                                      border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs sm:text-sm">
             <option>10</option><option>25</option><option>50</option><option>100</option>
           </select>
         </div>
 
-        <div class="text-sm text-neutral-600 dark:text-neutral-400" id="pageStats">0–0 de 0</div>
+        <div class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400" id="pageStats">0–0 de 0</div>
 
         <div class="flex items-center gap-1">
-          <button id="prevPage" class="h-9 w-9 border border-gray-300 dark:border-neutral-700 rounded-md
+          <button id="prevPage" class="h-8 w-8 sm:h-9 sm:w-9 border border-gray-300 dark:border-neutral-700 rounded-md
                                       text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   aria-label="Anterior">
             <span class="material-symbols-outlined text-base">chevron_left</span>
           </button>
-          <button id="nextPage" class="h-9 w-9 border border-gray-300 dark:border-neutral-700 rounded-md
+          <button id="nextPage" class="h-8 w-8 sm:h-9 sm:w-9 border border-gray-300 dark:border-neutral-700 rounded-md
                                       text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   aria-label="Siguiente">
             <span class="material-symbols-outlined text-base">chevron_right</span>
@@ -264,19 +268,19 @@
       <!-- Modal -->
       <div id="productModal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative mx-auto my-8 w-11/12 md:w-3/4 lg:w-2/3 max-h-[85vh] overflow-y-auto
+        <div class="relative mx-auto my-4 sm:my-8 w-[95%] sm:w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto
                     bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
                     border border-gray-300 dark:border-neutral-700
                     rounded-xl shadow-2xl">
-          <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-              <h3 id="modalTitle" class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Gestionar Producto</h3>
+          <div class="p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+              <h3 id="modalTitle" class="text-lg sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">Gestionar Producto</h3>
               <button id="closeModal"
-                      class="btn-cerrar inline-flex items-center justify-center h-9 w-9 rounded-md
+                      class="btn-cerrar inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-md
                             text-neutral-600 dark:text-neutral-400
                             hover:bg-neutral-200 dark:hover:bg-neutral-700"
                       aria-label="Cerrar modal">
-                <span class="material-symbols-outlined">close</span>
+                <span class="material-symbols-outlined text-xl sm:text-2xl">close</span>
               </button>
             </div>
             <div id="modalContent"></div>

@@ -11,6 +11,15 @@ from .decorators import requiere_rol
 @requiere_rol('operador', 'supervisor', 'administrador')
 def dashboard():
     from app.utils.eventohumano import registrar_evento_humano
+    from app.utils.sesiones_activas import registrar_usuario_activo
+    
+    # Registrar al usuario actual como activo
+    rut = session.get('usuario_id')
+    nombre = session.get('usuario_nombre')
+    rol = session.get('usuario_rol')
+    if rut and nombre:
+        registrar_usuario_activo(rut, nombre, rol)
+    
     if session.get('last_page') != 'dashboard':
         usuario_nombre = session.get('usuario_nombre', 'Usuario')
         registrar_evento_humano("navegacion", f"{usuario_nombre} ingresó al Dashboard")

@@ -26,6 +26,9 @@ limiter = Limiter(
     default_limits=["500 per hour", "100 per minute"]  # Límites más generosos
 )
 
+# SocketIO se importa e inicializa más abajo
+socketio_instance = None
+
 def create_app(config_name=None):
     """
     Factory para crear la aplicación Flask
@@ -33,6 +36,8 @@ def create_app(config_name=None):
     Args:
         config_name: Nombre de la configuración ('development', 'production', 'testing')
     """
+    global socketio_instance
+    
     app = Flask(__name__)
     
     # ========== CARGAR CONFIGURACIÓN ==========
@@ -57,6 +62,15 @@ def create_app(config_name=None):
     # CSRF Protection
     csrf.init_app(app)
     logger.info("✓ CSRF Protection activado")
+    
+    # Exentar rutas de API de chat del CSRF
+    @app.before_request
+    def bypass_csrf_for_chat_api():
+        if request.path.startswith('/api/chat/'):
+            from flask import g
+            g._csrf_exempt = True
+    
+    logger.info("✓ Rutas /api/chat/* exentas de CSRF")
     
     # Rate Limiting
     limiter.init_app(app)
@@ -87,6 +101,18 @@ def create_app(config_name=None):
         return User(usuarios[0]) if usuarios else None
 
     app.register_blueprint(routes_bp)
+    
+    # ========== INICIALIZAR SOCKETIO (CHAT TIEMPO REAL) ==========
+    try:
+        from .sockets.chat_ws import init_socketio, registrar_eventos_socket
+        socketio_instance = init_socketio(app)
+        registrar_eventos_socket()
+        logger.info("✓ WebSocket (SocketIO) configurado para chat")
+    except ImportError as e:
+        logger.warning(f"⚠️  SocketIO no disponible: {e}")
+        logger.warning("⚠️  Chat funcionará sin tiempo real (solo polling)")
+    except Exception as e:
+        logger.error(f"❌ Error al inicializar SocketIO: {e}")
     
     @app.errorhandler(Exception)
     def handle_error(e):

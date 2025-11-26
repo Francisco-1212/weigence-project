@@ -1,219 +1,222 @@
 /* ============================================================
-   IA RECOMMENDATION — ULTRA PREMIUM (Azure / OpenAI Style)
+   IA RECOMMENDATION — PROFESIONAL MINIMALISTA
+   IMPORTANTE: Las alturas se controlan desde auditoria.css
+   Este archivo solo contiene estilos del componente
    ============================================================ */
 
 /* Contenedor principal */
 .ia-recommendation {
   position: relative;
-  border-radius: 20px;
-  padding: 2px;              /* grosor del borde */
+  border-radius: 16px;
+  padding: 1px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(12px);
 }
 
-/* Borde IA fluido, inteligente, con luz asimétrica */
+/* Borde IA sutil y profesional */
 .ia-recommendation::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-
-  /* Azure Neural — Light Mode */
   background: linear-gradient(
-    135deg,
-    rgba(109,166,255,0.85) 0%,    /* Azul frío premium */
-    rgba(61,118,224,0.55) 28%,    /* Azul profundo IA */
-    rgba(164,140,255,0.35) 62%,   /* Violeta técnico suave */
-    rgba(255,255,255,0.06) 100%   /* Blanco técnico */
+    145deg,
+    rgba(59, 130, 246, 0.4) 0%,
+    rgba(139, 92, 246, 0.3) 50%,
+    rgba(59, 130, 246, 0.2) 100%
   );
-
-  background-size: 300% 300%;
-  animation: aiBorderFlow 8s ease-in-out infinite;
-
+  background-size: 200% 200%;
+  animation: aiBorderFlow 10s ease-in-out infinite;
   z-index: 0;
   pointer-events: none;
+  opacity: 0.8;
 }
 
 .dark .ia-recommendation::before {
-  /* Azure Neural — Dark Mode */
   background: linear-gradient(
-    135deg,
-    rgba(120,175,255,0.70) 0%,     /* Azul eléctrico suave */
-    rgba(124,95,255,0.48) 35%,     /* Violeta profundo IA */
-    rgba(58,63,117,0.35) 70%,      /* Índigo frío técnico */
-    rgba(255,255,255,0.04) 100%
+    145deg,
+    rgba(96, 165, 250, 0.5) 0%,
+    rgba(167, 139, 250, 0.4) 50%,
+    rgba(96, 165, 250, 0.3) 100%
   );
-
-  background-size: 300% 300%;
+  background-size: 200% 200%;
+  opacity: 1;
 }
 
-/* Animación suave, premium */
 @keyframes aiBorderFlow {
-  0%   { background-position:   0% 50%; }
+  0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
-  100% { background-position:   0% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Luz IA suave en una esquina (inteligencia activa) */
+/* Luz IA minimalista */
 .ia-recommendation::after {
   content: "";
   position: absolute;
-  top: -20%;
-  left: -12%;
-  width: 58%;
-  height: 58%;
+  top: -15%;
+  right: -10%;
+  width: 45%;
+  height: 45%;
   border-radius: 50%;
-
-  /* Glow Azure Neural */
-  background: radial-gradient(
-    circle,
-    rgba(170,195,255,0.32),   /* Luz azul IA */
-    transparent 70%
-  );
-
-  filter: blur(20px);
-  opacity: 0.55;
-  animation: aiCornerGlow 6s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.6;
+  animation: aiCornerGlow 8s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-
-/* Espaciado entre contenido y navegación */
-.ia-recommendation__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
-  min-height: 0; /* Permite que flex funcione correctamente */
-}
-
-/* Scrollbar personalizada para el contenido IA */
-.ia-recommendation__content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ia-recommendation__content::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-
-.ia-recommendation__content::-webkit-scrollbar-thumb {
-  background: rgba(120, 150, 255, 0.3);
-  border-radius: 3px;
-}
-
-.ia-recommendation__content::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 150, 255, 0.5);
-}
-
-.dark .ia-recommendation__content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dark .ia-recommendation__content::-webkit-scrollbar-thumb {
-  background: rgba(140, 160, 255, 0.3);
-}
-
-.dark .ia-recommendation__content::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 160, 255, 0.5);
+.dark .ia-recommendation::after {
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.2), transparent 70%);
+  opacity: 0.7;
 }
 
 @keyframes aiCornerGlow {
-  0%   { opacity: 0.35; transform: translate(0,0); }
-  50%  { opacity: 0.6;  transform: translate(8px,8px); }
-  100% { opacity: 0.35; transform: translate(0,0); }
+  0%   { opacity: 0.4; transform: scale(1); }
+  50%  { opacity: 0.7; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(1); }
 }
 
-/* Cuerpo interno */
+/* Cuerpo interno - Diseño profesional y limpio */
 .ia-recommendation__body {
   position: relative;
   z-index: 2;
   border-radius: inherit;
-  /* Altura controlada por media queries en auditoria.css */
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-
-  padding: 1.25rem 1.25rem 1rem;
-
-  background: var(--card-bg-light);
-  box-shadow:
-    0 10px 26px -12px rgba(0,0,0,0.20),
-    0 4px 14px -4px rgba(120,150,255,0.25); /* luz IA sutil */
+  padding: 1.5rem;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(249, 250, 251, 0.95) 100%
+  );
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 25px -5px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  min-height: 0;
 }
 
 .dark .ia-recommendation__body {
   background: linear-gradient(
-    140deg,
-    rgba(20,22,27,0.96),
-    rgba(28,30,36,0.92)
+    165deg,
+    rgba(17, 24, 39, 0.95) 0%,
+    rgba(31, 41, 55, 0.92) 100%
   );
-  box-shadow:
-    0 12px 32px -14px rgba(0,0,0,0.55),
-    0 4px 12px -4px rgba(120,150,255,0.20);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 10px 30px -5px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(55, 65, 81, 0.6);
 }
 
-/* Meta */
+/* Contenido - Rellena espacio con scroll si es necesario */
+.ia-recommendation__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Scrollbar minimalista y profesional */
+.ia-recommendation__content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ia-recommendation__content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+}
+
+.dark .ia-recommendation__content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ia-recommendation__content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.dark .ia-recommendation__content::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.3);
+}
+
+.ia-recommendation__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.dark .ia-recommendation__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 165, 250, 0.5);
+}
+
+/* Header meta */
 .ia-recommendation__meta {
   display: flex;
   align-items: center;
-  gap: .7rem;
-  font-size: .82rem;
+  gap: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-transform: uppercase;
-  opacity: .85;
+  opacity: 0.85;
+  flex-shrink: 0;
 }
 
 /* Título */
 .ia-recommendation__title {
-  margin-top: 1rem;
-  margin-bottom: 0.75rem;
-  font-size: 1.35rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.3;
+  flex-shrink: 0;
 }
 
 /* Mensaje */
 .ia-recommendation__message {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: .95rem;
-  line-height: 1.65;
-  opacity: .92;
-  white-space: pre-line;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  opacity: 0.92;
+  flex-shrink: 0;
 }
 
-/* Solución */
+/* Solución - Empuja al fondo */
 .ia-recommendation__solution {
   margin-top: auto;
-  margin-bottom: 0;
   padding-top: 1rem;
-  border-top: 1px solid rgba(150,150,150,0.2);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  flex-shrink: 0;
+}
+
+.dark .ia-recommendation__solution {
+  border-top-color: rgba(55, 65, 81, 0.5);
 }
 
 .ia-recommendation__label {
-  font-size: .72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  opacity: .85;
+  opacity: 0.85;
 }
 
 .ia-recommendation__solution-text {
-  margin-top: 0.6rem;
-  font-size: .92rem;
-  line-height: 1.65;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
-
-/* Contenedor de las flechas */
+/* Navegación */
 .ia-recommendation__navigation {
-  margin-top: 0;
+  margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,34 +224,249 @@
   flex-shrink: 0;
 }
 
-/* Fondo oscuro */
 .dark .ia-recommendation__navigation {
-  border-top-color: rgba(255,255,255,0.1);
+  border-top-color: rgba(55, 65, 81, 0.5);
 }
 
-.nav-button {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid rgba(120,140,255,0.35);
-  background: rgba(255,255,255,0.9);
+.ia-nav-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: .25s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.dark .nav-button {
-  background: rgba(25,30,40,0.9);
-  border-color: rgba(140,160,255,0.35);
+.ia-nav-button:hover:not(:disabled) {
+  background: rgba(249, 250, 251, 1);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
 }
 
-.nav-button:hover:not(:disabled) {
-  transform: scale(1.1);
+.dark .ia-nav-button {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(55, 65, 81, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .ia-nav-button:hover:not(:disabled) {
+  background: rgba(55, 65, 81, 1);
+  border-color: rgba(96, 165, 250, 0.6);
+  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
+}
+
+.ia-nav-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .nav-counter {
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  opacity: .75;
+  opacity: 0.75;
 }
+
+/* ============================================================
+   SEVERITY VARIANTS (INFO, WARNING, CRITICAL)
+   ============================================================ */
+
+/* Severity: Warning (Amarillo/Naranja) - Minimalista */
+.ia-recommendation[data-severity="warning"]::before {
+  background: linear-gradient(
+    145deg,
+    rgba(251, 191, 36, 0.4) 0%,
+    rgba(245, 158, 11, 0.3) 50%,
+    rgba(251, 191, 36, 0.2) 100%
+  );
+  background-size: 200% 200%;
+}
+
+.dark .ia-recommendation[data-severity="warning"]::before {
+  background: linear-gradient(
+    145deg,
+    rgba(251, 191, 36, 0.5) 0%,
+    rgba(245, 158, 11, 0.4) 50%,
+    rgba(251, 191, 36, 0.3) 100%
+  );
+  background-size: 200% 200%;
+}
+
+.ia-recommendation[data-severity="warning"]::after {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15), transparent 70%);
+}
+
+.dark .ia-recommendation[data-severity="warning"]::after {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.2), transparent 70%);
+}
+
+/* Severity: Critical (Rojo) - Minimalista */
+.ia-recommendation[data-severity="critical"]::before {
+  background: linear-gradient(
+    145deg,
+    rgba(239, 68, 68, 0.45) 0%,
+    rgba(220, 38, 38, 0.35) 50%,
+    rgba(239, 68, 68, 0.25) 100%
+  );
+  background-size: 200% 200%;
+  animation: aiBorderFlow 7s ease-in-out infinite;
+}
+
+.dark .ia-recommendation[data-severity="critical"]::before {
+  background: linear-gradient(
+    145deg,
+    rgba(248, 113, 113, 0.55) 0%,
+    rgba(239, 68, 68, 0.45) 50%,
+    rgba(248, 113, 113, 0.35) 100%
+  );
+  background-size: 200% 200%;
+}
+
+.ia-recommendation[data-severity="critical"]::after {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.18), transparent 70%);
+  animation: aiCornerGlow 6s ease-in-out infinite;
+}
+
+.dark .ia-recommendation[data-severity="critical"]::after {
+  background: radial-gradient(circle, rgba(248, 113, 113, 0.22), transparent 70%);
+}
+
+/* ============================================================
+   RESPONSIVE - MOBILE FIRST
+   ============================================================ */
+
+/* Mobile (< 640px) */
+@media (max-width: 640px) {
+  /* Contenedor principal IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 400px !important;
+    margin-top: 1rem;
+  }
+
+  /* Ajustes de tipografía */
+  .ia-recommendation__title {
+    font-size: 0.95rem !important;
+    line-height: 1.3;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.8rem !important;
+    line-height: 1.5;
+  }
+
+  .ia-recommendation__meta {
+    gap: 0.5rem;
+    font-size: 0.7rem !important;
+  }
+
+  .ia-recommendation__solution-text {
+    font-size: 0.8rem !important;
+  }
+
+  .nav-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Extra pequeño (< 375px) */
+@media (max-width: 375px) {
+  /* Contenedor IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 350px !important;
+  }
+
+  .ia-recommendation__body {
+    padding: 0.75rem;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Landscape móvil */
+@media (max-width: 896px) and (orientation: landscape) {
+  /* Contenedor IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 320px !important;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Tablet (641px - 1023px) */
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* Contenedor IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 480px !important;
+  }
+
+  .ia-recommendation__body {
+    padding: 1.25rem;
+  }
+
+  .ia-recommendation__title {
+    font-size: 1.05rem !important;
+  }
+
+  .ia-recommendation__message {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Desktop pequeño (1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* Contenedor IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 580px !important;
+  }
+
+  .ia-recommendation__title {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* Desktop grande (1280px+) */
+@media (min-width: 1280px) {
+  /* Contenedor IA - ALTURA FIJA */
+  .ia-recommendation {
+    height: 620px !important;
+  }
+
+  .ia-recommendation__body {
+    padding: 2rem;
+  }
+
+  .ia-recommendation__title {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* ============================================================
+   TOUCH & PRINT
+   ============================================================ */
+
+/* Touch-friendly */
+@media (pointer: coarse) {
+  .nav-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .ia-recommendation__navigation {
+    display: none !important;
+  }
+
+  .ia-recommendation__body {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
+

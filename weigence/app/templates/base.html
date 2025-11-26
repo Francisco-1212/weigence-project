@@ -9,7 +9,8 @@
   <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ia-recommendation.css') }}?v=7.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ia-recommendation.css') }}?v=10.1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-float.css') }}">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -38,19 +39,19 @@
   <meta name="author" content="Weigence Team"/>
 </head>
 <body class="!bg-[var(--bg-light)] dark:!bg-[var(--theme-bg-dark)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
-  <div class="flex min-h-screen w-full overflow-hidden ">
+  <div class="flex min-h-screen w-full overflow-hidden">
     <!-- Sidebar -->
     {% block sidebar %}{% endblock %}
 
   <!-- Contenedor derecho -->
-  <div class="flex flex-col flex-1 min-w-0 pl-64">
+  <div class="flex flex-col flex-1 min-w-0 lg:pl-64">
       <!-- Header -->
-      <header class="sticky top-0 z-50 bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
+      <header class="sticky top-0 z-40 bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-soft">
         {% block top %}{% endblock %}
       </header>
 
       <!-- Contenido -->
-      <main class="flex-1 px-4 py-8 overflow-y-auto overflow-x-hidden">
+      <main class="flex-1 px-2 sm:px-4 py-4 sm:py-8 overflow-y-auto overflow-x-hidden relative z-10">
         {% block contenido %}{% endblock %}
       </main>
     </div>
@@ -79,8 +80,8 @@
     <script src="{{ url_for('static', filename='js/charts.js') }}"> </script>
     <script src="{{ url_for('static', filename='js/notificaciones.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Script de Auditoría -->
-    <script src="{{ url_for('static', filename='js/auditoria.js') }}"></script>
+    <!-- Script de Auditoría Modularizado -->
+    <script type="module" src="{{ url_for('static', filename='js/auditoria-new.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ia-icons.js') }}"></script>
     <script src="{{ url_for('static', filename='js/edit-profile-modal.js') }}"></script>
     
@@ -90,9 +91,13 @@
       {% if session.get('usuario_logueado') %}
       function enviarHeartbeatGlobal() {
         const ahora = new Date().toLocaleTimeString();
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         fetch('/api/usuarios/heartbeat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          }
         })
         .then(response => {
           console.log('[HEARTBEAT-GLOBAL] 📡 Respuesta recibida:', response.status);
@@ -133,6 +138,100 @@
 
   <!-- Modal de edición de perfil -->
   {% include 'componentes/edit_profile_modal.html' %}
+
+  <!-- Botón flotante de chat (estilo redes sociales) -->
+  {% if session.get('usuario_logueado') %}
+  <div id="chat-float-container" class="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3">
+    <!-- Mini panel de chat (oculto por defecto) -->
+    <div id="chat-mini-panel" class="hidden w-[90vw] sm:w-96 h-[600px] max-h-[80vh] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-700 flex flex-col overflow-hidden animate-slide-up">
+      <!-- Header mini chat -->
+      <div class="p-4 bg-[var(--primary-color)] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button id="back-to-users" class="hidden p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <span class="material-symbols-outlined text-xl">arrow_back</span>
+          </button>
+          <span class="material-symbols-outlined">chat</span>
+          <h3 class="font-bold" id="mini-chat-title">Equipo Weigence</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="{{ url_for('main.chat_page_route') }}" target="_blank" class="p-1 hover:bg-white/20 rounded-lg transition-colors" title="Abrir chat completo">
+            <span class="material-symbols-outlined text-xl">open_in_new</span>
+          </a>
+          <button id="close-mini-chat" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Vista de usuarios -->
+      <div id="mini-usuarios-container">
+        <!-- Búsqueda -->
+        <div class="p-3 border-b border-gray-200 dark:border-neutral-700">
+          <div class="relative">
+            <input 
+              type="text" 
+              id="buscar-usuario-mini" 
+              placeholder="Buscar persona..."
+              class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+            >
+            <span class="material-symbols-outlined absolute left-2.5 top-2 text-neutral-400 text-xl">search</span>
+          </div>
+        </div>
+        
+        <!-- Lista de usuarios -->
+        <div id="mini-chat-usuarios" class="flex-1 overflow-y-auto p-2" style="max-height: 490px;">
+          <div class="flex items-center justify-center h-full text-neutral-500 dark:text-neutral-400">
+            <div class="text-center">
+              <span class="material-symbols-outlined text-4xl mb-2 opacity-50">sync</span>
+              <p class="text-sm">Cargando usuarios...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista de chat -->
+      <div id="mini-chat-container" class="hidden flex-1 flex flex-col">
+        <!-- Mensajes -->
+        <div id="mini-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="flex items-center justify-center h-full text-neutral-500 dark:text-neutral-400">
+            <p class="text-sm">Cargando mensajes...</p>
+          </div>
+        </div>
+        
+        <!-- Input de mensaje -->
+        <div class="p-3 border-t border-gray-200 dark:border-neutral-700">
+          <div class="flex gap-2">
+            <input 
+              type="text" 
+              id="mini-chat-input" 
+              placeholder="Escribe un mensaje..."
+              class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+            >
+            <button id="mini-chat-send" class="px-4 py-2 bg-[var(--primary-color)] hover:bg-[var(--primary-600)] text-white rounded-lg transition-colors">
+              <span class="material-symbols-outlined text-xl">send</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón flotante principal -->
+    <button id="chat-float-btn" class="w-14 h-14 sm:w-16 sm:h-16 bg-[var(--primary-color)] hover:bg-[var(--primary-600)] text-white rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center group relative hover:scale-110">
+      <span class="material-symbols-outlined text-2xl sm:text-3xl transition-transform" id="chat-icon">chat</span>
+      <!-- Badge de mensajes no leídos -->
+      <span id="chat-float-badge" class="hidden absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse border-2 border-white">
+        0
+      </span>
+      <!-- Tooltip -->
+      <span class="absolute right-full mr-3 px-3 py-2 bg-neutral-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+        Abrir chat
+      </span>
+    </button>
+  </div>
+
+  <!-- Script modularizado del chat flotante -->
+  <script src="{{ url_for('static', filename='js/chat-float.js') }}"></script>
+  {% endif %}
 
 </body>
 </html>
