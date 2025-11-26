@@ -74,12 +74,15 @@ def alertas():
 # =========================================================
 def generar_alertas_basicas():
     """
-    Crea o actualiza alertas según el stock de productos.
+    Crea o actualiza alertas según el stock de productos y fechas de vencimiento.
     - Marca como 'pendiente' si el stock está bajo o agotado.
     - Marca como 'resuelto' si el producto vuelve a stock normal (>5).
+    - Crea alertas de vencimiento próximo basándose en fecha_ingreso.
     """
     try:
+        from datetime import timedelta
         nuevas = []
+        fecha_hoy = datetime.now()
 
         # Obtener alertas existentes
         existentes = supabase.table("alertas").select("id, titulo, estado").execute().data or []
@@ -87,22 +90,23 @@ def generar_alertas_basicas():
         titulos_resueltos = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "resuelto"}
 
         # --- Obtener productos ---
-        productos = supabase.table("productos").select("idproducto, nombre, stock").execute().data or []
+        productos = supabase.table("productos").select("idproducto, nombre, stock, fecha_ingreso").execute().data or []
 
         for p in productos:
             nombre = p.get("nombre", "Producto sin nombre")
             stock = p.get("stock", 0)
+            idproducto = p.get("idproducto")
+            fecha_ingreso_str = p.get("fecha_ingreso")
+            
             titulo_bajo = f"Bajo stock: {nombre}".lower()
             titulo_agotado = f"Stock agotado: {nombre}".lower()
 
-            # --- Caso 1: stock normal (>5) → resolver alertas existentes ---
-            # --- Caso 1: stock normal (>5) → resolver alertas existentes ---
+            # --- Caso 1: stock normal (>5) → resolver alertas existentes de stock ---
             if stock > 5:
                 for alerta in existentes:
                     titulo = alerta.get("titulo", "").lower()
                     if nombre.lower() in titulo and "stock" in titulo and alerta.get("estado") == "pendiente":
                         supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alerta["id"]).execute()
-
 
             # --- Caso 2: stock == 0 → crear o reactivar alerta roja ---
             elif stock == 0:
@@ -117,7 +121,7 @@ def generar_alertas_basicas():
                             "icono": "cancel",
                             "tipo_color": "rojo",
                             "estado": "pendiente",
-                            "idproducto": p.get("idproducto"),
+                            "idproducto": idproducto,
                             "fecha_creacion": datetime.now().isoformat()
                         })
 
@@ -133,9 +137,103 @@ def generar_alertas_basicas():
                             "icono": "inventory_2",
                             "tipo_color": "amarilla",
                             "estado": "pendiente",
-                            "idproducto": p.get("idproducto"),
+                            "idproducto": idproducto,
                             "fecha_creacion": datetime.now().isoformat()
                         })
+
+            # --- Caso 4: Alertas de Vencimiento basadas en fecha_ingreso ---
+            if fecha_ingreso_str:
+                try:
+                    # Parsear fecha_ingreso (puede venir en varios formatos)
+                    if isinstance(fecha_ingreso_str, str):
+                        fecha_ingreso = datetime.fromisoformat(fecha_ingreso_str.replace('Z', '+00:00'))
+                    else:
+                        fecha_ingreso = fecha_ingreso_str
+                    
+                    # Calcular días desde el ingreso (asumiendo vida útil de 180 días)
+                    dias_desde_ingreso = (fecha_hoy - fecha_ingreso.replace(tzinfo=None)).days
+                    dias_vida_util = 180  # 6 meses de vida útil
+                    dias_restantes = dias_vida_util - dias_desde_ingreso
+                    
+                    # Definir alertas de vencimiento
+                    titulo_vence_30 = f"Vencimiento próximo (30 días): {nombre}".lower()
+                    titulo_vence_15 = f"Vencimiento próximo (15 días): {nombre}".lower()
+                    titulo_vence_7 = f"Vencimiento crítico (7 días): {nombre}".lower()
+                    titulo_vencido = f"Producto vencido: {nombre}".lower()
+                    
+                    # Resolver alertas de vencimiento si el producto está fresco
+                    if dias_restantes > 30:
+                        for titulo_venc in [titulo_vence_30, titulo_vence_15, titulo_vence_7, titulo_vencido]:
+                            if titulo_venc in titulos_activos:
+                                alerta_id = titulos_activos[titulo_venc]
+                                supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alerta_id).execute()
+                    
+                    # Producto vencido
+                    elif dias_restantes <= 0:
+                        if titulo_vencido not in titulos_activos:
+                            if titulo_vencido in titulos_resueltos:
+                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vencido]).execute()
+                            else:
+                                nuevas.append({
+                                    "titulo": f"Producto vencido: {nombre}",
+                                    "descripcion": f"El producto ha superado su vida útil de {dias_vida_util} días. Días vencidos: {abs(dias_restantes)}.",
+                                    "icono": "dangerous",
+                                    "tipo_color": "negro",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat()
+                                })
+                    
+                    # Vencimiento crítico (7 días)
+                    elif 0 < dias_restantes <= 7:
+                        if titulo_vence_7 not in titulos_activos:
+                            if titulo_vence_7 in titulos_resueltos:
+                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_7]).execute()
+                            else:
+                                nuevas.append({
+                                    "titulo": f"Vencimiento crítico (7 días): {nombre}",
+                                    "descripcion": f"El producto vencerá en {dias_restantes} días. ¡Acción urgente requerida!",
+                                    "icono": "warning",
+                                    "tipo_color": "rojo",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat()
+                                })
+                    
+                    # Vencimiento próximo (15 días)
+                    elif 7 < dias_restantes <= 15:
+                        if titulo_vence_15 not in titulos_activos:
+                            if titulo_vence_15 in titulos_resueltos:
+                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_15]).execute()
+                            else:
+                                nuevas.append({
+                                    "titulo": f"Vencimiento próximo (15 días): {nombre}",
+                                    "descripcion": f"El producto vencerá en {dias_restantes} días. Considere priorizar su venta.",
+                                    "icono": "schedule",
+                                    "tipo_color": "naranja",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat()
+                                })
+                    
+                    # Vencimiento próximo (30 días)
+                    elif 15 < dias_restantes <= 30:
+                        if titulo_vence_30 not in titulos_activos:
+                            if titulo_vence_30 in titulos_resueltos:
+                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_30]).execute()
+                            else:
+                                nuevas.append({
+                                    "titulo": f"Vencimiento próximo (30 días): {nombre}",
+                                    "descripcion": f"El producto vencerá en {dias_restantes} días. Monitoree su rotación.",
+                                    "icono": "event",
+                                    "tipo_color": "amarilla",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat()
+                                })
+                
+                except Exception as e:
+                    print(f"⚠️ Error procesando fecha de vencimiento para {nombre}: {e}")
 
         # Insertar nuevas alertas
         if nuevas:

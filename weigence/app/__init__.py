@@ -63,14 +63,33 @@ def create_app(config_name=None):
     csrf.init_app(app)
     logger.info("✓ CSRF Protection activado")
     
-    # Exentar rutas de API de chat del CSRF
+    # Exentar rutas de API de chat y password-reset del CSRF
     @app.before_request
     def bypass_csrf_for_chat_api():
-        if request.path.startswith('/api/chat/'):
+        exempt_paths = [
+            '/api/chat/',
+            '/password-reset',
+            '/api/validate-reset-token',
+            '/api/reset-password'
+        ]
+        
+        # Log de debug para ver todas las rutas que llegan
+        logger.debug(f"[CSRF-CHECK] Ruta: {request.path} | Método: {request.method}")
+        
+        # Verificar si la ruta debe estar exenta
+        is_exempt = any(
+            request.path.startswith(path) if path.endswith('/') else request.path == path 
+            for path in exempt_paths
+        )
+        
+        if is_exempt:
             from flask import g
             g._csrf_exempt = True
+            logger.info(f"[CSRF-EXEMPT] ✓ Ruta {request.path} exenta de CSRF")
+        else:
+            logger.debug(f"[CSRF-PROTECTED] Ruta {request.path} requiere CSRF")
     
-    logger.info("✓ Rutas /api/chat/* exentas de CSRF")
+    logger.info("✓ Rutas /api/chat/*, /password-reset y /api/validate-reset-token exentas de CSRF")
     
     # Rate Limiting
     limiter.init_app(app)
@@ -101,6 +120,27 @@ def create_app(config_name=None):
         return User(usuarios[0]) if usuarios else None
 
     app.register_blueprint(routes_bp)
+    
+    # Exentar rutas específicas de CSRF después de registrar el blueprint
+    @csrf.exempt
+    @app.route("/password-reset", methods=["POST"])
+    def csrf_exempt_password_reset():
+        from app.routes.login import password_reset
+        return password_reset()
+    
+    @csrf.exempt
+    @app.route("/api/validate-reset-token", methods=["POST"])
+    def csrf_exempt_validate_token():
+        from app.routes.login import validate_reset_token
+        return validate_reset_token()
+    
+    @csrf.exempt
+    @app.route("/api/reset-password", methods=["POST"])  
+    def csrf_exempt_reset_password():
+        from app.routes.login import reset_password_submit
+        return reset_password_submit()
+    
+    logger.info("✓ Rutas de recuperación de contraseña exentas de CSRF (método wrapper)")
     
     # ========== INICIALIZAR SOCKETIO (CHAT TIEMPO REAL) ==========
     try:

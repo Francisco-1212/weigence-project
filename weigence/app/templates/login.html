@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}"/>
   <title>Weigence Inventory Login</title>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -285,37 +286,70 @@
           }
 
           const endpoint = forgotForm.dataset.endpoint || '/password-reset';
+          console.log('[ForgotPassword] 📤 Enviando solicitud a:', endpoint);
+          console.log('[ForgotPassword] 📧 Email:', email);
+          
+          // Obtener el token CSRF del meta tag o del formulario de login
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                         || document.querySelector('input[name="csrf_token"]')?.value;
+          console.log('[ForgotPassword] 🔐 CSRF Token:', csrfToken ? 'Encontrado' : 'NO ENCONTRADO');
+          
           if (forgotSubmit) { forgotSubmit.disabled = true; forgotSubmit.textContent = 'Enviando...'; }
           if (forgotFeedback) forgotFeedback.textContent = '';
 
           try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) {
+              headers['X-CSRFToken'] = csrfToken;
+              console.log('[ForgotPassword] ✅ Token CSRF agregado a headers');
+            }
+            
             const res = await fetch(endpoint, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: headers,
               body: JSON.stringify({ email })
             });
 
+            console.log('[ForgotPassword] 📥 Respuesta recibida - Status:', res.status);
+
             if (res.ok) {
+              const jsonResponse = await res.json();
+              console.log('[ForgotPassword] ✅ Respuesta exitosa:', jsonResponse);
+              
               if (forgotFeedback) {
-                forgotFeedback.textContent = 'Si el correo existe en nuestro sistema, recibirás un enlace para restablecer la contraseña.';
+                forgotFeedback.textContent = '✅ Solicitud enviada. Si el correo existe en nuestro sistema, recibirás un enlace de recuperación. Por favor revisa tu bandeja de entrada y spam.';
                 forgotFeedback.className = 'text-sm text-green-600 dark:text-green-400';
               }
               console.log('[ForgotPassword] Solicitud exitosa para:', email);
-              setTimeout(closeModal, 2500);
+              
+              // Mantener el modal abierto por 8 segundos para que el usuario lea el mensaje
+              setTimeout(closeModal, 8000);
             } else {
               let txt = 'Ocurrió un error al solicitar el restablecimiento.';
+              let errorDetail = null;
+              
               try {
                 const j = await res.json();
+                console.error('[ForgotPassword] ❌ Error JSON del servidor:', j);
                 if (j && j.message) txt = j.message;
-              } catch (_) {}
+                errorDetail = j;
+              } catch (parseError) {
+                console.error('[ForgotPassword] ❌ No se pudo parsear JSON de error:', parseError);
+                try {
+                  const textError = await res.text();
+                  console.error('[ForgotPassword] ❌ Respuesta como texto:', textError);
+                } catch (_) {}
+              }
+              
               if (forgotFeedback) {
                 forgotFeedback.textContent = txt;
                 forgotFeedback.className = 'text-sm text-red-600 dark:text-red-400';
               }
-              console.error('[ForgotPassword] Error en servidor:', res.status);
+              console.error('[ForgotPassword] Error en servidor:', res.status, errorDetail);
             }
           } catch (err) {
-            console.warn('[ForgotPassword] Error de conexión:', err);
+            console.error('[ForgotPassword] ❌ Error de conexión COMPLETO:', err);
+            console.error('[ForgotPassword] Stack trace:', err.stack);
             if (forgotFeedback) {
               forgotFeedback.textContent = 'Error de conexión. Intenta nuevamente.';
               forgotFeedback.className = 'text-sm text-yellow-700 dark:text-yellow-400';

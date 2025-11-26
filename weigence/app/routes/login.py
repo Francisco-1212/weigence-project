@@ -124,17 +124,26 @@ def password_reset():
     Responde: JSON con { "success": true/false, "message": "..." }
     """
     try:
+        logger.info("[PASSWORD-RESET] 📥 Nueva solicitud de recuperación de contraseña")
+        
         data = request.get_json()
+        logger.info(f"[PASSWORD-RESET] Datos recibidos: {data}")
+        
         email = data.get("email", "").strip() if data else None
+        logger.info(f"[PASSWORD-RESET] Email procesado: {email}")
         
         if not email:
+            logger.warning("[PASSWORD-RESET] ⚠️ Email vacío o no proporcionado")
             return jsonify({
                 "success": False,
                 "message": "El correo es requerido"
             }), 400
         
         # Buscar usuario en Supabase
+        logger.info(f"[PASSWORD-RESET] 🔍 Buscando usuario en Supabase con email: {email}")
         usuarios = supabase.table("usuarios").select("*").execute().data
+        logger.info(f"[PASSWORD-RESET] Total usuarios encontrados: {len(usuarios)}")
+        
         usuario = next(
             (u for u in usuarios if u.get("correo") == email),
             None
@@ -143,15 +152,17 @@ def password_reset():
         if usuario:
             # Usuario encontrado: enviar correo
             nombre = usuario.get("nombre", "Usuario")
-            print(f"[PASSWORD-RESET] Enviando correo de recuperación a: {email}")
+            logger.info(f"[PASSWORD-RESET] ✅ Usuario encontrado: {nombre} ({email})")
+            logger.info(f"[PASSWORD-RESET] 📧 Intentando enviar correo de recuperación a: {email}")
             
             if enviar_correo_recuperacion(email, nombre):
+                logger.info(f"[PASSWORD-RESET] ✅ Correo enviado exitosamente a: {email}")
                 return jsonify({
                     "success": True,
                     "message": "Si el correo existe en nuestro sistema, recibirás un enlace para restablecer la contraseña."
                 }), 200
             else:
-                print(f"[PASSWORD-RESET] Fallo al enviar correo a: {email}")
+                logger.error(f"[PASSWORD-RESET] ❌ Fallo al enviar correo a: {email}")
                 # Responder con mensaje genérico por seguridad
                 return jsonify({
                     "success": True,
@@ -159,17 +170,149 @@ def password_reset():
                 }), 200
         else:
             # Usuario no encontrado (responder con mensaje genérico por seguridad)
-            print(f"[PASSWORD-RESET] Email no encontrado: {email}")
+            logger.warning(f"[PASSWORD-RESET] ⚠️ Email no encontrado en BD: {email}")
             return jsonify({
                 "success": True,
                 "message": "Si el correo existe en nuestro sistema, recibirás un enlace para restablecer la contraseña."
             }), 200
             
     except Exception as e:
-        print(f"[PASSWORD-RESET] Error: {e}")
+        logger.error(f"[PASSWORD-RESET] ❌❌❌ EXCEPCIÓN CAPTURADA: {e}")
+        logger.error(f"[PASSWORD-RESET] Tipo de error: {type(e).__name__}")
+        logger.error(f"[PASSWORD-RESET] Stack trace:", exc_info=True)
         return jsonify({
             "success": False,
             "message": "Error procesando la solicitud"
+        }), 500
+
+@bp.route("/reset-password", methods=["GET"])
+def reset_password_page():
+    """
+    Página para restablecer contraseña
+    Recibe: token y email por query params
+    """
+    return render_template("reset-password.html")
+
+@bp.route("/api/validate-reset-token", methods=["POST"])
+def validate_reset_token():
+    """
+    Valida si un token de recuperación es válido
+    """
+    try:
+        logger.info("="*60)
+        logger.info(f"[VALIDATE-TOKEN] ========== INICIO ==========")
+        logger.info(f"[VALIDATE-TOKEN] Método: {request.method}")
+        logger.info(f"[VALIDATE-TOKEN] Ruta completa: {request.path}")
+        logger.info(f"[VALIDATE-TOKEN] Headers:")
+        for key, value in request.headers:
+            logger.info(f"  {key}: {value}")
+        
+        # Verificar si CSRF está exento
+        from flask import g
+        csrf_exempt = getattr(g, '_csrf_exempt', False)
+        logger.info(f"[VALIDATE-TOKEN] CSRF exento: {csrf_exempt}")
+        
+        data = request.get_json()
+        logger.info(f"[VALIDATE-TOKEN] Data JSON recibida: {data}")
+        
+        email = data.get("email") if data else None
+        token = data.get("token") if data else None
+        
+        logger.info(f"[VALIDATE-TOKEN] Email extraído: {email}")
+        logger.info(f"[VALIDATE-TOKEN] Token extraído (primeros 20 chars): {token[:20] if token else 'VACÍO'}")
+        
+        if not email or not token:
+            logger.warning(f"[VALIDATE-TOKEN] ❌ Faltan parámetros")
+            return jsonify({
+                "valid": False,
+                "message": "Faltan parámetros requeridos"
+            }), 400
+        
+        # Verificar token
+        logger.info(f"[VALIDATE-TOKEN] Llamando a verificar_token_valido()...")
+        token_valido = verificar_token_valido(email, token)
+        logger.info(f"[VALIDATE-TOKEN] Resultado verificación: {token_valido}")
+        
+        if token_valido:
+            logger.info(f"[VALIDATE-TOKEN] ✅ Token válido para: {email}")
+            return jsonify({
+                "valid": True,
+                "message": "Token válido"
+            }), 200
+        else:
+            logger.warning(f"[VALIDATE-TOKEN] ❌ Token inválido para: {email}")
+            return jsonify({
+                "valid": False,
+                "message": "El enlace ha expirado o ya fue utilizado"
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"[VALIDATE-TOKEN] ❌ Exception: {str(e)}")
+        import traceback
+        logger.error(f"[VALIDATE-TOKEN] Traceback completo:\n{traceback.format_exc()}")
+        return jsonify({
+            "valid": False,
+            "message": "Error al validar el token"
+        }), 500
+
+@bp.route("/api/reset-password", methods=["POST"])
+def reset_password_submit():
+    """
+    Actualiza la contraseña del usuario
+    """
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        token = data.get("token")
+        new_password = data.get("new_password")
+        
+        logger.info(f"[RESET-PASSWORD] Actualizando contraseña para: {email}")
+        
+        if not email or not token or not new_password:
+            return jsonify({
+                "success": False,
+                "message": "Faltan parámetros requeridos"
+            }), 400
+        
+        # Validar token nuevamente
+        if not verificar_token_valido(email, token):
+            logger.warning(f"[RESET-PASSWORD] Token inválido para: {email}")
+            return jsonify({
+                "success": False,
+                "message": "Token inválido o expirado"
+            }), 400
+        
+        # Hash de la nueva contraseña
+        from app.utils.security import hash_password
+        password_hash = hash_password(new_password)
+        
+        # Actualizar contraseña en Supabase
+        logger.info(f"[RESET-PASSWORD] Actualizando password_hash en BD para: {email}")
+        result = supabase.table("usuarios").update({
+            "password_hash": password_hash
+        }).eq("correo", email).execute()
+        
+        if result.data:
+            # Marcar token como usado
+            marcar_token_usado(email, token)
+            logger.info(f"[RESET-PASSWORD] ✅ Contraseña actualizada exitosamente para: {email}")
+            
+            return jsonify({
+                "success": True,
+                "message": "Contraseña actualizada correctamente"
+            }), 200
+        else:
+            logger.error(f"[RESET-PASSWORD] No se pudo actualizar la contraseña para: {email}")
+            return jsonify({
+                "success": False,
+                "message": "No se pudo actualizar la contraseña"
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"[RESET-PASSWORD] Error: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "message": "Error al actualizar la contraseña"
         }), 500
 
 @bp.route("/logout")

@@ -246,7 +246,13 @@ const Alertas = {
 
     // Chip de tipo
     if (filtros.tipo) {
-      const tipoTexto = filtros.tipo === 'rojo' ? '🔴 Rojo' : '🟡 Amarillo';
+      const tiposMap = {
+        'rojo': '🔴 Rojo',
+        'naranja': '🟠 Naranja',
+        'amarillo': '🟡 Amarillo',
+        'negro': '⚫ Negro'
+      };
+      const tipoTexto = tiposMap[filtros.tipo] || filtros.tipo;
       chips.push(`
         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
           <span class="material-symbols-outlined text-sm">label</span>
@@ -496,7 +502,14 @@ const Alertas = {
       const rows = [];
 
       alertas.forEach(row => {
-        const tipo = row.dataset.tipo === 'rojo' ? 'Crítico' : 'Advertencia';
+        const tiposMap = {
+          'rojo': 'Crítico',
+          'naranja': 'Vencimiento',
+          'amarillo': 'Advertencia',
+          'amarilla': 'Advertencia',
+          'negro': 'Vencido'
+        };
+        const tipo = tiposMap[row.dataset.tipo] || row.dataset.tipo;
         const estado = row.dataset.estado.charAt(0).toUpperCase() + row.dataset.estado.slice(1);
         const fecha = new Date(row.dataset.fecha).toLocaleDateString('es-CL');
 
