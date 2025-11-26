@@ -278,17 +278,22 @@ const ChatFloat = {
       });
 
       const data = await response.json();
+      console.log('📦 Respuesta del servidor:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
       
       if (data.conversacion_id) {
-        const usuario = this.state.usuarios.find(u => u.rut === userId);
-        this.abrirChat(data.conversacion_id, usuario || { nombre: userName, rut: userId });
+        const usuario = this.state.usuarios.find(u => u.id === userId);
+        this.abrirChat(data.conversacion_id, usuario || { nombre: userName, id: userId });
       } else {
         throw new Error('No se recibió ID de conversación');
       }
 
     } catch (error) {
       console.error('❌ Error al crear conversación:', error);
-      alert('No se pudo iniciar el chat');
+      alert('No se pudo iniciar el chat: ' + error.message);
     }
   },
 

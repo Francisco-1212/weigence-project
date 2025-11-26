@@ -18,8 +18,10 @@ from .utils.logger import setup_logging, get_logger
 # Cargar variables de entorno
 load_dotenv()
 
-# Inicializar extensiones (a nivel de módulo para que puedan importarse)
 csrf = CSRFProtect()
+
+# Exponer csrf para importación desde otros módulos
+__all__ = ["csrf"]
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri="memory://",
@@ -211,6 +213,13 @@ def create_app(config_name=None):
             logger.error(f"Error al inyectar notificaciones globales: {e}")
             return dict(notificaciones=[], notificaciones_agrupadas={})
 
+
     logger.info("✅ Aplicación Weigence iniciada correctamente")
     logger.info("="*60)
     return app
+
+
+
+# Exponer la instancia csrf para importación directa
+csrf = csrf
+

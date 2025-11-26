@@ -15,7 +15,7 @@ from .chat_api import (
     api_chat_enviar_mensaje,
     api_chat_marcar_leido
 )
-
+from app import csrf  # Importa la instancia CSRF correctamente
 # ==================================================================
 # PÁGINA PRINCIPAL
 # ==================================================================
@@ -43,6 +43,7 @@ def api_conversaciones():
 
 
 @bp.route('/api/chat/conversacion/crear', methods=['POST'])
+@csrf.exempt
 def api_crear_conversacion():
     """POST: Crear o obtener conversación 1:1"""
     return api_chat_crear_conversacion()
@@ -66,12 +67,14 @@ def api_mensajes_query():
 
 
 @bp.route('/api/chat/mensaje/enviar', methods=['POST'])
+@csrf.exempt
 def api_enviar_mensaje():
     """POST: Enviar un mensaje"""
     return api_chat_enviar_mensaje()
 
 
 @bp.route('/api/chat/mensaje/marcar-leido', methods=['POST'])
+@csrf.exempt
 def api_marcar_leido():
     """POST: Marcar mensajes como leídos"""
     return api_chat_marcar_leido()

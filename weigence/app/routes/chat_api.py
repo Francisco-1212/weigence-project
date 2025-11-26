@@ -145,42 +145,49 @@ def api_chat_crear_conversacion():
     """
     try:
         user_id = usuario_autenticado()
+        logger.info(f"👤 Usuario autenticado: {user_id}")
+        
         if not user_id:
             return jsonify({'error': 'No autenticado'}), 401
         
         data = request.get_json()
         participantes = data.get('participantes', [])
         
+        logger.info(f"📦 Participantes recibidos: {participantes}")
+        
         if not participantes or len(participantes) != 1:
             return jsonify({'error': 'Debes especificar exactamente un participante'}), 400
         
         otro_usuario_id = participantes[0]
+        logger.info(f"🔍 Buscando/creando conversación entre {user_id} y {otro_usuario_id}")
         
         # Buscar conversación existente
         conv_existente = obtener_conversacion_entre_usuarios(user_id, otro_usuario_id)
         
         if conv_existente:
-            logger.info(f"Conversación existente: {conv_existente['id']}")
+            logger.info(f"✅ Conversación existente encontrada: {conv_existente['id']}")
             return jsonify({
                 'conversacion_id': conv_existente['id'],
                 'mensaje': 'Conversación existente encontrada'
             }), 200
         
         # Crear nueva conversación
+        logger.info(f"🆕 No existe conversación, creando nueva...")
         nueva_conv = crear_conversacion_1a1(user_id, otro_usuario_id)
         
         if not nueva_conv:
+            logger.error("❌ Error: crear_conversacion_1a1 retornó None")
             return jsonify({'error': 'Error al crear conversación'}), 500
         
-        logger.info(f"Nueva conversación creada: {nueva_conv['id']}")
+        logger.info(f"🎉 Nueva conversación creada: {nueva_conv['id']}")
         return jsonify({
             'conversacion_id': nueva_conv['id'],
             'mensaje': 'Conversación creada'
         }), 201
     
     except Exception as e:
-        logger.error(f"Error en api_chat_crear_conversacion: {e}", exc_info=True)
-        return jsonify({'error': 'Error al crear conversación'}), 500
+        logger.error(f"💥 Error en api_chat_crear_conversacion: {e}", exc_info=True)
+        return jsonify({'error': f'Error al crear conversación: {str(e)}'}), 500
 
 
 # ==================================================================

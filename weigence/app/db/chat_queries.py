@@ -29,6 +29,8 @@ def obtener_conversacion_entre_usuarios(user1_id: str, user2_id: str) -> Optiona
         Dict con datos de conversación o None si no existe
     """
     try:
+        logger.info(f"🔍 Buscando conversación entre {user1_id} y {user2_id}")
+        
         # Obtener conversaciones del primer usuario
         conv1 = supabase.table('chat_participantes')\
             .select('conversacion_id')\
@@ -40,7 +42,10 @@ def obtener_conversacion_entre_usuarios(user1_id: str, user2_id: str) -> Optiona
             .eq('usuario_id', user2_id)\
             .execute()
         
+        logger.info(f"📊 Conversaciones user1: {len(conv1.data) if conv1.data else 0}, user2: {len(conv2.data) if conv2.data else 0}")
+        
         if not conv1.data or not conv2.data:
+            logger.info("❌ Uno de los usuarios no tiene conversaciones")
             return None
         
         # Encontrar conversación común
@@ -48,21 +53,27 @@ def obtener_conversacion_entre_usuarios(user1_id: str, user2_id: str) -> Optiona
         ids2 = {c['conversacion_id'] for c in conv2.data}
         comunes = ids1 & ids2
         
+        logger.info(f"🔗 Conversaciones comunes: {len(comunes)}")
+        
         if not comunes:
             return None
         
         # Retornar la primera conversación común
         conv_id = list(comunes)[0]
+        logger.info(f"✅ Conversación encontrada: {conv_id}")
+        
         conversacion = supabase.table('chat_conversaciones')\
             .select('*')\
             .eq('id', conv_id)\
-            .single()\
             .execute()
         
-        return conversacion.data if conversacion.data else None
+        if conversacion.data and len(conversacion.data) > 0:
+            return conversacion.data[0]
+        
+        return None
     
     except Exception as e:
-        logger.error(f"Error al buscar conversación: {e}")
+        logger.error(f"❌ Error al buscar conversación: {e}", exc_info=True)
         return None
 
 
@@ -78,16 +89,19 @@ def crear_conversacion_1a1(user1_id: str, user2_id: str) -> Optional[Dict[str, A
         Dict con datos de la conversación creada o None si falla
     """
     try:
+        logger.info(f"🆕 Creando conversación entre {user1_id} y {user2_id}")
+        
         # Crear conversación
         conv_result = supabase.table('chat_conversaciones')\
             .insert({})\
             .execute()
         
-        if not conv_result.data:
-            logger.error("Error al crear conversación")
+        if not conv_result.data or len(conv_result.data) == 0:
+            logger.error("❌ Error: No se recibió datos al crear conversación")
             return None
         
         conv_id = conv_result.data[0]['id']
+        logger.info(f"📝 Conversación creada con ID: {conv_id}")
         
         # Registrar participantes
         participantes = [
@@ -95,15 +109,19 @@ def crear_conversacion_1a1(user1_id: str, user2_id: str) -> Optional[Dict[str, A
             {'conversacion_id': conv_id, 'usuario_id': user2_id}
         ]
         
-        supabase.table('chat_participantes')\
+        part_result = supabase.table('chat_participantes')\
             .insert(participantes)\
             .execute()
         
-        logger.info(f"✅ Conversación creada: {conv_id} entre {user1_id} y {user2_id}")
+        if not part_result.data:
+            logger.error(f"❌ Error al registrar participantes en conversación {conv_id}")
+            return None
+        
+        logger.info(f"✅ Conversación creada exitosamente: {conv_id} entre {user1_id} y {user2_id}")
         return conv_result.data[0]
     
     except Exception as e:
-        logger.error(f"Error al crear conversación: {e}")
+        logger.error(f"❌ Error al crear conversación: {e}", exc_info=True)
         return None
 
 
@@ -233,12 +251,12 @@ def obtener_conversaciones_usuario(user_id: str) -> List[Dict[str, Any]]:
 # MENSAJES
 # ==================================================================
 
-def obtener_mensajes_conversacion(conversacion_id: int, limit: int = 100) -> List[Dict[str, Any]]:
+def obtener_mensajes_conversacion(conversacion_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     """
     Obtiene los mensajes de una conversación
     
     Args:
-        conversacion_id: ID de la conversación
+        conversacion_id: ID de la conversación (UUID)
         limit: Cantidad máxima de mensajes a retornar
     
     Returns:
@@ -271,12 +289,12 @@ def obtener_mensajes_conversacion(conversacion_id: int, limit: int = 100) -> Lis
         return []
 
 
-def crear_mensaje(conversacion_id: int, usuario_id: str, contenido: str) -> Optional[Dict[str, Any]]:
+def crear_mensaje(conversacion_id: str, usuario_id: str, contenido: str) -> Optional[Dict[str, Any]]:
     """
     Crea un nuevo mensaje en una conversación
     
     Args:
-        conversacion_id: ID de la conversación
+        conversacion_id: ID de la conversación (UUID)
         usuario_id: RUT del usuario que envía
         contenido: Texto del mensaje
     
@@ -318,19 +336,32 @@ def crear_mensaje(conversacion_id: int, usuario_id: str, contenido: str) -> Opti
         return None
 
 
-def marcar_mensajes_leidos(conversacion_id: int, usuario_id: str, ultimo_mensaje_id: int) -> bool:
+def marcar_mensajes_leidos(conversacion_id: str, usuario_id: str) -> bool:
     """
-    Marca mensajes como leídos actualizando el último mensaje leído
+    Marca mensajes como leídos obteniendo automáticamente el último mensaje
     
     Args:
-        conversacion_id: ID de la conversación
+        conversacion_id: ID de la conversación (UUID)
         usuario_id: RUT del usuario que lee
-        ultimo_mensaje_id: ID del último mensaje leído
     
     Returns:
         True si se actualizó correctamente, False si hubo error
     """
     try:
+        # Obtener el último mensaje de la conversación
+        ultimo_msg = supabase.table('chat_mensajes')\
+            .select('id')\
+            .eq('conversacion_id', conversacion_id)\
+            .order('fecha_envio', desc=True)\
+            .limit(1)\
+            .execute()
+        
+        if not ultimo_msg.data:
+            logger.warning(f"No hay mensajes en conversación {conversacion_id}")
+            return True
+        
+        ultimo_mensaje_id = ultimo_msg.data[0]['id']
+        
         supabase.table('chat_participantes')\
             .update({'ultimo_mensaje_leido': ultimo_mensaje_id})\
             .eq('conversacion_id', conversacion_id)\
@@ -387,12 +418,12 @@ def obtener_usuarios_disponibles(usuario_actual: str) -> List[Dict[str, Any]]:
         return []
 
 
-def validar_participante(conversacion_id: int, usuario_id: str) -> bool:
+def validar_participante(conversacion_id: str, usuario_id: str) -> bool:
     """
     Valida si un usuario es participante de una conversación
     
     Args:
-        conversacion_id: ID de la conversación
+        conversacion_id: ID de la conversación (UUID)
         usuario_id: RUT del usuario
     
     Returns:
