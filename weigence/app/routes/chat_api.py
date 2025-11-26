@@ -5,6 +5,7 @@ Sistema de rutas API para chat 1:1 en tiempo real
 ==================================================================
 """
 from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for
+from api.conexion_supabase import supabase
 from app.db.chat_queries import (
     obtener_conversacion_entre_usuarios,
     crear_conversacion_1a1,
@@ -30,7 +31,6 @@ def usuario_autenticado():
 
 # ==================================================================
 # PÁGINA PRINCIPAL DEL CHAT
-# ==================================================================
 
 def chat_page():
     """Renderiza la página principal del chat"""
@@ -105,46 +105,6 @@ def api_chat_conversaciones():
     """
     try:
         user_id = usuario_autenticado()
-        if not user_id:
-            return jsonify({'error': 'No autenticado'}), 401
-        
-        conversaciones = obtener_conversaciones_usuario(user_id)
-        
-        logger.info(f"Conversaciones para {user_id}: {len(conversaciones)}")
-        return jsonify({'conversaciones': conversaciones}), 200
-    
-    except Exception as e:
-        logger.error(f"Error en api_chat_conversaciones: {e}", exc_info=True)
-        return jsonify({'error': 'Error al cargar conversaciones'}), 500
-
-
-# ==================================================================
-# API: CREAR/OBTENER CONVERSACIÓN
-# ==================================================================
-
-def api_chat_crear_conversacion():
-    """
-    POST /api/chat/conversacion/crear
-    Crea una nueva conversación 1:1 o retorna la existente
-    
-    Request:
-        {
-            "participantes": ["12345678-9"]  // RUT del otro usuario
-        }
-    
-    Response:
-        {
-            "conversacion": {
-                "id": "uuid-123",
-                "nombre": "Chat con Juan",
-                "es_grupal": false,
-                "participantes": [...],
-                "creado": true  // true si se creó, false si ya existía
-            }
-        }
-    """
-    try:
-        user_id = usuario_autenticado()
         logger.info(f"👤 Usuario autenticado: {user_id}")
         
         if not user_id:
@@ -168,6 +128,9 @@ def api_chat_crear_conversacion():
             logger.info(f"✅ Conversación existente encontrada: {conv_existente['id']}")
             return jsonify({
                 'conversacion_id': conv_existente['id'],
+                'conversacion': {
+                    'id': conv_existente['id']
+                },
                 'mensaje': 'Conversación existente encontrada'
             }), 200
         
@@ -178,10 +141,13 @@ def api_chat_crear_conversacion():
         if not nueva_conv:
             logger.error("❌ Error: crear_conversacion_1a1 retornó None")
             return jsonify({'error': 'Error al crear conversación'}), 500
-        
+
         logger.info(f"🎉 Nueva conversación creada: {nueva_conv['id']}")
         return jsonify({
             'conversacion_id': nueva_conv['id'],
+            'conversacion': {
+                'id': nueva_conv['id']
+            },
             'mensaje': 'Conversación creada'
         }), 201
     
@@ -230,11 +196,42 @@ def api_chat_mensajes(conversacion_id):
             return jsonify({'error': 'No tienes acceso a esta conversación'}), 403
         
         mensajes = obtener_mensajes_conversacion(conversacion_id, limit=100)
-        
-        # Agregar campo es_mio a cada mensaje
+
+        # Obtener datos de usuarios en un solo query
+        usuarios_ids = {msg['usuario_id'] for msg in mensajes}
+        usuarios_map = {}
+
+        if usuarios_ids:
+            usuarios_result = supabase.table('usuarios') \
+                .select('rut_usuario, nombre, correo, rol') \
+                .in_('rut_usuario', list(usuarios_ids)) \
+                .execute()
+
+            if usuarios_result.data:
+                for usuario in usuarios_result.data:
+                    usuarios_map[usuario['rut_usuario']] = {
+                        'id': usuario['rut_usuario'],
+                        'nombre': usuario.get('nombre') or 'Usuario',
+                        'apellido': '',
+                        'nombre_completo': usuario.get('nombre') or 'Usuario',
+                        'email': usuario.get('correo') or '',
+                        'rol': usuario.get('rol')
+                    }
+
+        # Enriquecer mensajes con flags y datos de usuario
         for msg in mensajes:
-            msg['es_mio'] = msg['usuario_id'] == user_id
-        
+            es_mio = msg['usuario_id'] == user_id
+            msg['es_mio'] = es_mio
+            msg['es_propio'] = es_mio  # Alias para front-end
+            msg['usuario'] = usuarios_map.get(msg['usuario_id'], {
+                'id': msg['usuario_id'],
+                'nombre': 'Usuario',
+                'apellido': '',
+                'nombre_completo': 'Usuario',
+                'email': '',
+                'rol': ''
+            })
+
         logger.info(f"Mensajes para {conversacion_id}: {len(mensajes)}")
         return jsonify({'mensajes': mensajes}), 200
     
@@ -376,6 +373,49 @@ def api_chat_marcar_leido():
     except Exception as e:
         logger.error(f"Error en api_chat_marcar_leido: {e}", exc_info=True)
         return jsonify({'error': 'Error al marcar mensajes'}), 500
+
+
+# ==================================================================
+# API: CREAR O RECUPERAR CONVERSACIÓN 1 a 1
+# ==================================================================
+
+def api_chat_crear_conversacion():
+    """
+    POST /api/chat/conversacion/crear
+    Crea o recupera una conversación 1 a 1 entre dos usuarios.
+    Request JSON:
+        {
+            "participantes": ["rut_usuario_1", "rut_usuario_2"]
+        }
+    Response:
+        {
+            "success": True,
+            "conversacion_id": "id_conversacion"
+        }
+    """
+    try:
+        data = request.get_json()
+        participantes = data.get("participantes", [])
+        if len(participantes) != 2:
+            return jsonify({"success": False, "error": "Se requieren dos participantes"}), 400
+        usuario_id, destinatario_id = participantes
+        if not usuario_id or not destinatario_id:
+            return jsonify({"success": False, "error": "Faltan IDs de usuario"}), 400
+
+        # Verificar si ya existe la conversación
+        conversacion = obtener_conversacion_entre_usuarios(usuario_id, destinatario_id)
+        if conversacion:
+            return jsonify({"success": True, "conversacion": {"id": conversacion["id"]}})
+
+        # Si no existe, crearla
+        nueva_conversacion = crear_conversacion_1a1(usuario_id, destinatario_id)
+        if nueva_conversacion:
+            return jsonify({"success": True, "conversacion": {"id": nueva_conversacion["id"]}})
+        else:
+            return jsonify({"success": False, "error": "No se pudo crear la conversación"}), 500
+    except Exception as e:
+        logger.error(f"💥 Error en api_chat_crear_conversacion: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ==================================================================

@@ -193,9 +193,9 @@ const Chat = {
 
   renderizarMensajes(mensajes) {
     this.dom.mensajesContenedor.innerHTML = mensajes.map(msg => {
-      const esPropio = msg.es_propio;
-      const usuario = msg.usuario;
-      const iniciales = (usuario.nombre[0] + (usuario.apellido[0] || '')).toUpperCase();
+      const esPropio = msg.es_propio ?? msg.es_mio ?? false;
+      const usuario = msg.usuario || { nombre: 'Usuario', apellido: '' };
+      const iniciales = `${(usuario.nombre?.[0] || 'U').toUpperCase()}${(usuario.apellido?.[0] || '').toUpperCase()}`;
       
       return `
         <div class="flex ${esPropio ? 'justify-end' : 'justify-start'} items-end gap-2">
@@ -324,7 +324,7 @@ const Chat = {
     // Event listeners para los usuarios
     this.dom.listaUsuarios.querySelectorAll('.usuario-item').forEach(item => {
       item.addEventListener('click', () => {
-        const id = parseInt(item.dataset.id);
+        const id = item.dataset.id;
         this.iniciarConversacion(id);
       });
     });
@@ -332,6 +332,13 @@ const Chat = {
 
   async iniciarConversacion(usuarioId) {
     try {
+      // Obtener el ID del usuario actual desde el DOM, variable global, o sesión
+      // Ejemplo: desde un atributo data en el body
+      const usuarioActualId = document.body.dataset.usuarioId;
+      if (!usuarioActualId) {
+        alert('No se pudo obtener el ID del usuario actual');
+        return;
+      }
       const response = await fetch('/api/chat/conversacion/crear', {
         method: 'POST',
         headers: {
@@ -339,16 +346,13 @@ const Chat = {
           'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
         },
         body: JSON.stringify({
-          participantes: [usuarioId]
+          participantes: [usuarioActualId, usuarioId]
         })
       });
-      
       const data = await response.json();
-      
       if (data.conversacion) {
         this.cerrarModal();
         await this.cargarConversaciones();
-        
         // Abrir la conversación nueva o existente
         const conv = this.state.conversaciones.find(c => c.id === data.conversacion.id);
         if (conv) {

@@ -15,7 +15,7 @@ from .chat_api import (
     api_chat_enviar_mensaje,
     api_chat_marcar_leido
 )
-from app import csrf  # Importa la instancia CSRF correctamente
+from app.__init__ import csrf  # Importa la instancia CSRF correctamente
 # ==================================================================
 # PÁGINA PRINCIPAL
 # ==================================================================

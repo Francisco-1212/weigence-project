@@ -265,7 +265,12 @@ const ChatFloat = {
   async iniciarChat(userId, userName) {
     try {
       console.log('💬 Iniciando chat con:', userId, userName);
-
+      // Obtener el ID del usuario actual desde el body
+      const usuarioActualId = document.body.dataset.usuarioId;
+      if (!usuarioActualId) {
+        alert('No se pudo obtener el ID del usuario actual');
+        return;
+      }
       const response = await fetch('/api/chat/conversacion/crear', {
         method: 'POST',
         headers: {
@@ -273,24 +278,23 @@ const ChatFloat = {
           'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
         },
         body: JSON.stringify({
-          participantes: [userId]
+          participantes: [usuarioActualId, userId]
         })
       });
-
       const data = await response.json();
       console.log('📦 Respuesta del servidor:', data);
-      
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
-      
-      if (data.conversacion_id) {
+      if (data.conversacion && data.conversacion.id) {
+        const usuario = this.state.usuarios.find(u => u.id === userId);
+        this.abrirChat(data.conversacion.id, usuario || { nombre: userName, id: userId });
+      } else if (data.conversacion_id) {
         const usuario = this.state.usuarios.find(u => u.id === userId);
         this.abrirChat(data.conversacion_id, usuario || { nombre: userName, id: userId });
       } else {
         throw new Error('No se recibió ID de conversación');
       }
-
     } catch (error) {
       console.error('❌ Error al crear conversación:', error);
       alert('No se pudo iniciar el chat: ' + error.message);
