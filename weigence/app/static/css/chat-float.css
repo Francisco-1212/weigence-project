@@ -50,6 +50,19 @@
   display: flex;
 }
 
+#chat-message-view {
+  flex: 1;
+  min-height: 0; /* permite que los hijos hagan overflow */
+}
+
+#chat-body {
+  flex: 1;
+  min-height: 0;
+  max-height: calc(80vh - 170px); /* reserva espacio para headers/inputs */
+  overflow-y: auto !important;
+  padding-right: 6px;
+}
+
 .dark #chat-mini-panel {
   background: rgb(23, 23, 23);
   border-color: rgba(55, 65, 81, 0.6);
@@ -94,6 +107,27 @@
 
 #mini-chat-usuarios::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.5);
+}
+
+#chat-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dark #chat-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#chat-body::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 10px;
+}
+
+#chat-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
 }
 
 /* Item de usuario */

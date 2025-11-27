@@ -1,4 +1,3 @@
-
 // ============================================================
 //  CHAT CORE - WebSocket layer (no UI)
 //  Responsible for:
@@ -15,6 +14,7 @@ const ChatCore = (() => {
     let socket = null;
     let conectado = false;
     let currentRoom = null;
+    let loadingClient = false;
 
     // UI callbacks
     let onMessageCallback = null;
@@ -27,17 +27,40 @@ const ChatCore = (() => {
     // INIT SOCKET
     // ============================================================
 
+    function ensureClientLoaded() {
+        if (typeof io !== "undefined") return true;
+        if (loadingClient) return false;
+
+        loadingClient = true;
+        const script = document.createElement("script");
+        script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+        script.crossOrigin = "anonymous";
+        script.onload = () => {
+            console.log("[WS] socket.io client cargado desde CDN");
+            loadingClient = false;
+            init();
+        };
+        script.onerror = () => {
+            console.warn("[WS] No se pudo cargar socket.io client (CDN)");
+            loadingClient = false;
+        };
+        document.head.appendChild(script);
+        return false;
+    }
+
     function init() {
         if (socket) return socket;
 
         if (typeof io === "undefined") {
-            console.error("[WS] socket.io client no encontrado. Asegúrate de cargar /socket.io/socket.io.js antes de chat-core.js");
-            return null;
+            console.warn("[WS] socket.io client no encontrado, cargando CDN...");
+            if (!ensureClientLoaded()) return null;
         }
 
         try {
             socket = io({
-                transports: ["websocket"],
+                // Forzamos polling para evitar errores cuando el servidor no soporta WebSocket (e.g. livereload)
+                transports: ["polling"],
+                upgrade: false,
                 reconnection: true,
             });
 
@@ -83,6 +106,16 @@ const ChatCore = (() => {
             // Errors
             socket.on("error", (err) => {
                 console.warn("[WS] error", err);
+                // Si la sesion es invalida, reiniciamos el socket completo
+                if (err && String(err.message || err).toLowerCase().includes("invalid session")) {
+                    try {
+                        socket.disconnect();
+                    } catch (_) {}
+                    socket = null;
+                    conectado = false;
+                    init();
+                    return;
+                }
                 if (onErrorCallback) onErrorCallback(err);
             });
 
@@ -198,3 +231,7 @@ const ChatCore = (() => {
     };
 
 })();
+
+if (typeof window !== "undefined") {
+    window.ChatCore = ChatCore;
+}
