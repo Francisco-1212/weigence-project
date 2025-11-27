@@ -1,7 +1,4 @@
-﻿"""
-Decoradores para control de acceso por roles.
-Utiliza la configuracion centralizada de app/config/roles_permisos.py.
-"""
+﻿
 from functools import wraps
 
 from flask import jsonify, redirect, request, session, url_for
