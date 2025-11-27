@@ -1,32 +1,31 @@
-ws
 from flask import session
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 
 from app.chat import chat_service as svc
-
 
 socketio = None
 
 
 # ============================================================
-# INIT — debe ejecutarse en app/__init__.py
+# INIT - called from app/__init__.py
 # ============================================================
 
 def init_socketio(app):
+    """Inicializa SocketIO y registra eventos."""
     global socketio
     socketio = SocketIO(
         app,
         cors_allowed_origins="*",
         logger=False,
         engineio_logger=False,
-        async_mode="threading"  # simple y compatible
+        async_mode="threading",  # simple y compatible
     )
     registrar_eventos()
     return socketio
 
 
 # ============================================================
-# 1. CONEXIÓN / DESCONEXIÓN
+# 1. CONEXION / DESCONEXION
 # ============================================================
 
 def _get_user():
@@ -36,37 +35,41 @@ def _get_user():
 def on_connect():
     user = _get_user()
     if not user:
-        print("[WS] ❌ conexión denegada (sin sesión)")
+        print("[WS] conexion denegada (sin sesion)")
         return False
 
-    print(f"[WS] ✓ conectado: {user}")
+    print(f"[WS] usuario conectado: {user}")
     emit("ws_connected", {"usuario_id": user})
 
 
 def on_disconnect():
     user = _get_user()
-    print(f"[WS] ✂ desconectado: {user}")
+    print(f"[WS] usuario desconectado: {user}")
 
 
 # ============================================================
-# 2. UNIRSE A UNA CONVERSACIÓN
+# 2. UNIRSE A UNA CONVERSACION
 # ============================================================
 
 def on_join(data):
+    if not isinstance(data, dict):
+        _emit_error("Datos insuficientes")
+        return
+
     user = _get_user()
     conv = data.get("conversacion_id")
-
     if not user or not conv:
-        EmitError("Datos insuficientes")
+        _emit_error("Datos insuficientes")
         return
 
-    if not svc.usuario_puede_ver(conv, user):
-        EmitError("No perteneces a la conversación")
+    conv_str = str(conv)
+    if not svc.usuario_puede_ver(conv_str, user):
+        _emit_error("No perteneces a la conversacion")
         return
 
-    join_room(conv)
-    print(f"[WS] 🚪 {user} entró a {conv}")
-    emit("joined", {"conversacion_id": conv})
+    join_room(conv_str)
+    print(f"[WS] usuario {user} entro a {conv_str}")
+    emit("joined", {"conversacion_id": conv_str})
 
 
 # ============================================================
@@ -74,70 +77,78 @@ def on_join(data):
 # ============================================================
 
 def on_send(data):
+    if not isinstance(data, dict):
+        _emit_error("Faltan datos")
+        return
+
     user = _get_user()
     conv = data.get("conversacion_id")
     txt = data.get("contenido")
-
     if not user or not conv or not txt:
-        EmitError("Faltan datos")
+        _emit_error("Faltan datos")
         return
 
     try:
-        msg = svc.enviar_mensaje_ws(usuario_id=user, conversacion_id=conv, contenido=txt)
+        conv_str = str(conv)
+        msg = svc.enviar_mensaje_ws(usuario_id=user, conversacion_id=conv_str, contenido=str(txt))
     except Exception as e:
         print("[WS] ERROR SEND:", e)
-        EmitError("No se pudo enviar el mensaje")
+        _emit_error("No se pudo enviar el mensaje")
         return
 
-    # Broadcast del mensaje
     socketio.emit(
         "mensaje_nuevo",
         msg,
-        room=conv,
-        include_self=True
+        room=conv_str,
+        include_self=True,
     )
 
-    print(f"[WS] 📩 mensaje en conv {conv} por {user}")
+    print(f"[WS] mensaje en conv {conv_str} por {user}")
 
 
 # ============================================================
-# 4. MARCAR COMO LEÍDO
+# 4. MARCAR COMO LEIDO
 # ============================================================
 
 def on_seen(data):
+    if not isinstance(data, dict):
+        _emit_error("Faltan datos")
+        return
+
     user = _get_user()
     conv = data.get("conversacion_id")
     last = data.get("ultimo_id")
-
-    if not user or not conv or not last:
-        EmitError("Faltan datos")
+    if not user or not conv or last is None:
+        _emit_error("Faltan datos")
         return
 
     try:
-        svc.marcar_leido(conv, user, last)
+        conv_str = str(conv)
+        last_id = int(last)
+        svc.marcar_leido(conv_str, user, last_id)
     except Exception as e:
         print("[WS] ERROR SEEN:", e)
-        EmitError("No se pudo marcar como leído")
+        _emit_error("No se pudo marcar como leido")
         return
 
     socketio.emit(
         "mensaje_visto",
         {
-            "conversacion_id": conv,
+            "conversacion_id": conv_str,
             "usuario_id": user,
-            "ultimo_id": last
+            "ultimo_id": last_id,
         },
-        room=conv
+        room=conv_str,
     )
 
-    print(f"[WS] 👀 visto conv {conv} por {user}")
+    print(f"[WS] visto conv {conv_str} por {user}")
 
 
 # ============================================================
 # 5. UTILIDAD
 # ============================================================
 
-def EmitError(msg):
+def _emit_error(msg):
     emit("error", {"msg": msg})
 
 
@@ -153,4 +164,3 @@ def registrar_eventos():
     socketio.on_event("join", on_join)
     socketio.on_event("send", on_send)
     socketio.on_event("seen", on_seen)
-

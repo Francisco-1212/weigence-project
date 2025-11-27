@@ -1,9 +1,12 @@
-from flask import render_template, jsonify, request, session, redirect, url_for, flash
-from . import bp
-from api.conexion_supabase import supabase
+import json
 from datetime import datetime
 from pathlib import Path
-import json
+
+from flask import jsonify, request
+
+from api.conexion_supabase import supabase
+
+from . import bp
 from .utils import requiere_login
 
 last_manual_update = datetime.now()
@@ -17,29 +20,24 @@ def check_sistema_integral():
     except Exception:
         estados.append("db_fail")
 
-    data_dir = Path(__file__).parent / 'data'
+    data_dir = Path(__file__).parent / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
-    errors_file = data_dir / 'errors_log.json'
+    errors_file = data_dir / "errors_log.json"
     errores = []
 
     if errors_file.exists():
-        with open(errors_file, 'r', encoding='utf-8') as f:
+        with open(errors_file, "r", encoding="utf-8") as f:
             errores = json.load(f)
 
-    if "db_fail" in estados:
-        estado_general = "offline"
-    elif errores:
-        estado_general = "warning"
-    else:
-        estado_general = "online"
+    estado_general = "offline" if "db_fail" in estados else ("warning" if errores else "online")
 
     detalles = []
     if "db_fail" in estados:
         detalles.append("No se pudo conectar a la base de datos")
-    for e in errores[:10]:
-        ts = e.get('timestamp', '')
-        msg = e.get('message', '')
-        detalles.append(f"{ts} - {msg}")
+    detalles.extend(
+        f"{e.get('timestamp', '')} - {e.get('message', '')}"
+        for e in errores[:10]
+    )
 
     return estado_general, detalles
 
@@ -48,7 +46,6 @@ def check_sistema_integral():
 @requiere_login
 def api_status():
     estado, detalles = check_sistema_integral()
-    global last_manual_update
     return jsonify({
         'connection_state': estado,
         'status_details': detalles,
