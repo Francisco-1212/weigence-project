@@ -1,3 +1,4 @@
+ws
 from flask import session
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
@@ -20,7 +21,7 @@ def init_socketio(app):
         engineio_logger=False,
         async_mode="threading"  # simple y compatible
     )
-    _registrar_eventos()
+    registrar_eventos()
     return socketio
 
 
@@ -28,7 +29,6 @@ def init_socketio(app):
 # 1. CONEXIÓN / DESCONEXIÓN
 # ============================================================
 
-@staticmethod
 def _get_user():
     return session.get("usuario_id")
 

@@ -1,29 +1,52 @@
-// ELEMENTOS
-const btn = document.getElementById("chat-float-btn");
-const panel = document.getElementById("chat-mini-panel");
-const closeBtn = document.getElementById("chat-close-btn");
+﻿
+(() => {
+    // DOM elements
+    const btn = document.getElementById("chat-float-btn");
+    const panel = document.getElementById("chat-mini-panel");
+    const closeBtn = document.getElementById("chat-close-btn");
 
-// Estado
-let abierto = false;
-
-// Mostrar panel
-btn.addEventListener("click", () => {
-    panel.classList.remove("hidden");
-    btn.classList.add("hidden");
-    abierto = true;
-});
-
-// Cerrar panel
-closeBtn.addEventListener("click", () => {
-    panel.classList.add("hidden");
-    btn.classList.remove("hidden");
-    abierto = false;
-});
-document.addEventListener("click", (e) => {
-    if (!abierto) return;
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-        panel.classList.add("hidden");
-        btn.classList.remove("hidden");
-        abierto = false;
+    if (!btn || !panel || !closeBtn) {
+        console.warn("[CHAT] chat-float: elementos no encontrados, se omite binding");
+        return;
     }
-});
+
+    let abierto = false;
+
+    const bindOnce = (target, event, key, handler) => {
+        if (!target) return;
+        const flag = `__chatBound_${key}`;
+        if (target[flag]) return;
+        target.addEventListener(event, handler);
+        target[flag] = true;
+    };
+
+    const open = () => {
+        if (window.ChatFloat && typeof window.ChatFloat.openPanel === "function") {
+            window.ChatFloat.openPanel();
+        } else {
+            panel.classList.remove("hidden");
+            btn.classList.add("hidden");
+        }
+        abierto = true;
+    };
+
+    const close = () => {
+        if (window.ChatFloat && typeof window.ChatFloat.closePanel === "function") {
+            window.ChatFloat.closePanel();
+        } else {
+            panel.classList.add("hidden");
+            btn.classList.remove("hidden");
+        }
+        abierto = false;
+    };
+
+    bindOnce(btn, "click", "open", open);
+    bindOnce(closeBtn, "click", "close", close);
+    bindOnce(document, "click", "outside", (e) => {
+        if (!abierto) return;
+        const target = e.target;
+        if (!panel.contains(target) && !btn.contains(target)) {
+            close();
+        }
+    });
+})();

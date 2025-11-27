@@ -6,6 +6,11 @@
 
 /* Contenedor principal */
 .ia-recommendation {
+  --ia-divider: rgba(226, 232, 240, 0.4);
+  --ia-sheen: rgba(120, 150, 255, 0.08);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
   position: relative;
   border-radius: 16px;
   padding: 1px;
@@ -13,6 +18,11 @@
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(12px);
+}
+
+.ia-recommendation.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Borde IA sutil y profesional */
@@ -71,6 +81,11 @@
 .dark .ia-recommendation::after {
   background: radial-gradient(circle, rgba(167, 139, 250, 0.2), transparent 70%);
   opacity: 0.7;
+}
+
+.dark .ia-recommendation {
+  --ia-divider: rgba(255, 255, 255, 0.1);
+  --ia-sheen: rgba(160, 190, 255, 0.12);
 }
 
 @keyframes aiCornerGlow {
@@ -191,12 +206,12 @@
 .ia-recommendation__solution {
   margin-top: auto;
   padding-top: 1rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  border-top: 1px solid var(--ia-divider);
   flex-shrink: 0;
 }
 
 .dark .ia-recommendation__solution {
-  border-top-color: rgba(55, 65, 81, 0.5);
+  border-top-color: var(--ia-divider);
 }
 
 .ia-recommendation__label {
@@ -216,7 +231,7 @@
 .ia-recommendation__navigation {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  border-top: 1px solid var(--ia-divider);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,7 +240,7 @@
 }
 
 .dark .ia-recommendation__navigation {
-  border-top-color: rgba(55, 65, 81, 0.5);
+  border-top-color: var(--ia-divider);
 }
 
 .ia-nav-button {
@@ -333,6 +348,41 @@
 
 .dark .ia-recommendation[data-severity="critical"]::after {
   background: radial-gradient(circle, rgba(248, 113, 113, 0.22), transparent 70%);
+}
+
+/* ============================================================
+   ESTADOS Y ANIMACIONES (carga/actualización)
+   ============================================================ */
+
+.ia-recommendation[data-ia-status="loading"] .ia-recommendation__body {
+  position: relative;
+  overflow: hidden;
+}
+
+.ia-recommendation[data-ia-status="loading"] .ia-recommendation__body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 35%, var(--ia-sheen) 50%, transparent 65%);
+  animation: iaSheen 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes iaSheen {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+.ia-recommendation__title.updating,
+.ia-recommendation__message.updating,
+.ia-recommendation__solution-text.updating {
+  animation: iaContentUpdate 0.35s ease;
+}
+
+@keyframes iaContentUpdate {
+  0%   { opacity: 0.35; transform: translateY(4px); }
+  60%  { opacity: 1; transform: translateY(-2px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================================
@@ -469,4 +519,3 @@
     border: 1px solid #ccc;
   }
 }
-

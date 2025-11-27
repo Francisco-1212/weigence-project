@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es" class="{{ 'dark' if session.get('theme') == 'dark' else '' }}">
 <head>
@@ -8,14 +9,16 @@
   <title>{% block title %}Weigence{% endblock %}</title>
   <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
 
-  <!-- CSS global -->
+  <!-- Libs -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- CSS global (debe ir DESPUÉS de Tailwind CDN para evitar sobre-escritura) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/ia-recommendation.css') }}?v=10.1">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-float.css') }}">
-
-  <!-- Libs -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="{{ url_for('static', filename='js/audit-detail-modal.js') }}" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
@@ -161,7 +164,18 @@
   {% if session.get("usuario_id") %}
     {% include "componentes/chat.html" %}
 
-
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // Fallback si /socket.io/socket.io.js no carga (p.ej. modo offline o ruta no expuesta)
+      if (typeof io === "undefined") {
+        var fallback = document.createElement("script");
+        fallback.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+        fallback.crossOrigin = "anonymous";
+        document.head.appendChild(fallback);
+      }
+    </script>
+    <script src="{{ url_for('static', filename='js/chat/chat-core.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat/chat-panel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat/chat-float.js') }}"></script>
 
   {% endif %}

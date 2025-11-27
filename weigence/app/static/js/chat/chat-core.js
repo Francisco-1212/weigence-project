@@ -1,23 +1,22 @@
+
 // ============================================================
-//  CHAT CORE — Capa WebSocket, sin UI
-//  Responsable de:
-//      - conectar/desconectar
-//      - eventos del servidor
-//      - envío de mensajes
+//  CHAT CORE - WebSocket layer (no UI)
+//  Responsible for:
+//      - connect/disconnect
+//      - server events
+//      - send messages
 //      - join/leave rooms
-//      - callbacks globales
+//      - UI callbacks
 // ============================================================
 
 const ChatCore = (() => {
 
-    // ---------------------------------------------
-    // Propiedades internas
-    // ---------------------------------------------
+    // Internal state
     let socket = null;
     let conectado = false;
     let currentRoom = null;
 
-    // Callbacks del UI
+    // UI callbacks
     let onMessageCallback = null;
     let onSeenCallback = null;
     let onJoinedCallback = null;
@@ -31,49 +30,59 @@ const ChatCore = (() => {
     function init() {
         if (socket) return socket;
 
+        if (typeof io === "undefined") {
+            console.error("[WS] socket.io client no encontrado. Asegúrate de cargar /socket.io/socket.io.js antes de chat-core.js");
+            return null;
+        }
+
         try {
             socket = io({
                 transports: ["websocket"],
                 reconnection: true,
             });
 
-            // === eventos base ===
+            // Base events
             socket.on("connect", () => {
                 conectado = true;
-                console.log("[WS] ✓ conectado");
+                console.log("[WS] conectado");
+
+                // Auto rejoin if room was selected before reconnect
+                if (currentRoom) {
+                    socket.emit("join", { conversacion_id: currentRoom });
+                }
             });
 
             socket.on("disconnect", () => {
                 conectado = false;
-                console.log("[WS] ✂ desconectado");
+                console.log("[WS] desconectado");
             });
 
-            // === handshake backend ===
+            // Backend handshake
             socket.on("ws_connected", (data) => {
-                console.log("[WS] sesión OK →", data);
+                console.log("[WS] sesion OK", data);
             });
 
-            // === mensajes nuevos ===
+            // New messages
             socket.on("mensaje_nuevo", (msg) => {
-                console.log("[WS] 📩 nuevo msg", msg);
+                console.log("[WS] nuevo mensaje", msg);
                 if (onMessageCallback) onMessageCallback(msg);
             });
 
-            // === vistos ===
+            // Seen
             socket.on("mensaje_visto", (data) => {
-                console.log("[WS] 👀 visto", data);
+                console.log("[WS] mensaje visto", data);
                 if (onSeenCallback) onSeenCallback(data);
             });
 
-            // === join exitoso ===
+            // Join success
             socket.on("joined", (data) => {
-                console.log("[WS] 🚪 joined", data);
+                console.log("[WS] joined", data);
                 if (onJoinedCallback) onJoinedCallback(data);
             });
 
-            // === errores ===
+            // Errors
             socket.on("error", (err) => {
-                console.warn("[WS] ❗ error", err);
+                console.warn("[WS] error", err);
                 if (onErrorCallback) onErrorCallback(err);
             });
 
@@ -86,16 +95,37 @@ const ChatCore = (() => {
 
 
     // ============================================================
-    // JOIN ROOM
+    // JOIN / LEAVE ROOM
     // ============================================================
 
-    function join(conversacion_id) {
+    function join(conversacionId) {
         if (!socket) init();
+        if (!conversacionId) {
+            console.warn("[WS] join > conversacion_id invalido");
+            return;
+        }
 
-        if (!conversacion_id) return;
-        currentRoom = conversacion_id;
+        // Normalizar a string para comparaciones consistentes
+        currentRoom = String(conversacionId);
 
-        socket.emit("join", { conversacion_id });
+        if (!conectado) {
+            console.warn("[WS] join > sin conexion, se reintentara al reconectar");
+            return;
+        }
+
+        socket.emit("join", { conversacion_id: conversacionId });
+    }
+
+    function leave() {
+        if (!socket || !currentRoom) return;
+
+        try {
+            socket.emit("leave", { conversacion_id: currentRoom });
+        } catch (err) {
+            console.warn("[WS] leave > error", err);
+        }
+
+        currentRoom = null;
     }
 
 
@@ -104,14 +134,20 @@ const ChatCore = (() => {
     // ============================================================
 
     function send(texto) {
-        if (!socket || !currentRoom) {
-            console.warn("[WS] send > SIN ROOM O SOCKET");
+        const contenido = (texto || "").trim();
+        if (!contenido) {
+            console.warn("[WS] send > texto vacio");
+            return;
+        }
+
+        if (!socket || !conectado || !currentRoom) {
+            console.warn("[WS] send > sin room o sin conexion");
             return;
         }
 
         socket.emit("send", {
             conversacion_id: currentRoom,
-            contenido: texto,
+            contenido,
         });
     }
 
@@ -120,18 +156,19 @@ const ChatCore = (() => {
     // MARK AS SEEN
     // ============================================================
 
-    function seen(msg_id) {
-        if (!socket || !currentRoom) return;
+    function seen(msgId) {
+        if (!socket || !conectado || !currentRoom) return;
+        if (!msgId) return;
 
         socket.emit("seen", {
             conversacion_id: currentRoom,
-            ultimo_id: msg_id,
+            ultimo_id: msgId,
         });
     }
 
 
     // ============================================================
-    // UI CALLBACKS (inversión de control)
+    // UI CALLBACKS (inversion de control)
     // ============================================================
 
     function onMessage(cb) { onMessageCallback = cb; }
@@ -141,14 +178,18 @@ const ChatCore = (() => {
 
 
     // ============================================================
-    // API pública
+    // Public API
     // ============================================================
 
     return {
         init,
         join,
+        leave,
         send,
         seen,
+
+        isConnected: () => conectado,
+        currentRoom: () => currentRoom,
 
         onMessage,
         onSeen,

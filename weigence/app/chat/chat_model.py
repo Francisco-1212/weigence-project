@@ -1,4 +1,9 @@
+
 from api.conexion_supabase import supabase
+try:
+    from postgrest.exceptions import APIError
+except ImportError:
+    APIError = Exception
 
 
 # ============================================================
@@ -9,12 +14,15 @@ def obtener_usuario(rut):
     """
     Retorna datos mínimos del usuario para mostrar mensajes y lista.
     """
-    r = supabase.table("usuarios") \
-        .select("rut_usuario, nombre, rol") \
-        .eq("rut_usuario", rut) \
-        .single() \
-        .execute()
-    return r.data
+    try:
+        r = supabase.table("usuarios") \
+            .select("rut_usuario, nombre, rol") \
+            .eq("rut_usuario", rut) \
+            .single() \
+            .execute()
+        return r.data
+    except APIError:
+        return None
 
 
 # ============================================================
@@ -22,12 +30,15 @@ def obtener_usuario(rut):
 # ============================================================
 
 def obtener_conversacion_por_id(conv_id):
-    r = supabase.table("chat_conversaciones") \
-        .select("*") \
-        .eq("id", conv_id) \
-        .single() \
-        .execute()
-    return r.data
+    try:
+        r = supabase.table("chat_conversaciones") \
+            .select("*") \
+            .eq("id", conv_id) \
+            .single() \
+            .execute()
+        return r.data
+    except APIError:
+        return None
 
 
 def obtener_conversacion_entre_usuarios(user1, user2):
@@ -35,10 +46,13 @@ def obtener_conversacion_entre_usuarios(user1, user2):
     Encuentra una conversación existente entre user1 y user2.
     Regla: ambos deben aparecer como participantes de la misma conversación.
     """
-    r = supabase.table("chat_participantes") \
-        .select("conversacion_id, usuario_id") \
-        .in_("usuario_id", [user1, user2]) \
-        .execute()
+    try:
+        r = supabase.table("chat_participantes") \
+            .select("conversacion_id, usuario_id") \
+            .in_("usuario_id", [user1, user2]) \
+            .execute()
+    except APIError:
+        return None
 
     if not r.data:
         return None
@@ -124,10 +138,13 @@ def obtener_participantes(conversacion_id):
     """
     Retorna lista de IDs usuario
     """
-    r = supabase.table("chat_participantes") \
-        .select("usuario_id") \
-        .eq("conversacion_id", conversacion_id) \
-        .execute()
+    try:
+        r = supabase.table("chat_participantes") \
+            .select("usuario_id") \
+            .eq("conversacion_id", conversacion_id) \
+            .execute()
+    except APIError:
+        return []
 
     if not r.data:
         return []
@@ -139,13 +156,16 @@ def validar_usuario_en_conversacion(conversacion_id, usuario_id):
     """
     True si el usuario pertenece a la conversación.
     """
-    r = supabase.table("chat_participantes") \
-        .select("id") \
-        .eq("conversacion_id", conversacion_id) \
-        .eq("usuario_id", usuario_id) \
-        .single() \
-        .execute()
-    return bool(r.data)
+    try:
+        r = supabase.table("chat_participantes") \
+            .select("id") \
+            .eq("conversacion_id", conversacion_id) \
+            .eq("usuario_id", usuario_id) \
+            .single() \
+            .execute()
+        return bool(r.data)
+    except APIError:
+        return False
 
 
 def obtener_participacion(conversacion_id, usuario_id):
@@ -153,14 +173,16 @@ def obtener_participacion(conversacion_id, usuario_id):
     Obtiene datos de la fila del participante:
     ultimo_mensaje_leido, etc
     """
-    r = supabase.table("chat_participantes") \
-        .select("ultimo_mensaje_leido") \
-        .eq("conversacion_id", conversacion_id) \
-        .eq("usuario_id", usuario_id) \
-        .single() \
-        .execute()
-
-    return r.data
+    try:
+        r = supabase.table("chat_participantes") \
+            .select("ultimo_mensaje_leido") \
+            .eq("conversacion_id", conversacion_id) \
+            .eq("usuario_id", usuario_id) \
+            .single() \
+            .execute()
+        return r.data
+    except APIError:
+        return None
 
 
 def marcar_mensajes_leidos(conversacion_id, usuario_id, ultimo_mensaje_id):
@@ -175,10 +197,13 @@ def marcar_mensajes_leidos(conversacion_id, usuario_id, ultimo_mensaje_id):
         .execute()
 
 def obtener_conversaciones_de_usuario(rut):
-    r = supabase.table("chat_conversaciones") \
-        .select("*") \
-        .order("ultimo_mensaje_timestamp", desc=True) \
-        .execute()
+    try:
+        r = supabase.table("chat_conversaciones") \
+            .select("*") \
+            .order("ultimo_mensaje_timestamp", desc=True) \
+            .execute()
+    except APIError:
+        return []
 
     if not r.data:
         return []
@@ -199,6 +224,36 @@ def obtener_ultimo_mensaje(conversacion_id):
         .execute()
 
     return r.data[0] if r.data else None
+
+
+def contar_no_leidos(conversacion_id, usuario_id):
+    """
+    Cuenta mensajes no leídos por un usuario en una conversación.
+    Se considera no leído si:
+      - pertenece a la conversación
+      - id > ultimo_mensaje_leido registrado en chat_participantes (si existe)
+      - el emisor es distinto al usuario
+    """
+    # Último mensaje leído
+    part = obtener_participacion(conversacion_id, usuario_id)
+    last_seen = part.get("ultimo_mensaje_leido") if part else None
+
+    try:
+        query = supabase.table("chat_mensajes") \
+            .select("id, usuario_id") \
+            .eq("conversacion_id", conversacion_id)
+
+        if last_seen:
+            query = query.gt("id", last_seen)
+
+        res = query.execute()
+    except APIError:
+        return 0
+
+    if not res.data:
+        return 0
+
+    return len([m for m in res.data if m.get("usuario_id") != usuario_id])
 
 def obtener_todos_usuarios():
     r = supabase.table("usuarios") \
