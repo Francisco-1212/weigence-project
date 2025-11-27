@@ -18,10 +18,8 @@ from .utils.logger import setup_logging, get_logger
 # Cargar variables de entorno
 load_dotenv()
 
+# Inicializar extensiones (a nivel de módulo para que puedan importarse)
 csrf = CSRFProtect()
-
-# Exponer csrf para importación desde otros módulos
-__all__ = ["csrf"]
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri="memory://",
@@ -59,7 +57,9 @@ def create_app(config_name=None):
     logger.info("="*60)
     logger.info(f"🚀 Weigence Inventory - Modo: {config_name.upper()}")
     logger.info("="*60)
-    
+    from app.chat.chat_api import bp_chat
+    app.register_blueprint(bp_chat)
+
     # ========== INICIALIZAR EXTENSIONES DE SEGURIDAD ==========
     # CSRF Protection
     csrf.init_app(app)
@@ -120,7 +120,7 @@ def create_app(config_name=None):
         from api.conexion_supabase import supabase
         usuarios = supabase.table("usuarios").select("*").eq("rut_usuario", user_id).execute().data
         return User(usuarios[0]) if usuarios else None
-
+    
     app.register_blueprint(routes_bp)
     
     # Exentar rutas específicas de CSRF después de registrar el blueprint
@@ -146,9 +146,10 @@ def create_app(config_name=None):
     
     # ========== INICIALIZAR SOCKETIO (CHAT TIEMPO REAL) ==========
     try:
-        from .sockets.chat_ws import init_socketio, registrar_eventos_socket
+        from .chat.sockets.chat_ws import init_socketio, registrar_eventos
         socketio_instance = init_socketio(app)
-        registrar_eventos_socket()
+        registrar_eventos()
+
         logger.info("✓ WebSocket (SocketIO) configurado para chat")
     except ImportError as e:
         logger.warning(f"⚠️  SocketIO no disponible: {e}")

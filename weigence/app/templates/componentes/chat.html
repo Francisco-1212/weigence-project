@@ -1,0 +1,48 @@
+<div id="chat-float-container">
+
+    <!-- BOTÓN FLOTANTE -->
+    <button id="chat-float-btn"
+        class="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-500 shadow-xl hover:bg-indigo-600 text-white text-2xl">
+        ...
+    </button>
+
+    <!-- PANEL -->
+    <div id="chat-mini-panel" class="hidden flex flex-col">
+
+        <!-- HEADER -->
+        <div class="px-4 py-2 border-b flex justify-between items-center bg-white dark:bg-neutral-900">
+            <span id="chat-title" class="font-semibold text-sm">Usuarios</span>
+            <button id="chat-close-btn" class="text-xl">×</button>
+        </div>
+
+        <!-- LISTA DE USUARIOS -->
+        <div id="chat-user-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-white dark:bg-neutral-900 text-sm">
+            <div class="text-center text-neutral-500">
+                Cargando usuarios...
+            </div>
+        </div>
+
+        <!-- CHAT -->
+        <div id="chat-message-view" class="hidden flex flex-col flex-1 bg-white dark:bg-neutral-900">
+
+            <!-- HEADER CHAT -->
+            <div class="px-4 py-2 border-b flex items-center gap-2">
+                <button id="chat-back-btn" class="text-indigo-500 text-xs">← Volver</button>
+                <span id="chat-target-name" class="font-semibold text-sm"></span>
+            </div>
+
+            <!-- MENSAJES -->
+            <div id="chat-body" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+
+            <!-- INPUT -->
+            <div class="p-3 border-t">
+                <input
+                    id="chat-input"
+                    type="text"
+                    class="w-full rounded-lg px-3 py-2 bg-neutral-200 dark:bg-neutral-800 outline-none"
+                    placeholder="Escribe un mensaje...">
+            </div>
+        </div>
+
+    </div>
+</div>

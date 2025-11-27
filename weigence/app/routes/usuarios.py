@@ -511,3 +511,4 @@ def api_usuario_heartbeat():
         import traceback
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
