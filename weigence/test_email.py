@@ -93,7 +93,7 @@ except Exception as e:
 # 5. Probar importación de módulo de email
 print("\n5️⃣  Verificando módulo de email...")
 try:
-    from app.email_utils import enviar_correo_recuperacion
+    from app.utils.email_utils import enviar_correo_recuperacion
     print("   ✅ Módulo email_utils importado correctamente")
 except ImportError as e:
     print(f"   ❌ Error importando email_utils: {e}")

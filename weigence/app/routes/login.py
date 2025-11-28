@@ -1,7 +1,7 @@
 from flask import render_template, jsonify, request, session, redirect, url_for, flash
 from . import bp
 from api.conexion_supabase import supabase
-from app.email_utils import enviar_correo_recuperacion, verificar_token_valido, marcar_token_usado
+from app.utils.email_utils import enviar_correo_recuperacion, verificar_token_valido, marcar_token_usado
 from app.utils.security import verify_password
 import logging
 
