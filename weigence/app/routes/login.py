@@ -119,8 +119,7 @@ def login():
 @bp.route("/password-reset", methods=["POST"])
 def password_reset():
     """
-    Endpoint para solicitar recuperación de contraseña
-    Rate limited: 5 intentos por hora
+    Endpoint para solicitar recuperación de contraseña (sin validación CSRF)
     Recibe: JSON con { "email": "usuario@example.com" }
     Responde: JSON con { "success": true/false, "message": "..." }
     """
@@ -197,60 +196,66 @@ def reset_password_page():
 @bp.route("/api/validate-reset-token", methods=["POST"])
 def validate_reset_token():
     """
-    Valida si un token de recuperación es válido
+    Valida si un token de recuperación es válido (sin validación CSRF)
     """
     try:
-        logger.info("="*60)
-        logger.info(f"[VALIDATE-TOKEN] ========== INICIO ==========")
-        logger.info(f"[VALIDATE-TOKEN] Método: {request.method}")
-        logger.info(f"[VALIDATE-TOKEN] Ruta completa: {request.path}")
-        logger.info(f"[VALIDATE-TOKEN] Headers:")
-        for key, value in request.headers:
-            logger.info(f"  {key}: {value}")
-        
-        # Verificar si CSRF está exento
-        from flask import g
-        csrf_exempt = getattr(g, '_csrf_exempt', False)
-        logger.info(f"[VALIDATE-TOKEN] CSRF exento: {csrf_exempt}")
-        
         data = request.get_json()
-        logger.info(f"[VALIDATE-TOKEN] Data JSON recibida: {data}")
-        
         email = data.get("email") if data else None
         token = data.get("token") if data else None
         
-        logger.info(f"[VALIDATE-TOKEN] Email extraído: {email}")
-        logger.info(f"[VALIDATE-TOKEN] Token extraído (primeros 20 chars): {token[:20] if token else 'VACÍO'}")
+        logger.info(f"[VALIDATE-TOKEN] ========== DEBUG TOKEN ==========")
+        logger.info(f"[VALIDATE-TOKEN] Email recibido: {email}")
+        logger.info(f"[VALIDATE-TOKEN] Token recibido (completo): {token}")
+        logger.info(f"[VALIDATE-TOKEN] Longitud del token: {len(token) if token else 0}")
         
         if not email or not token:
-            logger.warning(f"[VALIDATE-TOKEN] ❌ Faltan parámetros")
             return jsonify({
                 "valid": False,
                 "message": "Faltan parámetros requeridos"
             }), 400
         
-        # Verificar token
-        logger.info(f"[VALIDATE-TOKEN] Llamando a verificar_token_valido()...")
+        # Buscar token en BD para comparar
+        try:
+            tokens_bd = supabase.table("token").select("*").eq("correo", email).execute().data
+            logger.info(f"[VALIDATE-TOKEN] Tokens encontrados en BD: {len(tokens_bd)}")
+            if tokens_bd:
+                token_bd = tokens_bd[0].get("token")
+                logger.info(f"[VALIDATE-TOKEN] Token en BD (completo): {token_bd}")
+                logger.info(f"[VALIDATE-TOKEN] Longitud token BD: {len(token_bd) if token_bd else 0}")
+                logger.info(f"[VALIDATE-TOKEN] ¿Son iguales?: {token == token_bd}")
+                logger.info(f"[VALIDATE-TOKEN] Usado: {tokens_bd[0].get('usado')}")
+                logger.info(f"[VALIDATE-TOKEN] Expira en: {tokens_bd[0].get('expires_at')}")
+        except Exception as e:
+            logger.error(f"[VALIDATE-TOKEN] Error al buscar en BD: {e}")
+        
+        # Verificar token en la base de datos
         token_valido = verificar_token_valido(email, token)
-        logger.info(f"[VALIDATE-TOKEN] Resultado verificación: {token_valido}")
         
         if token_valido:
             logger.info(f"[VALIDATE-TOKEN] ✅ Token válido para: {email}")
             return jsonify({
                 "valid": True,
-                "message": "Token válido"
+                "message": "Token válido",
+                "debug": {
+                    "token_enviado": token,
+                    "token_bd": tokens_bd[0].get("token") if tokens_bd else None,
+                    "son_iguales": token == tokens_bd[0].get("token") if tokens_bd else False
+                }
             }), 200
         else:
             logger.warning(f"[VALIDATE-TOKEN] ❌ Token inválido para: {email}")
             return jsonify({
                 "valid": False,
-                "message": "El enlace ha expirado o ya fue utilizado"
+                "message": "El enlace ha expirado o ya fue utilizado",
+                "debug": {
+                    "token_enviado": token,
+                    "token_bd": tokens_bd[0].get("token") if tokens_bd else None,
+                    "son_iguales": token == tokens_bd[0].get("token") if tokens_bd else False
+                }
             }), 200
             
     except Exception as e:
-        logger.error(f"[VALIDATE-TOKEN] ❌ Exception: {str(e)}")
-        import traceback
-        logger.error(f"[VALIDATE-TOKEN] Traceback completo:\n{traceback.format_exc()}")
+        logger.error(f"[VALIDATE-TOKEN] Error: {e}")
         return jsonify({
             "valid": False,
             "message": "Error al validar el token"
@@ -259,7 +264,7 @@ def validate_reset_token():
 @bp.route("/api/reset-password", methods=["POST"])
 def reset_password_submit():
     """
-    Actualiza la contraseña del usuario
+    Actualiza la contraseña del usuario (sin validación CSRF)
     """
     try:
         data = request.get_json()
@@ -267,7 +272,10 @@ def reset_password_submit():
         token = data.get("token")
         new_password = data.get("new_password")
         
-        logger.info(f"[RESET-PASSWORD] Actualizando contraseña para: {email}")
+        logger.info(f"[RESET-PASSWORD] ========== DEBUG TOKEN ==========")
+        logger.info(f"[RESET-PASSWORD] Email: {email}")
+        logger.info(f"[RESET-PASSWORD] Token recibido: {token}")
+        logger.info(f"[RESET-PASSWORD] Longitud token: {len(token) if token else 0}")
         
         if not email or not token or not new_password:
             return jsonify({
@@ -275,7 +283,16 @@ def reset_password_submit():
                 "message": "Faltan parámetros requeridos"
             }), 400
         
-        # Validar token nuevamente
+        # Buscar token en BD antes de validar
+        try:
+            tokens_bd = supabase.table("token").select("*").eq("correo", email).execute().data
+            if tokens_bd:
+                logger.info(f"[RESET-PASSWORD] Token en BD: {tokens_bd[0].get('token')}")
+                logger.info(f"[RESET-PASSWORD] ¿Son iguales?: {token == tokens_bd[0].get('token')}")
+        except Exception as e:
+            logger.error(f"[RESET-PASSWORD] Error al buscar en BD: {e}")
+        
+        # Validar token
         if not verificar_token_valido(email, token):
             logger.warning(f"[RESET-PASSWORD] Token inválido para: {email}")
             return jsonify({
@@ -287,30 +304,29 @@ def reset_password_submit():
         from app.utils.security import hash_password
         password_hash = hash_password(new_password)
         
-        # Actualizar contraseña en Supabase
-        logger.info(f"[RESET-PASSWORD] Actualizando password_hash en BD para: {email}")
+        # Actualizar contraseña en Supabase (la columna se llama "Contraseña")
         result = supabase.table("usuarios").update({
-            "password_hash": password_hash
+            "Contraseña": password_hash
         }).eq("correo", email).execute()
         
         if result.data:
             # Marcar token como usado
             marcar_token_usado(email, token)
-            logger.info(f"[RESET-PASSWORD] ✅ Contraseña actualizada exitosamente para: {email}")
+            logger.info(f"[RESET-PASSWORD] ✅ Contraseña actualizada para: {email}")
             
             return jsonify({
                 "success": True,
                 "message": "Contraseña actualizada correctamente"
             }), 200
         else:
-            logger.error(f"[RESET-PASSWORD] No se pudo actualizar la contraseña para: {email}")
+            logger.error(f"[RESET-PASSWORD] No se pudo actualizar para: {email}")
             return jsonify({
                 "success": False,
                 "message": "No se pudo actualizar la contraseña"
             }), 500
             
     except Exception as e:
-        logger.error(f"[RESET-PASSWORD] Error: {e}", exc_info=True)
+        logger.error(f"[RESET-PASSWORD] Error: {e}")
         return jsonify({
             "success": False,
             "message": "Error al actualizar la contraseña"
