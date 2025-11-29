@@ -68,6 +68,39 @@ function setupEditProfileModal() {
     }
   });
 
+  // Manejo de foto de perfil
+  const photoInput = document.getElementById('profile-photo-input');
+  const profilePreview = document.getElementById('profile-preview');
+  let selectedPhoto = null;
+
+  if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona una imagen válida');
+          return;
+        }
+        
+        // Validar tamaño (máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('La imagen no debe superar los 5MB');
+          return;
+        }
+
+        selectedPhoto = file;
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          profilePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
   // Validaciones de entrada
   const emailInput = document.getElementById('modal-email');
   const numeroInput = document.getElementById('modal-numero_celular');
@@ -129,18 +162,23 @@ function setupEditProfileModal() {
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+        // Usar FormData para enviar archivos
+        const formData = new FormData();
+        formData.append('nombre', nombre);
+        formData.append('email', email);
+        formData.append('numero_celular', numero_celular);
+        
+        if (selectedPhoto) {
+          formData.append('foto_perfil', selectedPhoto);
+        }
+
         const response = await fetch('/api/editar-perfil', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken
           },
           credentials: 'same-origin',
-          body: JSON.stringify({
-            nombre,
-            email,
-            numero_celular
-          })
+          body: formData
         });
 
         const data = await response.json();

@@ -73,6 +73,7 @@ def login():
                 session["usuario_rol"] = str(usuario_encontrado.get("rol", "")).lower()  # Convertir a minúsculas
                 session["usuario_id"] = usuario_encontrado.get("rut_usuario")
                 session["usuario_correo"] = usuario_encontrado.get("correo")
+                session["usuario_foto_perfil"] = usuario_encontrado.get("foto_perfil_url")
                 
                 logger.info(f"[LOGIN] ✓ Login exitoso para: {session['usuario_nombre']} (Rol: {session['usuario_rol']})")
                 

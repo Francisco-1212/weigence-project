@@ -7,6 +7,7 @@
     </button>
 
     <!-- Selector de rango de fechas -->
+    {% if mostrar_filtro != False %}
     <div class="flex items-center gap-2 sm:gap-3">
       <h1 class="text-base sm:text-xl font-bold hidden sm:block">Filtrar</h1>
       <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5 sm:p-1">
@@ -20,6 +21,7 @@
         <button id="btn-mes-next" class="rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-sm">&gt;</button>
       </div>
     </div>
+    {% endif %}
   </div> 
   <!-- Recomendación IA en Header -->
   <div class="relative flex-1 mx-2 sm:mx-6 min-w-0 hidden md:block">

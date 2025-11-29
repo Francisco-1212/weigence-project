@@ -1006,40 +1006,53 @@
   function conectarBotonesHeaderFiltros() {
     const botonesHeader = document.querySelectorAll('.filtro-fecha-btn');
     
+    console.log('🔍 Buscando botones de filtro:', botonesHeader.length, 'encontrados');
+    
     if (!botonesHeader.length) {
       console.warn('⚠️ No se encontraron botones de filtro de fecha en el header');
       return;
     }
     
     botonesHeader.forEach(btn => {
+      console.log('✅ Conectando botón:', btn.dataset.rango);
+      
       // Evitar listeners duplicados
-      if (btn.dataset.listenerAdded === 'true') return;
+      if (btn.dataset.listenerAdded === 'true') {
+        console.log('⚠️ Ya tiene listener:', btn.dataset.rango);
+        return;
+      }
       btn.dataset.listenerAdded = 'true';
       
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        
         const rango = btn.getAttribute('data-rango');
+        console.log('🎯 Click en filtro:', rango);
         
         // Remover clase activa de todos los botones
         botonesHeader.forEach(b => {
-          b.classList.remove('bg-primary', 'text-white');
-          b.classList.add('text-neutral-700', 'dark:text-neutral-300');
+          b.classList.remove('filtro-activo');
         });
         
         // Activar el botón clickeado
-        btn.classList.add('bg-primary', 'text-white');
-        btn.classList.remove('text-neutral-700', 'dark:text-neutral-300');
+        btn.classList.add('filtro-activo');
         
         // Ejecutar filtro correspondiente
         if (rango === 'hoy') {
+          console.log('📅 Ejecutando filtrarHoy()');
           filtrarHoy();
         } else if (rango === 'semana') {
+          console.log('📅 Ejecutando filtrarSemana()');
           filtrarSemana();
         } else if (rango === 'mes') {
+          console.log('📅 Ejecutando filtrarMes()');
           filtrarMes();
         }
       });
     });
+    
+    console.log('✅ Botones de filtro conectados correctamente');
   }
 
   // ===========================================================
@@ -1392,9 +1405,11 @@
   if (el.exportPdf) el.exportPdf.onclick = () => exportFormato("pdf");
   if (el.filterUser) el.filterUser.onclick = filtrarPorUsuarioActual;
   if (el.activeUsers) el.activeUsers.onclick = mostrarUsuariosActivos;
-  if (el.filterToday) el.filterToday.onclick = filtrarHoy;
-  if (el.filterWeek) el.filterWeek.onclick = filtrarSemana;
-  if (el.filterMonth) el.filterMonth.onclick = filtrarMes;
+  
+  // Los filtros de fecha ahora se manejan con conectarBotonesHeaderFiltros()
+  // if (el.filterToday) el.filterToday.onclick = filtrarHoy;
+  // if (el.filterWeek) el.filterWeek.onclick = filtrarSemana;
+  // if (el.filterMonth) el.filterMonth.onclick = filtrarMes;
 
   if (el.recalibrate) el.recalibrate.onclick = recalibrarSensores;
 
@@ -1411,7 +1426,22 @@
   
   loadLogs();
   updateActiveUserCount(); // Cargar contador inicial
-  conectarBotonesHeaderFiltros(); // Conectar botones del header
+  
+  // Conectar botones del header con un pequeño delay para asegurar que el DOM esté listo
+  setTimeout(() => {
+    console.log('🚀 Iniciando conexión de botones de filtro...');
+    conectarBotonesHeaderFiltros();
+    
+    // Activar filtro "Hoy" por defecto
+    const btnHoy = document.querySelector('.filtro-fecha-btn[data-rango="hoy"]');
+    if (btnHoy) {
+      console.log('✅ Botón Hoy encontrado, activando filtro');
+      btnHoy.classList.add('filtro-activo');
+      filtrarHoy();
+    } else {
+      console.warn('⚠️ No se encontró el botón Hoy');
+    }
+  }, 300);
   
   // Scroll inicial al fondo después de cargar
   setTimeout(() => {

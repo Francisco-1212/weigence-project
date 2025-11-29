@@ -102,6 +102,76 @@ const Alertas = {
       }
     });
 
+    // Filtros de fecha (Hoy/Semana/Mes)
+    const filtroFechaBtns = document.querySelectorAll('.filtro-fecha-btn');
+    if (filtroFechaBtns.length > 0) {
+      filtroFechaBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rango = btn.dataset.rango;
+          this.aplicarFiltroFecha(rango);
+          
+          // Actualizar estilo activo
+          filtroFechaBtns.forEach(b => b.classList.remove('filtro-activo'));
+          btn.classList.add('filtro-activo');
+        });
+      });
+      
+      // Inicializar con "Hoy" por defecto
+      filtroFechaBtns[0]?.classList.add('filtro-activo');
+      this.aplicarFiltroFecha('hoy');
+    }
+  },
+
+  aplicarFiltroFecha(rango) {
+    const ahora = new Date();
+    let fechaInicio;
+
+    switch(rango) {
+      case 'hoy':
+        fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        break;
+      case 'semana':
+        fechaInicio = new Date(ahora);
+        fechaInicio.setDate(ahora.getDate() - 7);
+        break;
+      case 'mes':
+        fechaInicio = new Date(ahora);
+        fechaInicio.setMonth(ahora.getMonth() - 1);
+        break;
+      default:
+        fechaInicio = null;
+    }
+
+    // Filtrar filas por fecha
+    if (fechaInicio) {
+      this.rows.forEach(row => {
+        const fechaTexto = row.dataset.fecha;
+        if (fechaTexto) {
+          const fechaAlerta = new Date(fechaTexto);
+          if (fechaAlerta >= fechaInicio) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    } else {
+      // Mostrar todo
+      this.rows.forEach(row => row.style.display = '');
+    }
+
+    this.refreshRows();
+    this.applyPagination();
+  },
+
+  bindFiltrosExistente() {
+    // Cerrar con ESC (continuación)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
+        this.cerrarModal();
+      }
+    });
+
     // Botón exportar
     this.btnExportar?.addEventListener('click', () => this.exportarAlertas());
 

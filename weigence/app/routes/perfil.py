@@ -191,25 +191,14 @@ def api_editar_perfil_handler():
     try:
         # Log de debug
         print(f"[API-EDITAR-PERFIL] Content-Type: {request.content_type}")
-        print(f"[API-EDITAR-PERFIL] Is JSON: {request.is_json}")
         
-        # Validar que el request tiene Content-Type: application/json
-        if not request.is_json:
-            print(f"[API-EDITAR-PERFIL] ERROR: Content-Type incorrecto")
-            return jsonify({'success': False, 'error': 'Content-Type debe ser application/json'}), 400
-        
-        data = request.get_json(force=True, silent=True)
-        print(f"[API-EDITAR-PERFIL] JSON parseado: {data}")
-        
-        if data is None:
-            print(f"[API-EDITAR-PERFIL] ERROR: No se pudo parsear JSON")
-            return jsonify({'success': False, 'error': 'No se pudo procesar el JSON'}), 400
-        
-        nombre = data.get('nombre', '').strip() if data.get('nombre') else ''
-        correo = data.get('email', '').strip() if data.get('email') else ''
-        numero_celular = data.get('numero_celular', '').strip() if data.get('numero_celular') else ''
+        # Obtener datos del formulario (ahora con FormData)
+        nombre = request.form.get('nombre', '').strip() if request.form.get('nombre') else ''
+        correo = request.form.get('email', '').strip() if request.form.get('email') else ''
+        numero_celular = request.form.get('numero_celular', '').strip() if request.form.get('numero_celular') else ''
+        foto_perfil = request.files.get('foto_perfil')
 
-        print(f"[API-EDITAR-PERFIL] Datos extraídos - Nombre: '{nombre}', Correo: '{correo}', Celular: '{numero_celular}'")
+        print(f"[API-EDITAR-PERFIL] Datos extraídos - Nombre: '{nombre}', Correo: '{correo}', Celular: '{numero_celular}', Foto: {foto_perfil is not None}")
 
         # Validaciones
         if not nombre:
@@ -241,11 +230,66 @@ def api_editar_perfil_handler():
         numero_celular_formateado = formatear_numero_celular(numero_celular) if numero_celular else None
         print(f"[API-EDITAR-PERFIL] Número celular formateado: '{numero_celular_formateado}'")
 
+        # Procesar foto de perfil si existe
+        foto_url = None
+        print(f"[API-EDITAR-PERFIL] foto_perfil: {foto_perfil}")
+        if foto_perfil:
+            print(f"[API-EDITAR-PERFIL] foto_perfil.filename: {foto_perfil.filename}")
+        
+        if foto_perfil and foto_perfil.filename:
+            import uuid
+            from werkzeug.utils import secure_filename
+            
+            print(f"[API-EDITAR-PERFIL] Procesando foto: {foto_perfil.filename}")
+            
+            # Validar extensión
+            extensiones_permitidas = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+            extension = foto_perfil.filename.rsplit('.', 1)[1].lower() if '.' in foto_perfil.filename else ''
+            
+            print(f"[API-EDITAR-PERFIL] Extensión detectada: {extension}")
+            
+            if extension in extensiones_permitidas:
+                try:
+                    # Generar nombre único
+                    nombre_archivo = f"{usuario_rut}_{uuid.uuid4().hex[:8]}.{extension}"
+                    
+                    # Usar ruta absoluta desde el directorio de la app
+                    from flask import current_app
+                    ruta_completa = os.path.join(current_app.root_path, 'static', 'uploads', 'profile_pictures', nombre_archivo)
+                    
+                    print(f"[API-EDITAR-PERFIL] Intentando guardar en: {ruta_completa}")
+                    
+                    # Crear directorio si no existe
+                    directorio = os.path.dirname(ruta_completa)
+                    if not os.path.exists(directorio):
+                        os.makedirs(directorio, exist_ok=True)
+                        print(f"[API-EDITAR-PERFIL] Directorio creado: {directorio}")
+                    
+                    # Guardar archivo
+                    foto_perfil.save(ruta_completa)
+                    
+                    # Verificar que se guardó
+                    if os.path.exists(ruta_completa):
+                        print(f"[API-EDITAR-PERFIL] ✓ Archivo guardado correctamente")
+                    
+                    # URL relativa para la BD
+                    foto_url = f"/static/uploads/profile_pictures/{nombre_archivo}"
+                    print(f"[API-EDITAR-PERFIL] ✓ URL de foto: {foto_url}")
+                except Exception as e:
+                    print(f"[API-EDITAR-PERFIL] ✗ Error al guardar foto: {str(e)}")
+                    import traceback
+                    print(f"[API-EDITAR-PERFIL] Traceback: {traceback.format_exc()}")
+            else:
+                print(f"[API-EDITAR-PERFIL] ✗ Extensión no permitida: {extension}")
+
         update_data = {
             "nombre": nombre,
             "correo": correo if correo else None,
             "numero celular": numero_celular_formateado
         }
+        
+        if foto_url:
+            update_data["foto_perfil_url"] = foto_url
         
         print(f"[API-EDITAR-PERFIL] Datos a actualizar en Supabase: {update_data}")
         print(f"[API-EDITAR-PERFIL] Filtro: rut_usuario = '{usuario_rut}'")
@@ -285,6 +329,8 @@ def api_editar_perfil_handler():
         session['usuario_nombre'] = nombre
         session['usuario_correo'] = correo if correo else session.get('usuario_correo', '')
         session['usuario_numero_celular'] = numero_celular_formateado if numero_celular_formateado else session.get('usuario_numero_celular', '')
+        if foto_url:
+            session['usuario_foto_perfil'] = foto_url
         session.modified = True
 
         print(f"[API-EDITAR-PERFIL] ✅ Actualización exitosa - Sesión actualizada")
@@ -296,7 +342,8 @@ def api_editar_perfil_handler():
             'usuario': {
                 'nombre': nombre,
                 'correo': correo,
-                'numero_celular': numero_celular_formateado
+                'numero_celular': numero_celular_formateado,
+                'foto_perfil_url': foto_url
             }
         }), 200
 

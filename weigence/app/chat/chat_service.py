@@ -68,12 +68,20 @@ def marcar_leido(conversacion_id, user_id, ultimo_mensaje_id):
         raise PermissionError("Usuario no pertenece a la conversacion")
 
     part = model.obtener_participacion(conversacion_id, user_id)
+    
+    # Si no existe participación o es la primera vez, siempre marcar
+    if not part:
+        model.marcar_mensajes_leidos(conversacion_id, user_id, ultimo_mensaje_id)
+        return True
+    
     last = part.get("ultimo_mensaje_leido")
-    if last and ultimo_mensaje_id <= last:
-        return False
-
-    model.marcar_mensajes_leidos(conversacion_id, user_id, ultimo_mensaje_id)
-    return True
+    
+    # Si nunca ha leído nada o el nuevo mensaje es más reciente
+    if not last or ultimo_mensaje_id > last:
+        model.marcar_mensajes_leidos(conversacion_id, user_id, ultimo_mensaje_id)
+        return True
+    
+    return False
 
 
 # ============================================================

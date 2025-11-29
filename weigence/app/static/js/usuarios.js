@@ -168,6 +168,8 @@ function limpiarFormulario() {
 function guardarUsuario(e) {
   e.preventDefault();
   
+  console.log('[USUARIOS] guardarUsuario ejecutado, modo:', modo_modal);
+  
   // Limpiar errores previos
   document.querySelectorAll('[id^="error-"]').forEach(el => el.classList.add('hidden'));
   
@@ -177,6 +179,8 @@ function guardarUsuario(e) {
   const correo = document.getElementById('usuario-correo').value.trim();
   const rol = document.getElementById('usuario-rol').value.trim();
   const telefono = document.getElementById('usuario-telefono').value.trim();
+  
+  console.log('[USUARIOS] Valores del formulario:', {rut, nombre, correo, rol, telefono});
   
   // Validaciones
   let errores = {};
@@ -216,17 +220,21 @@ function guardarUsuario(e) {
   }
   
   // Preparar datos
-  const datosUsuario = {
-    rut_usuario: rut,
-    nombre: nombre,
-    correo: correo,
-    rol: rol,
-    'numero celular': telefono,
-    fecha_registro: new Date().toISOString()
-  };
+  const datosUsuario = {};
+  
+  // En modo editar, solo enviar campos que cambiaron (excepto RUT que no se puede cambiar)
+  if (nombre) datosUsuario.nombre = nombre;
+  if (correo) datosUsuario.correo = correo;
+  if (rol) datosUsuario.rol = rol;
+  if (telefono) datosUsuario['numero celular'] = telefono;
+  
+  console.log('[USUARIOS] Datos preparados para enviar:', datosUsuario);
+  console.log('[USUARIOS] Modo modal:', modo_modal);
   
   // Enviar al servidor
   if (modo_modal === 'crear') {
+    datosUsuario.rut_usuario = rut;
+    datosUsuario.fecha_registro = new Date().toISOString();
     crearUsuario(datosUsuario);
   } else {
     editarUsuario(rut, datosUsuario);
@@ -274,16 +282,38 @@ function crearUsuario(datos) {
 // ============================================================
 function editarUsuario(rut, datos) {
   console.log('[USUARIOS] Editando usuario:', rut, datos);
+  console.log('[USUARIOS] Tipo de datos:', typeof datos);
+  console.log('[USUARIOS] Keys de datos:', Object.keys(datos));
+  console.log('[USUARIOS] JSON stringified:', JSON.stringify(datos));
+  
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  console.log('[USUARIOS] CSRF Token encontrado:', csrfToken ? 'Sí (' + csrfToken.substring(0, 10) + '...)' : 'NO');
+  
+  if (!csrfToken) {
+    console.error('[USUARIOS] ERROR: No se encontró el token CSRF');
+    mostrarError('Error: Token CSRF no disponible');
+    return;
+  }
+  
+  const body = JSON.stringify(datos);
+  console.log('[USUARIOS] Body a enviar:', body);
   
   fetch(`/api/usuarios/${rut}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
     },
-    body: JSON.stringify(datos)
+    body: body
   })
   .then(response => {
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    console.log('[USUARIOS] Response status:', response.status);
+    if (!response.ok) {
+      return response.text().then(text => {
+        console.error('[USUARIOS] Error response:', text);
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      });
+    }
     return response.json();
   })
   .then(data => {
@@ -312,10 +342,20 @@ function eliminarUsuario(rut, nombre) {
   
   console.log('[USUARIOS] Eliminando usuario:', rut);
   
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  console.log('[USUARIOS] CSRF Token encontrado:', csrfToken ? 'Sí (' + csrfToken.substring(0, 10) + '...)' : 'NO');
+  
+  if (!csrfToken) {
+    console.error('[USUARIOS] ERROR: No se encontró el token CSRF');
+    mostrarError('Error: Token CSRF no disponible');
+    return;
+  }
+  
   fetch(`/api/usuarios/${rut}`, {
     method: 'DELETE',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
     }
   })
   .then(response => {

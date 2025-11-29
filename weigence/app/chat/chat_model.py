@@ -209,9 +209,17 @@ def contar_no_leidos(conversacion_id, usuario_id):
             supabase.table("chat_mensajes")
             .select("id, usuario_id")
             .eq("conversacion_id", conversacion_id)
+            .neq("usuario_id", usuario_id)  # Solo mensajes del otro usuario
         )
+        
         if last_seen:
+            # Si ya hay un último mensaje leído, contar solo los posteriores
             query = query.gt("id", last_seen)
+        else:
+            # Si es primera vez (nunca ha leído nada), retornar 0
+            # Los mensajes se marcarán como leídos cuando abra el chat
+            return 0
+            
         res = query.execute()
     except APIError:
         return 0
@@ -219,7 +227,7 @@ def contar_no_leidos(conversacion_id, usuario_id):
     if not res.data:
         return 0
 
-    return len([m for m in res.data if m.get("usuario_id") != usuario_id])
+    return len(res.data)
 
 
 def obtener_todos_usuarios():

@@ -10,6 +10,7 @@ const ChatFloat = (() => {
     const chatBody = document.getElementById("chat-body");
     const chatInput = document.getElementById("chat-input");
     const targetName = document.getElementById("chat-target-name");
+    const unreadBadge = document.getElementById("chat-unread-badge");
 
     if (!btn || !panel || !userView || !chatView || !chatBody || !chatInput) {
         console.warn("[CHAT] Elementos del chat no encontrados, se aborta inicializacion");
@@ -21,6 +22,7 @@ const ChatFloat = (() => {
     let currentConversationId = null;
     const renderedMessageIds = new Set();
     let socketReady = false;
+    let unreadInterval = null;
 
     function ensureSocket() {
         if (socketReady) return;
@@ -81,12 +83,16 @@ const ChatFloat = (() => {
         panel.classList.remove("hidden");
         btn.classList.add("hidden");
         loadUsers();
+        // Actualizar contador al abrir
+        updateUnreadCount();
     }
 
     function closePanel() {
         panel.classList.add("hidden");
         btn.classList.remove("hidden");
         resetUI();
+        // Actualizar contador al cerrar
+        updateUnreadCount();
     }
 
     function resetUI() {
@@ -100,6 +106,8 @@ const ChatFloat = (() => {
         if (typeof ChatCore !== "undefined") {
             ChatCore.leave();
         }
+        // Actualizar contador al volver a la lista
+        updateUnreadCount();
     }
 
     async function loadUsers() {
@@ -128,7 +136,7 @@ const ChatFloat = (() => {
         }
     }
 
-    function renderUsers(lista) {
+    async function renderUsers(lista) {
         userView.innerHTML = "";
 
         if (!lista.length) {
@@ -140,12 +148,31 @@ const ChatFloat = (() => {
             return;
         }
 
+        // Obtener conversaciones para mostrar mensajes no leídos
+        let conversaciones = [];
+        try {
+            const res = await fetch("/api/chat/conversaciones");
+            const data = await res.json();
+            if (data.success) {
+                conversaciones = data.lista;
+            }
+        } catch (err) {
+            console.warn("[CHAT] Error cargando conversaciones para badges:", err);
+        }
+
         lista.forEach(u => {
+            // Buscar si hay conversación con este usuario
+            const conv = conversaciones.find(c => c.usuario && c.usuario.rut_usuario === u.id);
+            const unread = conv ? (conv.unread || 0) : 0;
+
             const card = document.createElement("div");
-            card.className = "usuario-mini-item flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg px-2 py-3";
+            card.className = "usuario-mini-item flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg px-2 py-3 relative";
             card.innerHTML = `
-                <div>
-                    <p class="font-medium">${u.nombre}</p>
+                <div class="flex-1">
+                    <p class="font-medium flex items-center gap-2">
+                        ${u.nombre}
+                        ${unread > 0 ? `<span class="inline-flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5">${unread > 99 ? '99+' : unread}</span>` : ''}
+                    </p>
                     <p class="text-xs opacity-60">${u.rol}</p>
                 </div>
                 ${u.is_online ? '<span class="w-2 h-2 rounded-full bg-green-500"></span>' : ""}
@@ -190,6 +217,20 @@ const ChatFloat = (() => {
                 `);
             } else {
                 data.mensajes.forEach(renderMessage);
+                
+                // Marcar mensajes como leídos
+                const ultimoMensaje = data.mensajes[data.mensajes.length - 1];
+                if (ultimoMensaje && ultimoMensaje.id) {
+                    try {
+                        if (typeof ChatCore !== "undefined" && ChatCore.seen) {
+                            ChatCore.seen(ultimoMensaje.id);
+                        }
+                        // Actualizar el contador de no leídos
+                        updateUnreadCount();
+                    } catch (e) {
+                        console.warn("[CHAT] Error marcando mensajes como leídos:", e);
+                    }
+                }
             }
         } catch (err) {
             console.error("[CHAT] Error cargando historial:", err);
@@ -260,16 +301,162 @@ const ChatFloat = (() => {
 
     function handleIncomingMessage(msg) {
         if (!msg) return;
-        if (String(msg.conversacion_id) !== String(currentConversationId || "")) return;
-        renderMessage(msg);
+        
+        // Si el mensaje es para la conversación actual, renderizarlo y marcarlo como leído
+        if (String(msg.conversacion_id) === String(currentConversationId || "")) {
+            renderMessage(msg);
+            
+            // Marcar como leído si el chat está abierto y visible
+            if (msg.id && !panel.classList.contains("hidden")) {
+                try {
+                    if (typeof ChatCore !== "undefined" && ChatCore.seen) {
+                        ChatCore.seen(msg.id);
+                    }
+                } catch (e) {
+                    console.warn("[CHAT] Error marcando mensaje como leído:", e);
+                }
+            }
+        }
+        
+        // Actualizar el contador cuando llega un mensaje nuevo
+        updateUnreadCount();
+    }
+
+    // =============================================
+    // CONTADOR DE MENSAJES NO LEÍDOS
+    // =============================================
+
+    async function updateUnreadCount() {
+        if (!unreadBadge) return;
+
+        try {
+            const res = await fetch("/api/chat/conversaciones");
+            const data = await res.json();
+
+            if (!data.success) {
+                unreadBadge.classList.add("hidden");
+                return;
+            }
+
+            // Sumar todos los mensajes no leídos
+            const total = data.lista.reduce((sum, conv) => sum + (conv.unread || 0), 0);
+
+            // Solo mostrar badge si hay mensajes no leídos
+            if (total > 0) {
+                unreadBadge.textContent = total > 99 ? "99+" : total;
+                unreadBadge.classList.remove("hidden");
+            } else {
+                unreadBadge.classList.add("hidden");
+            }
+        } catch (err) {
+            console.warn("[CHAT] Error actualizando contador de no leídos:", err);
+            unreadBadge.classList.add("hidden");
+        }
+    }
+
+    function startUnreadPolling() {
+        // Actualizar inmediatamente
+        updateUnreadCount();
+
+        // Actualizar cada 30 segundos
+        if (unreadInterval) clearInterval(unreadInterval);
+        unreadInterval = setInterval(updateUnreadCount, 30000);
+    }
+
+    function stopUnreadPolling() {
+        if (unreadInterval) {
+            clearInterval(unreadInterval);
+            unreadInterval = null;
+        }
+    }
+
+    // =============================================
+    // DETECTOR DE PANEL DE NOTIFICACIONES
+    // =============================================
+
+    function setupNotificationObserver() {
+        const notifPanel = document.getElementById("notification-panel");
+        const chatContainer = document.getElementById("chat-float-container");
+        
+        if (!chatContainer) return;
+
+        // 1. Observar panel lateral de notificaciones (header)
+        if (notifPanel) {
+            const panelObserver = new MutationObserver(() => {
+                const isOpen = !notifPanel.classList.contains("translate-x-full");
+                
+                if (isOpen) {
+                    chatContainer.classList.add("notification-open");
+                } else {
+                    chatContainer.classList.remove("notification-open");
+                }
+            });
+
+            panelObserver.observe(notifPanel, {
+                attributes: true,
+                attributeFilter: ["class"]
+            });
+        }
+
+        // 2. Observar notificaciones inline (como en auditoría)
+        // Buscar específicamente las notificaciones tipo toast
+        let checkInterval = setInterval(() => {
+            let hasInlineNotif = false;
+            
+            // Buscar notificaciones en la parte inferior derecha (bottom-4 right-4)
+            const toastElements = document.querySelectorAll('.fixed');
+            
+            toastElements.forEach(el => {
+                // Ignorar el panel de notificaciones del header y el chat mismo
+                if (el.id === 'notification-panel' || 
+                    el.id === 'notification-backdrop' ||
+                    el.id === 'chat-float-container' ||
+                    el.closest('#chat-float-container')) {
+                    return;
+                }
+                
+                const rect = el.getBoundingClientRect();
+                const style = window.getComputedStyle(el);
+                const classes = el.className || '';
+                
+                // Verificar si es un toast visible en la parte inferior derecha
+                const isBottomRight = classes.includes('bottom') || classes.includes('right');
+                const isVisible = style.display !== 'none' && 
+                                 style.visibility !== 'hidden' && 
+                                 parseFloat(style.opacity) > 0 &&
+                                 rect.height > 0 &&
+                                 rect.width > 0;
+                
+                // Si está en la parte inferior de la pantalla
+                const isAtBottom = rect.bottom > window.innerHeight - 150;
+                
+                if (isVisible && isBottomRight && isAtBottom) {
+                    hasInlineNotif = true;
+                }
+            });
+            
+            const wasOpen = chatContainer.classList.contains("notification-open");
+            
+            if (hasInlineNotif && !wasOpen) {
+                chatContainer.classList.add("notification-open");
+                console.log("[CHAT] 📢 Notificación detectada - Moviendo chat hacia arriba");
+            } else if (!hasInlineNotif && wasOpen && (!notifPanel || notifPanel.classList.contains("translate-x-full"))) {
+                chatContainer.classList.remove("notification-open");
+                console.log("[CHAT] ✅ Notificación cerrada - Volviendo chat a posición normal");
+            }
+        }, 5); // Verificar cada 5ms para detección instantánea
+
+        console.log("[CHAT] Observador de notificaciones configurado");
     }
 
     function init() {
         ensureSocket();
+        startUnreadPolling();
+        setupNotificationObserver();
         console.log("[CHAT] Chat flotante iniciado.");
     }
 
-    return { init, openPanel, closePanel };
+    return { init, openPanel, closePanel, updateUnreadCount };
 
 })();
 

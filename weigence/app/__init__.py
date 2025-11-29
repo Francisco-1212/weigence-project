@@ -13,7 +13,7 @@ from .utils.logger import setup_logging
 
 load_dotenv()
 
-# Extensiones inicializadas a nivel de módulo
+# Extensiones inicializadas a nivel de mï¿½dulo
 csrf = CSRFProtect()
 limiter = Limiter(
     key_func=get_remote_address,
@@ -60,6 +60,7 @@ def create_app(config_name=None):
     def bypass_csrf_for_chat_api():
         exempt_paths = [
             "/api/chat/",
+            "/api/usuarios",
             "/password-reset",
             "/api/validate-reset-token",
             "/api/reset-password",

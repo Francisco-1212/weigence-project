@@ -160,6 +160,11 @@
   </script>
   {% endif %}
   
+  <!-- Modal de editar perfil -->
+  {% if session.get("usuario_id") %}
+    {% include "componentes/edit_profile_modal.html" %}
+  {% endif %}
+  
   <!-- Chat flotante: include + scripts -->
   {% if session.get("usuario_id") %}
     {% include "componentes/chat.html" %}

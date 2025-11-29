@@ -157,6 +157,67 @@ const Inventario = {
       const pages = Math.max(1, Math.ceil(total / this.state.pageSize));
       if (this.state.page < pages) { this.state.page++; this.applyPagination(); }
     });
+
+    // Filtros de fecha (Hoy/Semana/Mes)
+    const filtroFechaBtns = document.querySelectorAll('.filtro-fecha-btn');
+    if (filtroFechaBtns.length > 0) {
+      filtroFechaBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rango = btn.dataset.rango;
+          this.aplicarFiltroFecha(rango);
+          
+          // Actualizar estilo activo
+          filtroFechaBtns.forEach(b => b.classList.remove('filtro-activo'));
+          btn.classList.add('filtro-activo');
+        });
+      });
+      
+      // Inicializar con "Hoy" por defecto
+      filtroFechaBtns[0]?.classList.add('filtro-activo');
+      this.aplicarFiltroFecha('hoy');
+    }
+  },
+
+  aplicarFiltroFecha(rango) {
+    const ahora = new Date();
+    let fechaInicio;
+
+    switch(rango) {
+      case 'hoy':
+        fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        break;
+      case 'semana':
+        fechaInicio = new Date(ahora);
+        fechaInicio.setDate(ahora.getDate() - 7);
+        break;
+      case 'mes':
+        fechaInicio = new Date(ahora);
+        fechaInicio.setMonth(ahora.getMonth() - 1);
+        break;
+      default:
+        fechaInicio = null;
+    }
+
+    // Filtrar filas por fecha
+    if (fechaInicio) {
+      this.rows.forEach(row => {
+        const fechaTexto = row.dataset.fecha; // Asumiendo que cada fila tiene data-fecha
+        if (fechaTexto) {
+          const fechaProducto = new Date(fechaTexto);
+          if (fechaProducto >= fechaInicio) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    } else {
+      // Mostrar todo
+      this.rows.forEach(row => row.style.display = '');
+    }
+
+    this.refreshRows();
+    this.filterAndPaginate();
   },
 
   // -------------------- Filtrado y Paginación --------------------

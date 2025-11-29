@@ -24,8 +24,10 @@ def serve_with_retry(server: Server, host: str = "127.0.0.1", start_port: int = 
                 server.serve(port=port, host=host, debug=True)
             return
         except OSError as e:
-            if getattr(e, "winerror", None) == 10048 or "Address already in use" in str(e):
-                print(f"Puerto {port} en uso, intentando puerto {port + 1}...")
+            winerror = getattr(e, "winerror", None)
+            # 10048 = Address already in use, 10013 = Permission denied (socket in use)
+            if winerror in (10048, 10013) or "Address already in use" in str(e) or "permisos de acceso" in str(e):
+                print(f"Puerto {port} en uso o sin permisos, intentando puerto {port + 1}...")
                 port += 1
                 continue
             raise
@@ -40,8 +42,10 @@ def serve_socketio_with_retry(sio, flask_app, host: str, start_port: int, max_tr
             sio.run(flask_app, host=host, port=port, debug=True, allow_unsafe_werkzeug=True)
             return
         except OSError as e:
-            if getattr(e, "winerror", None) == 10048 or "Address already in use" in str(e):
-                print(f"Puerto {port} en uso, intentando puerto {port + 1}...")
+            winerror = getattr(e, "winerror", None)
+            # 10048 = Address already in use, 10013 = Permission denied (socket in use)
+            if winerror in (10048, 10013) or "Address already in use" in str(e) or "permisos de acceso" in str(e):
+                print(f"Puerto {port} en uso o sin permisos, intentando puerto {port + 1}...")
                 port += 1
                 continue
             raise

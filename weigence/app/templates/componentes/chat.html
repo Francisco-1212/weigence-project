@@ -2,8 +2,10 @@
 
     <!-- BOTÓN FLOTANTE -->
     <button id="chat-float-btn"
-        class="flex items-center justify-center w-14 h-14 rounded-full bg-indigo-500 shadow-xl hover:bg-indigo-600 text-white text-2xl">
-        ...
+        class="relative flex items-center justify-center w-14 h-14 rounded-full bg-indigo-500 shadow-xl hover:bg-indigo-600 transition-all duration-200 text-white">
+        <span class="material-symbols-outlined" style="font-size: 28px;">chat_bubble</span>
+        <!-- Badge contador -->
+        <span id="chat-unread-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">0</span>
     </button>
 
     <!-- PANEL -->

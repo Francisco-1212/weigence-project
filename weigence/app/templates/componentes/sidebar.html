@@ -126,8 +126,12 @@
 
       <!-- Contenido principal -->
       <div class="bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] text-[var(--text-light)] flex flex-col items-center text-center px-3 py-5 rounded-xl shadow-sm">
-        <div class="w-20 h-20 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center mb-3">
-          <span class="material-symbols-outlined text-6xl text-primary-600 dark:text-primary-400">account_circle</span>
+        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mb-3 overflow-hidden shadow-lg">
+          {% if session.get('usuario_foto_perfil') %}
+            <img src="{{ session.get('usuario_foto_perfil') }}" alt="" class="w-full h-full object-cover">
+          {% else %}
+            <span class="text-3xl font-bold text-white">{{ session["usuario_nombre"][0].upper() }}</span>
+          {% endif %}
         </div>
         <p class="text-xl font-bold text-neutral-900 dark:text-neutral-100">{{ session["usuario_nombre"] }}</p>
         <span class="text-sm font-semibold text-primary-600 dark:text-primary-400">{{ session["usuario_rol"] }}</span>
