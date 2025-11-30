@@ -582,22 +582,27 @@ class AnomalyDetector:
         # 4️⃣ VENTAS - Comparación 48h
         try:
             sales = insights.analyze_sales_comparison_48h()
-            change = sales['change_percent']
+            change = sales.get('change_percent', 0)
+            recent_total = sales.get('recent_total', 0)
+            previous_total = sales.get('previous_total', 0)
+            top_product = sales.get('top_product', 'N/A')
+            top_product_qty = sales.get('top_product_qty', 0)
+            
             if change > 30:
                 findings.append({
                     'emoji': '📈',
                     'modulo': 'ventas',
                     'titulo': f'Ventas: ¡Incremento del {change:.0f}%!',
-                    'descripcion': f'${sales["recent_total"]:.0f} vs ${sales["previous_total"]:.0f} (24h anteriores). Top: "{sales["top_product"]}" con {sales["top_product_qty"]:.0f} unidades.',
+                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f} (24h anteriores). Top: "{top_product}" con {top_product_qty:.0f} unidades.',
                     'ml_severity': 'low',
-                    'plan_accion': f'Capitalizar tendencia. Asegurar stock de "{sales["top_product"]}" y productos relacionados.'
+                    'plan_accion': f'Capitalizar tendencia. Asegurar stock de "{top_product}" y productos relacionados.'
                 })
             elif change < -30:
                 findings.append({
                     'emoji': '📉',
                     'modulo': 'ventas',
                     'titulo': f'Ventas: Caída del {abs(change):.0f}%',
-                    'descripcion': f'${sales["recent_total"]:.0f} vs ${sales["previous_total"]:.0f} (24h anteriores). Incremento del {sales["change_percent"]:.1f}% en ventas.',
+                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f} (24h anteriores). Caída del {abs(change):.1f}% en ventas.',
                     'ml_severity': 'critical',
                     'plan_accion': 'URGENTE: Reunión con equipo comercial. Revisar stock, precios y estrategia de marketing.'
                 })
@@ -606,7 +611,7 @@ class AnomalyDetector:
                     'emoji': '💰',
                     'modulo': 'ventas',
                     'titulo': f'Ventas: Rendimiento estable ({change:+.0f}%)',
-                    'descripcion': f'${sales["recent_total"]:.0f} en últimas 24h. Top: "{sales["top_product"]}" ({sales["top_product_qty"]:.0f} unidades).',
+                    'descripcion': f'${recent_total:.0f} en últimas 24h. Top: "{top_product}" ({top_product_qty:.0f} unidades).',
                     'ml_severity': 'low',
                     'plan_accion': 'Mantener estrategia actual y monitorear tendencias semanales.'
                 })

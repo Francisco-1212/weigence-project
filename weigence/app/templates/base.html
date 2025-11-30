@@ -28,6 +28,10 @@
   <meta name="current-user" content="{{ session.get('usuario_nombre', 'None') }}">
   <meta name="author" content="Weigence Team"/>
   <meta name="usuario_id" content="{{ session.get('usuario_id') }}">
+  <!-- Prevenir caché de la página -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- Tema dark/light -->
   <script>
     (function () {
@@ -54,6 +58,139 @@
       nombre: "{{ session.get('usuario_nombre') }}",
       rol: "{{ session.get('usuario_rol', '---') }}"
     };
+  </script>
+
+  <!-- Seguridad: Prevenir navegación hacia atrás después de logout -->
+  <script>
+    (function() {
+      'use strict';
+      
+      // Función para verificar sesión contra el servidor
+      async function verificarSesionServidor() {
+        try {
+          const response = await fetch('/api/verify-session', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          });
+          const data = await response.json();
+          return data.authenticated === true;
+        } catch (error) {
+          console.error('[SECURITY] Error verificando sesión:', error);
+          return false;
+        }
+      }
+      
+      // Validar sesión inmediatamente al cargar
+      function validarSesionLocal() {
+        const tieneUsuario = window.CURRENT_USER && window.CURRENT_USER.id && window.CURRENT_USER.id !== '';
+        
+        if (!tieneUsuario) {
+          console.warn('[SECURITY] Sin sesión válida - redirigiendo a login');
+          window.location.replace("{{ url_for('main.login') }}");
+          return false;
+        }
+        return true;
+      }
+
+      // Ejecutar validación local inmediatamente
+      if (!validarSesionLocal()) {
+        return;
+      }
+
+      // Detectar navegación desde caché (botones atrás/adelante)
+      var esNavegacionCache = false;
+      if (window.performance) {
+        const navEntries = performance.getEntriesByType('navigation');
+        if (navEntries.length > 0) {
+          const navType = navEntries[0].type;
+          if (navType === 'back_forward') {
+            esNavegacionCache = true;
+            console.log('[SECURITY] Navegación back/forward detectada');
+          }
+        }
+      }
+
+      // SOLO verificar con servidor si es navegación desde caché
+      if (esNavegacionCache) {
+        console.log('[SECURITY] Verificando sesión con servidor...');
+        (async function() {
+          const isValid = await verificarSesionServidor();
+          if (!isValid) {
+            console.warn('[SECURITY] Sesión inválida - redirigiendo al login');
+            window.location.replace("{{ url_for('main.login') }}");
+          } else {
+            console.log('[SECURITY] Sesión válida - permitiendo acceso');
+          }
+        })();
+        return;
+      }
+
+      // Prevenir navegación hacia atrás después de logout
+      function prevenirRetroceso() {
+        window.history.pushState(null, document.title, window.location.href);
+      }
+      
+      prevenirRetroceso();
+
+      // Interceptar botón atrás y adelante
+      window.addEventListener('popstate', function(event) {
+        console.log('[SECURITY] Evento popstate detectado - validando sesión...');
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Verificar con el servidor inmediatamente
+        verificarSesionServidor().then(function(isValid) {
+          if (!isValid) {
+            console.warn('[SECURITY] Sesión inválida - redirigiendo al login');
+            window.location.replace("{{ url_for('main.login') }}");
+          } else {
+            console.log('[SECURITY] Sesión válida - previniendo navegación');
+            prevenirRetroceso();
+            // Forzar recarga para asegurar datos frescos del servidor
+            window.location.reload(true);
+          }
+        });
+      });
+
+      // Detectar página desde caché (bfcache) - Chrome específico
+      window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+          console.log('[SECURITY] Página restaurada desde bfcache - verificando sesión...');
+          
+          // Verificar sesión con el servidor
+          verificarSesionServidor().then(function(isValid) {
+            if (!isValid) {
+              window.location.replace("{{ url_for('main.login') }}");
+            } else {
+              // Forzar recarga completa desde el servidor
+              window.location.reload(true);
+            }
+          });
+        }
+      });
+
+      // Prevenir caché al salir
+      window.addEventListener('beforeunload', function() {
+        if (window.CURRENT_USER && window.CURRENT_USER.id) {
+          sessionStorage.setItem('lastPage', window.location.pathname);
+        }
+      });
+
+      // Validar sesión cuando la página recupera el foco
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          verificarSesionServidor().then(function(isValid) {
+            if (!isValid) {
+              window.location.replace("{{ url_for('main.login') }}");
+            }
+          });
+        }
+      });
+
+    })();
   </script>
 </head>
 
@@ -169,16 +306,8 @@
   {% if session.get("usuario_id") %}
     {% include "componentes/chat.html" %}
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-      // Fallback si /socket.io/socket.io.js no carga (p.ej. modo offline o ruta no expuesta)
-      if (typeof io === "undefined") {
-        var fallback = document.createElement("script");
-        fallback.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
-        fallback.crossOrigin = "anonymous";
-        document.head.appendChild(fallback);
-      }
-    </script>
+    <!-- Socket.IO desde CDN (más confiable que /socket.io/socket.io.js) -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/chat/chat-core.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat/chat-panel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat/chat-float.js') }}"></script>

@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, request, session, redirect, url_for, flash
+from flask import render_template, jsonify, request, session, redirect, url_for, flash, make_response
 from . import bp
 from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
@@ -8,11 +8,33 @@ import requests
 
 
 def requiere_login(f):
+    """
+    Decorador que requiere sesión activa y previene caché del navegador.
+    Agrega headers de seguridad para evitar navegación con botones atrás/adelante.
+    """
     @wraps(f)
     def decorador(*args, **kwargs):
+        # Validar que existe sesión activa
         if 'usuario_logueado' not in session:
+            session.clear()  # Limpiar cualquier residuo de sesión
+            flash("Debes iniciar sesión para acceder a esta página", "warning")
             return redirect(url_for('main.login'))
-        return f(*args, **kwargs)
+        
+        # Validar que la sesión tenga los datos mínimos requeridos
+        if not session.get('usuario_id') or not session.get('usuario_nombre'):
+            session.clear()
+            flash("Sesión inválida. Por favor inicia sesión nuevamente", "error")
+            return redirect(url_for('main.login'))
+        
+        # Ejecutar la función protegida
+        response = make_response(f(*args, **kwargs))
+        
+        # Agregar headers de seguridad para prevenir caché
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
     return decorador
 
 
@@ -164,3 +186,29 @@ def formatear_estante_codigo(id_estante):
         return f"E-{int(id_estante):02d}"
     except (TypeError, ValueError):
         return "E-??"
+
+
+# === ENDPOINT DE SEGURIDAD: VERIFICAR SESIÓN ===
+@bp.route('/api/verify-session', methods=['GET'])
+def verify_session():
+    """
+    Endpoint para verificar si existe una sesión activa válida.
+    Usado por JavaScript para prevenir navegación con caché después de logout.
+    """
+    is_authenticated = (
+        'usuario_logueado' in session and 
+        session.get('usuario_id') and 
+        session.get('usuario_nombre')
+    )
+    
+    response = jsonify({
+        'authenticated': is_authenticated,
+        'user_id': session.get('usuario_id') if is_authenticated else None
+    })
+    
+    # Headers anti-caché para que el navegador no cachee esta respuesta
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response

@@ -3,14 +3,6 @@ const notificationPanel = document.getElementById('notification-panel');
 const closeNotificationPanel = document.getElementById('close-notification-panel');
 const notificationBackdrop = document.getElementById('notification-backdrop');
 
-// Constantes para los iconos de severidad de IA
-const AI_SEVERITY_ICONS = {
-  info: 'auto_awesome',
-  warning: 'warning',
-  error: 'error',
-  success: 'check_circle'
-};
-
 notificationButton.addEventListener('click', () => {
   notificationPanel.classList.remove('translate-x-full');
   notificationBackdrop.classList.remove('opacity-0','pointer-events-none');

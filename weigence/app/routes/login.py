@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, request, session, redirect, url_for, flash
+from flask import render_template, jsonify, request, session, redirect, url_for, flash, make_response
 from . import bp
 from api.conexion_supabase import supabase
 from app.utils.email_utils import enviar_correo_recuperacion, verificar_token_valido, marcar_token_usado
@@ -348,6 +348,19 @@ def logout():
         if eliminar_usuario(usuario_rut):
             logger.info(f"[LOGOUT] Usuario {usuario_rut} eliminado de usuarios conectados")
     
+    # Limpiar completamente la sesión
     session.clear()
+    session.modified = True
+    
     flash("Sesión cerrada correctamente", "info")
-    return redirect(url_for("main.login"))
+    
+    # Crear respuesta con headers anti-caché para prevenir navegación hacia atrás
+    response = make_response(redirect(url_for("main.login")))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    # Limpiar cookies de sesión del navegador
+    response.set_cookie('session', '', expires=0)
+    
+    return response

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, session, jsonify, request
+from flask import Flask, session, jsonify, request, redirect, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
@@ -13,12 +13,12 @@ from .utils.logger import setup_logging
 
 load_dotenv()
 
-# Extensiones inicializadas a nivel de m�dulo
+# Extensiones inicializadas a nivel de módulo
 csrf = CSRFProtect()
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri="memory://",
-    default_limits=["500 per hour", "100 per minute"],  # limites mas generosos
+    default_limits=["10000 per hour", "500 per minute"],  # Límites muy altos para desarrollo
 )
 
 socketio_instance = None
@@ -90,6 +90,48 @@ def create_app(config_name=None):
     limiter.init_app(app)
     logger.info("Rate Limiting configurado")
 
+    # ========== SEGURIDAD: Headers anti-caché para páginas protegidas ==========
+    @app.after_request
+    def add_security_headers(response):
+        """
+        Agrega headers de seguridad para prevenir caché en páginas protegidas.
+        Esto evita que usuarios puedan usar botones atrás/adelante después de logout.
+        """
+        # Solo aplicar a páginas HTML (no APIs, static files, etc)
+        if response.content_type and 'text/html' in response.content_type:
+            # Verificar si es una página protegida (que requiere login)
+            if 'usuario_logueado' in session:
+                response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private, max-age=0, post-check=0, pre-check=0'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '-1'
+                # Header adicional para prevenir bfcache en navegadores modernos
+                response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        return response
+    
+    @app.before_request
+    def validate_session_on_protected_routes():
+        """
+        Valida la sesión antes de cada request a rutas protegidas.
+        Fuerza logout si la sesión está corrupta o inválida.
+        """
+        # Excluir rutas públicas y archivos estáticos
+        public_routes = ['/login', '/logout', '/password-reset', '/static', '/api/reset-password', '/api/validate-reset-token']
+        
+        if any(request.path.startswith(route) for route in public_routes):
+            return None
+        
+        # Si hay "intento" de sesión pero está incompleta, forzar limpieza
+        if session.get('usuario_logueado'):
+            if not session.get('usuario_id') or not session.get('usuario_nombre'):
+                logger.warning(f"[SECURITY] Sesión corrupta detectada en {request.path} - forzando logout")
+                session.clear()
+                return redirect(url_for('main.login'))
+        
+        return None
+    
+    logger.info("Headers de seguridad anti-caché configurados")
+
     # Registrar endpoint de debug (solo en desarrollo)
     if app.config.get("DEBUG"):
         try:
@@ -153,6 +195,14 @@ def create_app(config_name=None):
         logger.warning("Chat funcionara sin tiempo real (solo polling)")
     except Exception as e:
         logger.error(f"Error al inicializar SocketIO: {e}")
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        """Log para 404 mostrando la URL solicitada"""
+        logger.warning(f"⚠️ 404 Not Found: {request.method} {request.path}")
+        if request.path.startswith("/api/"):
+            return jsonify({"success": False, "error": "Endpoint no encontrado"}), 404
+        raise
 
     @app.errorhandler(Exception)
     def handle_error(e):

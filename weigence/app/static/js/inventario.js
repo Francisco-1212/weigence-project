@@ -1061,7 +1061,7 @@ const WeigenceMonitor = {
   WeigenceMonitor.actualizarSVG = async function () {
     const svg = document.getElementById("svg-almacen");
       if (!svg) {
-        console.warn("SVG del almacén no encontrado en el DOM todavía");
+        // SVG no presente en esta página, es normal
         return;
       }
 
@@ -1455,16 +1455,24 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.documentElement, { attributes: true });
 
 
-// integrar con el resto
-const oldUpdate = WeigenceMonitor.actualizarTodo.bind(WeigenceMonitor);
-WeigenceMonitor.actualizarTodo = async function () {
-  await oldUpdate();
-  this.actualizarSVG();
-};
+// Integrar con el resto
+if (typeof WeigenceMonitor !== 'undefined' && typeof WeigenceMonitor.actualizarTodo === 'function') {
+  const oldUpdate = WeigenceMonitor.actualizarTodo.bind(WeigenceMonitor);
+  WeigenceMonitor.actualizarTodo = async function () {
+    await oldUpdate();
+    this.actualizarSVG();
+  };
+} else if (typeof WeigenceMonitor !== 'undefined') {
+  WeigenceMonitor.actualizarTodo = async function () {
+    this.actualizarSVG();
+  };
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await WeigenceMonitor.init();
-  await WeigenceMonitor.actualizarSVG();
+  if (typeof WeigenceMonitor !== 'undefined') {
+    await WeigenceMonitor.init();
+    await WeigenceMonitor.actualizarSVG();
+  }
   await cargarAlertas();
   Inventario.init();
   console.info("Weigence Inventory System listo.");

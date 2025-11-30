@@ -1,20 +1,33 @@
 ﻿
 from functools import wraps
 
-from flask import jsonify, redirect, request, session, url_for
+from flask import jsonify, redirect, request, session, url_for, make_response
 
 from app.config.roles_permisos import ROLES_DISPONIBLES, usuario_puede_realizar_accion
 
 
 def requiere_rol(*roles_permitidos):
-    """Requiere que el usuario tenga uno de los roles especificados."""
+    """
+    Requiere que el usuario tenga uno de los roles especificados.
+    Incluye validación de sesión robusta y headers anti-caché.
+    """
     def decorador(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            # Validar sesión activa
             if not session.get("usuario_logueado"):
+                session.clear()  # Limpiar sesión inválida
                 print(f"[DECORADOR] Usuario no autenticado intentando acceder a {request.path}")
                 if request.is_json or request.path.startswith("/api/"):
                     return jsonify({"success": False, "error": "No autenticado", "code": 401}), 401
+                return redirect(url_for("main.login"))
+
+            # Validar datos esenciales de sesión
+            if not session.get('usuario_id') or not session.get('usuario_nombre'):
+                session.clear()
+                print(f"[DECORADOR] Sesión incompleta - redirigiendo al login")
+                if request.is_json or request.path.startswith("/api/"):
+                    return jsonify({"success": False, "error": "Sesión inválida", "code": 401}), 401
                 return redirect(url_for("main.login"))
 
             rol_usuario = session.get("usuario_rol", "").lower()
@@ -37,7 +50,17 @@ def requiere_rol(*roles_permitidos):
                 return redirect(url_for("main.dashboard"))
 
             print(f"[DECORADOR] Acceso concedido a {usuario_id} ({rol_usuario}) en {request.path}")
-            return f(*args, **kwargs)
+            
+            # Ejecutar función protegida
+            response = make_response(f(*args, **kwargs))
+            
+            # Agregar headers anti-caché para páginas HTML
+            if not (request.is_json or request.path.startswith("/api/")):
+                response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private, max-age=0'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+            
+            return response
 
         return decorated_function
 

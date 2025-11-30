@@ -181,7 +181,7 @@ const Ventas = {
 
     // Filtrar filas por fecha
     if (fechaInicio) {
-      this.rows.forEach(row => {
+      this.state.rows.forEach(row => {
         const fechaTexto = row.dataset.fecha;
         if (fechaTexto) {
           const fechaVenta = new Date(fechaTexto);
@@ -194,7 +194,7 @@ const Ventas = {
       });
     } else {
       // Mostrar todo
-      this.rows.forEach(row => row.style.display = '');
+      this.state.rows.forEach(row => row.style.display = '');
     }
 
     this.refreshRows();
