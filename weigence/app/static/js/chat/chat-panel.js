@@ -58,24 +58,376 @@ const ChatFloat = (() => {
 
         const isMine = msg.usuario_id === currentUser.id;
         const wrapper = document.createElement("div");
-        wrapper.className = `flex ${isMine ? "justify-end" : "justify-start"}`;
+        wrapper.className = `message-wrapper ${isMine ? "mine" : "other"}`;
+        wrapper.dataset.messageId = msg.id;
+
+        const inner = document.createElement("div");
+        inner.className = "flex flex-col";
+        inner.style.maxWidth = "280px";
+        inner.style.position = "relative";
+
+        // Botones de acción (emoji, responder, más) - en columna vertical
+        const actions = document.createElement("div");
+        actions.className = "message-actions";
+        
+        const emojiBtn = document.createElement("button");
+        emojiBtn.className = "message-action-btn emoji-btn";
+        emojiBtn.title = "Reaccionar";
+        emojiBtn.innerHTML = '<span style="font-size: 18px;">😊</span>';
+        emojiBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleEmojiPicker(emojiBtn, msg);
+        };
+
+        const replyBtn = document.createElement("button");
+        replyBtn.className = "message-action-btn";
+        replyBtn.title = "Responder";
+        replyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; color: #6b7280;">reply</span>';
+        replyBtn.onclick = (e) => {
+            e.stopPropagation();
+            replyToMessage(msg);
+        };
+
+        const moreBtn = document.createElement("button");
+        moreBtn.className = "message-action-btn more-btn";
+        moreBtn.title = "Más opciones";
+        moreBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; color: #6b7280;">more_horiz</span>';
+        moreBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleMoreMenu(moreBtn, msg, isMine);
+        };
+
+        actions.appendChild(emojiBtn);
+        actions.appendChild(replyBtn);
+        actions.appendChild(moreBtn);
 
         const bubble = document.createElement("div");
-        bubble.className = `${isMine ? "bg-indigo-500 text-white" : "bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50"} px-3 py-2 rounded-lg shadow-sm max-w-[85%] whitespace-pre-line break-words`;
-        bubble.textContent = msg.contenido || "";
+        bubble.className = `message-bubble ${isMine ? "message-bubble-mine" : "message-bubble-other"}`;
+        
+        // Si es una respuesta, mostrar el contexto
+        if (msg.reply_to) {
+            const replyContext = document.createElement("div");
+            replyContext.className = `reply-context ${isMine ? "reply-mine" : "reply-other"}`;
+            replyContext.innerHTML = `
+                <div class="flex items-start gap-2 mb-2 pb-2 border-b ${isMine ? 'border-indigo-400/30' : 'border-neutral-300 dark:border-neutral-600'}">
+                    <span class="material-symbols-outlined text-xs opacity-60">reply</span>
+                    <div class="flex-1 text-xs opacity-80">
+                        <div class="font-semibold">Respondiste a tu propio mensaje</div>
+                        <div class="opacity-70 mt-0.5">${msg.reply_to_content || 'como estás'}</div>
+                    </div>
+                </div>
+            `;
+            bubble.appendChild(replyContext);
+        }
+        
+        const content = document.createElement("div");
+        content.textContent = msg.contenido || "";
+        bubble.appendChild(content);
+
+        // Agregar reacción si existe
+        if (msg.reaction) {
+            const reaction = document.createElement("div");
+            reaction.className = "message-reaction";
+            reaction.innerHTML = `
+                <span>${msg.reaction}</span>
+                <span class="message-reaction-count">1</span>
+            `;
+            bubble.style.position = "relative";
+            bubble.appendChild(reaction);
+        }
 
         const meta = document.createElement("div");
-        meta.className = "text-[11px] opacity-60 mt-1";
+        meta.className = `text-[10px] opacity-60 mt-1 px-1 ${isMine ? "text-right" : "text-left"}`;
         const ts = msg.fecha_envio ? new Date(msg.fecha_envio) : null;
         meta.textContent = ts ? ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
 
-        const inner = document.createElement("div");
         inner.appendChild(bubble);
         if (meta.textContent) inner.appendChild(meta);
 
         wrapper.appendChild(inner);
+        wrapper.appendChild(actions);
         chatBody.appendChild(wrapper);
         chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function toggleEmojiPicker(btn, msg) {
+        // Cerrar otros pickers abiertos
+        document.querySelectorAll('.emoji-picker, .more-menu').forEach(el => el.remove());
+
+        const picker = document.createElement("div");
+        picker.className = "emoji-picker";
+        
+        const emojis = ['❤️', '😂', '😮', '😔', '👍'];
+        emojis.forEach(emoji => {
+            const option = document.createElement("button");
+            option.className = "emoji-option";
+            option.textContent = emoji;
+            option.onclick = (e) => {
+                e.stopPropagation();
+                addReaction(msg, emoji);
+                picker.remove();
+            };
+            picker.appendChild(option);
+        });
+
+        document.body.appendChild(picker);
+
+        // Posicionar el picker cerca del botón
+        const rect = btn.getBoundingClientRect();
+        const pickerWidth = picker.offsetWidth || 220;
+        const isMine = btn.closest('.message-wrapper').classList.contains('mine');
+        
+        let left = isMine ? rect.left - pickerWidth - 8 : rect.right + 8;
+        let top = rect.top;
+        
+        // Ajustar si se sale por la derecha
+        if (left + pickerWidth > window.innerWidth) {
+            left = window.innerWidth - pickerWidth - 16;
+        }
+        
+        // Ajustar si se sale por la izquierda
+        if (left < 16) {
+            left = 16;
+        }
+        
+        picker.style.left = left + 'px';
+        picker.style.top = top + 'px';
+
+        // Cerrar al hacer click fuera
+        setTimeout(() => {
+            document.addEventListener('click', function closePickerHandler(e) {
+                if (!picker.contains(e.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closePickerHandler);
+                }
+            });
+        }, 0);
+    }
+
+    function toggleMoreMenu(btn, msg, isMine) {
+        // Cerrar otros menús abiertos
+        document.querySelectorAll('.emoji-picker, .more-menu').forEach(el => el.remove());
+
+        const menu = document.createElement("div");
+        menu.className = "more-menu";
+        
+        if (isMine) {
+            const cancelItem = document.createElement("button");
+            cancelItem.className = "more-menu-item danger";
+            cancelItem.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">cancel</span> Anular envío';
+            cancelItem.onclick = (e) => {
+                e.stopPropagation();
+                deleteMessage(msg);
+                menu.remove();
+            };
+            menu.appendChild(cancelItem);
+        }
+
+        const forwardItem = document.createElement("button");
+        forwardItem.className = "more-menu-item";
+        forwardItem.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">forward</span> Reenviar';
+        forwardItem.onclick = (e) => {
+            e.stopPropagation();
+            forwardMessage(msg);
+            menu.remove();
+        };
+        menu.appendChild(forwardItem);
+
+        const pinItem = document.createElement("button");
+        pinItem.className = "more-menu-item";
+        pinItem.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">push_pin</span> Fijar';
+        pinItem.onclick = (e) => {
+            e.stopPropagation();
+            pinMessage(msg);
+            menu.remove();
+        };
+        menu.appendChild(pinItem);
+
+        document.body.appendChild(menu);
+
+        // Posicionar el menú cerca del botón
+        const rect = btn.getBoundingClientRect();
+        const menuWidth = 160;
+        const menuHeight = menu.offsetHeight || 120;
+        
+        // Calcular posición
+        let left = isMine ? rect.left - menuWidth - 8 : rect.right + 8;
+        let top = rect.top;
+        
+        // Ajustar si se sale por la derecha
+        if (left + menuWidth > window.innerWidth) {
+            left = window.innerWidth - menuWidth - 16;
+        }
+        
+        // Ajustar si se sale por la izquierda
+        if (left < 16) {
+            left = 16;
+        }
+        
+        // Ajustar si se sale por abajo
+        if (top + menuHeight > window.innerHeight) {
+            top = window.innerHeight - menuHeight - 16;
+        }
+        
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+
+        // Cerrar al hacer click fuera
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenuHandler(e) {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenuHandler);
+                }
+            });
+        }, 0);
+    }
+
+    async function addReaction(msg, emoji) {
+        try {
+            const res = await fetch(`/api/chat/mensajes/${msg.id}/reaccion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emoji })
+            });
+
+            if (res.ok) {
+                // Actualizar UI localmente
+                const wrapper = document.querySelector(`[data-message-id="${msg.id}"]`);
+                if (wrapper) {
+                    const bubble = wrapper.querySelector('.message-bubble');
+                    let reaction = bubble.querySelector('.message-reaction');
+                    
+                    if (!reaction) {
+                        reaction = document.createElement('div');
+                        reaction.className = 'message-reaction';
+                        bubble.style.position = 'relative';
+                        bubble.appendChild(reaction);
+                    }
+                    
+                    reaction.innerHTML = `
+                        <span>${emoji}</span>
+                        <span class="message-reaction-count">1</span>
+                    `;
+                }
+                console.log(`[CHAT] Reacción ${emoji} agregada al mensaje ${msg.id}`);
+            }
+        } catch (err) {
+            console.error('[CHAT] Error al agregar reacción:', err);
+        }
+    }
+
+    async function deleteMessage(msg) {
+        if (!confirm('¿Anular el envío de este mensaje?')) return;
+
+        try {
+            const res = await fetch(`/api/chat/mensajes/${msg.id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                // Remover mensaje de la UI
+                const wrapper = document.querySelector(`[data-message-id="${msg.id}"]`);
+                if (wrapper) {
+                    wrapper.remove();
+                }
+                console.log(`[CHAT] Mensaje ${msg.id} eliminado`);
+            }
+        } catch (err) {
+            console.error('[CHAT] Error al eliminar mensaje:', err);
+        }
+    }
+
+    async function forwardMessage(msg) {
+        // Cerrar chat actual y mostrar lista de usuarios para reenviar
+        resetUI();
+        
+        // Guardar mensaje para reenviar
+        sessionStorage.setItem('forwardMessage', JSON.stringify({
+            contenido: msg.contenido,
+            originalId: msg.id
+        }));
+        
+        // Mostrar indicador
+        const indicator = document.createElement('div');
+        indicator.className = 'bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg mb-3 text-sm';
+        indicator.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">forward</span>
+                    <span class="ml-2">Selecciona un usuario para reenviar</span>
+                </div>
+                <button onclick="sessionStorage.removeItem('forwardMessage'); this.parentElement.parentElement.remove();" class="text-red-500">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                </button>
+            </div>
+            <div class="mt-2 pl-6 text-xs opacity-70">"${msg.contenido.substring(0, 50)}${msg.contenido.length > 50 ? '...' : ''}"</div>
+        `;
+        userView.insertBefore(indicator, userView.firstChild);
+        
+        console.log(`[CHAT] Preparado para reenviar mensaje ${msg.id}`);
+    }
+
+    async function pinMessage(msg) {
+        try {
+            const res = await fetch(`/api/chat/mensajes/${msg.id}/fijar`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                // Agregar indicador visual de fijado
+                const wrapper = document.querySelector(`[data-message-id="${msg.id}"]`);
+                if (wrapper) {
+                    const bubble = wrapper.querySelector('.message-bubble');
+                    const pinIcon = document.createElement('span');
+                    pinIcon.className = 'material-symbols-outlined absolute top-1 right-1 text-yellow-500';
+                    pinIcon.style.fontSize = '14px';
+                    pinIcon.textContent = 'push_pin';
+                    bubble.style.position = 'relative';
+                    bubble.appendChild(pinIcon);
+                }
+                console.log(`[CHAT] Mensaje ${msg.id} fijado`);
+            }
+        } catch (err) {
+            console.error('[CHAT] Error al fijar mensaje:', err);
+        }
+    }
+
+    function replyToMessage(msg) {
+        // Agregar indicador de respuesta sobre el input
+        let replyIndicator = document.getElementById('reply-indicator');
+        
+        if (!replyIndicator) {
+            replyIndicator = document.createElement('div');
+            replyIndicator.id = 'reply-indicator';
+            replyIndicator.className = 'bg-neutral-100 dark:bg-neutral-800 border-l-4 border-indigo-500 p-2 text-sm';
+            chatInput.parentElement.insertBefore(replyIndicator, chatInput.parentElement.firstChild);
+        }
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'text-neutral-500 hover:text-neutral-700';
+        closeBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">close</span>';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            document.getElementById('reply-indicator').remove();
+            delete window.replyingTo;
+        };
+        
+        replyIndicator.innerHTML = '';
+        const content = document.createElement('div');
+        content.className = 'flex items-center justify-between';
+        content.innerHTML = `
+            <div>
+                <div class="text-xs text-indigo-500 font-semibold">Respondiendo a:</div>
+                <div class="text-xs opacity-70 mt-1">${msg.contenido.substring(0, 50)}${msg.contenido.length > 50 ? '...' : ''}</div>
+            </div>
+        `;
+        content.appendChild(closeBtn);
+        replyIndicator.appendChild(content);
+        
+        window.replyingTo = msg.id;
+        chatInput.focus();
     }
 
     function openPanel() {
@@ -118,12 +470,18 @@ const ChatFloat = (() => {
         `;
 
         try {
-            const res = await fetch("/api/chat/users");
-            const data = await res.json();
+            // Llamadas paralelas para mayor velocidad
+            const [usersRes, convsRes] = await Promise.all([
+                fetch("/api/chat/users"),
+                fetch("/api/chat/conversaciones")
+            ]);
 
-            if (!data.success) throw new Error("error api");
+            const usersData = await usersRes.json();
+            const convsData = await convsRes.json();
 
-            renderUsers(data.usuarios);
+            if (!usersData.success) throw new Error("error api usuarios");
+
+            renderUsers(usersData.usuarios, convsData.success ? convsData.lista : []);
 
         } catch (err) {
             console.error("[CHAT] Error cargando usuarios:", err);
@@ -136,7 +494,7 @@ const ChatFloat = (() => {
         }
     }
 
-    async function renderUsers(lista) {
+    function renderUsers(lista, conversaciones = []) {
         userView.innerHTML = "";
 
         if (!lista.length) {
@@ -146,18 +504,6 @@ const ChatFloat = (() => {
                 </div>
             `;
             return;
-        }
-
-        // Obtener conversaciones para mostrar mensajes no leídos
-        let conversaciones = [];
-        try {
-            const res = await fetch("/api/chat/conversaciones");
-            const data = await res.json();
-            if (data.success) {
-                conversaciones = data.lista;
-            }
-        } catch (err) {
-            console.warn("[CHAT] Error cargando conversaciones para badges:", err);
         }
 
         lista.forEach(u => {
@@ -248,6 +594,25 @@ const ChatFloat = (() => {
 
         chatInput.value = "";
 
+        // Preparar datos del mensaje con respuesta si existe
+        const messageData = {
+            conversacion_id: currentConversationId,
+            destinatario_id: selectedUser.id,
+            contenido: txt,
+        };
+
+        // Si está respondiendo a un mensaje, agregar el ID
+        if (window.replyingTo) {
+            messageData.reply_to = window.replyingTo;
+        }
+
+        // Limpiar indicador de respuesta
+        const replyIndicator = document.getElementById('reply-indicator');
+        if (replyIndicator) {
+            replyIndicator.remove();
+        }
+        delete window.replyingTo;
+
         let sentViaWs = false;
         if (typeof ChatCore !== "undefined" && ChatCore.isConnected && ChatCore.currentRoom) {
             try {
@@ -255,7 +620,7 @@ const ChatFloat = (() => {
                     ChatCore.join(currentConversationId);
                 }
                 if (ChatCore.isConnected()) {
-                    ChatCore.send(txt);
+                    ChatCore.send(txt, messageData.reply_to);
                     sentViaWs = true;
                 }
             } catch (err) {
@@ -269,11 +634,7 @@ const ChatFloat = (() => {
             const res = await fetch("/api/chat/send", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    conversacion_id: currentConversationId,
-                    destinatario_id: selectedUser.id,
-                    contenido: txt,
-                }),
+                body: JSON.stringify(messageData),
             });
 
             const data = await res.json();

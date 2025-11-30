@@ -100,18 +100,17 @@ def obtener_mensajes(conversacion_id, limit=50):
     return list(reversed(r.data))
 
 
-def insertar_mensaje(conversacion_id, usuario_id, contenido):
-    r = (
-        supabase.table("chat_mensajes")
-        .insert(
-            {
-                "conversacion_id": conversacion_id,
-                "usuario_id": usuario_id,
-                "contenido": contenido,
-            }
-        )
-        .execute()
-    )
+def insertar_mensaje(conversacion_id, usuario_id, contenido, reply_to=None):
+    data = {
+        "conversacion_id": conversacion_id,
+        "usuario_id": usuario_id,
+        "contenido": contenido,
+    }
+    
+    if reply_to:
+        data["reply_to"] = reply_to
+    
+    r = supabase.table("chat_mensajes").insert(data).execute()
     return r.data[0]
 
 
@@ -188,6 +187,114 @@ def obtener_conversaciones_de_usuario(rut):
     return [conv for conv in r.data if validar_usuario_en_conversacion(conv["id"], rut)]
 
 
+def obtener_conversaciones_optimizado(usuario_id):
+    """Obtiene conversaciones con todos los datos necesarios en una sola consulta optimizada."""
+    try:
+        # Obtener conversaciones donde participa el usuario
+        participaciones = (
+            supabase.table("chat_participantes")
+            .select("conversacion_id, ultimo_mensaje_leido")
+            .eq("usuario_id", usuario_id)
+            .execute()
+        )
+        
+        if not participaciones.data:
+            return []
+        
+        conv_ids = [p["conversacion_id"] for p in participaciones.data]
+        ultimo_leido_map = {p["conversacion_id"]: p["ultimo_mensaje_leido"] for p in participaciones.data}
+        
+        # Obtener todos los participantes de esas conversaciones
+        todos_participantes = (
+            supabase.table("chat_participantes")
+            .select("conversacion_id, usuario_id")
+            .in_("conversacion_id", conv_ids)
+            .execute()
+        )
+        
+        # Mapear participantes por conversación
+        participantes_map = {}
+        for p in todos_participantes.data:
+            cid = p["conversacion_id"]
+            if cid not in participantes_map:
+                participantes_map[cid] = []
+            participantes_map[cid].append(p["usuario_id"])
+        
+        # Obtener todos los últimos mensajes de esas conversaciones
+        mensajes = (
+            supabase.table("chat_mensajes")
+            .select("*")
+            .in_("conversacion_id", conv_ids)
+            .order("fecha_envio", desc=False)
+            .execute()
+        )
+        
+        # Agrupar mensajes por conversación (solo el último)
+        ultimos_mensajes = {}
+        mensajes_no_leidos = {}
+        
+        for msg in mensajes.data:
+            cid = msg["conversacion_id"]
+            ultimos_mensajes[cid] = msg
+            
+            # Contar no leídos
+            if msg["usuario_id"] != usuario_id:
+                ultimo_leido = ultimo_leido_map.get(cid)
+                if not ultimo_leido or msg["id"] > ultimo_leido:
+                    mensajes_no_leidos[cid] = mensajes_no_leidos.get(cid, 0) + 1
+        
+        # Obtener info de todos los usuarios de una vez
+        otros_usuarios_ids = []
+        for cid, miembros in participantes_map.items():
+            otros = [m for m in miembros if m != usuario_id]
+            otros_usuarios_ids.extend(otros)
+        
+        otros_usuarios_ids = list(set(otros_usuarios_ids))
+        
+        usuarios_info = {}
+        if otros_usuarios_ids:
+            usuarios_data = (
+                supabase.table("usuarios")
+                .select("rut_usuario, nombre, rol")
+                .in_("rut_usuario", otros_usuarios_ids)
+                .execute()
+            )
+            usuarios_info = {u["rut_usuario"]: u for u in usuarios_data.data}
+        
+        # Construir resultado
+        resultado = []
+        for cid in conv_ids:
+            miembros = participantes_map.get(cid, [])
+            otros = [m for m in miembros if m != usuario_id]
+            
+            if not otros:
+                continue
+            
+            otro_id = otros[0]
+            info_otro = usuarios_info.get(otro_id)
+            
+            if not info_otro:
+                continue
+            
+            ultimo_msg = ultimos_mensajes.get(cid)
+            unread = mensajes_no_leidos.get(cid, 0)
+            
+            resultado.append({
+                "conversacion_id": cid,
+                "usuario": info_otro,
+                "ultimo_mensaje": ultimo_msg["contenido"] if ultimo_msg else "",
+                "fecha": ultimo_msg["fecha_envio"] if ultimo_msg else None,
+                "unread": unread,
+                "is_online": False  # Se actualiza después
+            })
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"[CHAT_MODEL] Error en obtener_conversaciones_optimizado: {e}")
+        return []
+
+
 def obtener_ultimo_mensaje(conversacion_id):
     r = (
         supabase.table("chat_mensajes")
@@ -233,3 +340,91 @@ def contar_no_leidos(conversacion_id, usuario_id):
 def obtener_todos_usuarios():
     r = supabase.table("usuarios").select("rut_usuario, nombre, rol").execute()
     return r.data or []
+
+
+# ============================================================
+# 5. FUNCIONES ADICIONALES (Reacciones, Eliminar, Fijar)
+# ============================================================
+
+def obtener_mensaje_por_id(mensaje_id):
+    """Obtiene un mensaje específico por su ID."""
+    try:
+        r = (
+            supabase.table("chat_mensajes")
+            .select("*")
+            .eq("id", mensaje_id)
+            .single()
+            .execute()
+        )
+        return r.data
+    except APIError:
+        return None
+
+
+def agregar_reaccion(mensaje_id, usuario_id, emoji):
+    """Agrega o actualiza una reacción a un mensaje."""
+    try:
+        # Verificar si ya existe una reacción de este usuario
+        r = (
+            supabase.table("chat_reacciones")
+            .select("*")
+            .eq("mensaje_id", mensaje_id)
+            .eq("usuario_id", usuario_id)
+            .execute()
+        )
+        
+        if r.data:
+            # Actualizar reacción existente
+            supabase.table("chat_reacciones").update(
+                {"emoji": emoji}
+            ).eq("mensaje_id", mensaje_id).eq("usuario_id", usuario_id).execute()
+        else:
+            # Insertar nueva reacción
+            supabase.table("chat_reacciones").insert({
+                "mensaje_id": mensaje_id,
+                "usuario_id": usuario_id,
+                "emoji": emoji
+            }).execute()
+        
+        return True
+    except Exception as e:
+        print(f"[CHAT_MODEL] Error agregando reacción: {e}")
+        return False
+
+
+def eliminar_mensaje_db(mensaje_id):
+    """Elimina un mensaje de la base de datos."""
+    try:
+        supabase.table("chat_mensajes").delete().eq("id", mensaje_id).execute()
+        return True
+    except Exception as e:
+        print(f"[CHAT_MODEL] Error eliminando mensaje: {e}")
+        return False
+
+
+def fijar_mensaje_db(conversacion_id, mensaje_id):
+    """Marca un mensaje como fijado en una conversación."""
+    try:
+        # Actualizar la conversación con el mensaje fijado
+        supabase.table("chat_conversaciones").update(
+            {"mensaje_fijado_id": mensaje_id}
+        ).eq("id", conversacion_id).execute()
+        return True
+    except Exception as e:
+        print(f"[CHAT_MODEL] Error fijando mensaje: {e}")
+        return False
+
+
+def obtener_reacciones_mensaje(mensaje_id):
+    """Obtiene todas las reacciones de un mensaje."""
+    try:
+        r = (
+            supabase.table("chat_reacciones")
+            .select("*")
+            .eq("mensaje_id", mensaje_id)
+            .execute()
+        )
+        return r.data or []
+    except APIError:
+        return []
+

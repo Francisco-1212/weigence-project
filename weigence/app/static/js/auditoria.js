@@ -1151,6 +1151,9 @@
   }
 
   async function mostrarUsuariosActivos() {
+    let usuariosActivos = [];
+    let usuariosDesconectados = [];
+    
     try {
       // Obtener datos de usuarios activos desde la API
       const response = await fetch('/api/auditoria/usuarios-activos');
@@ -1161,8 +1164,8 @@
         return;
       }
       
-      const usuariosActivos = data.activos.filter(u => u.activo);
-      const usuariosDesconectados = data.activos.filter(u => !u.activo);
+      usuariosActivos = data.activos.filter(u => u.activo);
+      usuariosDesconectados = data.activos.filter(u => !u.activo);
       
       console.log('📊 Usuarios activos:', usuariosActivos.length);
       console.log('📊 Usuarios desconectados:', usuariosDesconectados.length);

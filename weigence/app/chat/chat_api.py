@@ -17,47 +17,33 @@ def chat_conversaciones():
     if not user:
         return jsonify({"success": False, "msg": "No autenticado"}), 401
 
-    # Todas las conversaciones donde participa este usuario
-    parts = model.obtener_conversaciones_de_usuario(user)
-
-    # usuarios conectados (timeout 5 minutos para ser más tolerante)
-    conectados, detalles = obtener_usuarios_conectados(timeout_minutos=5)
-    conectados_set = set(conectados or [])
-
-    lista = []
-    for conv in parts:
-        cid = conv["id"]
-
-        # participantes
-        miembros = model.obtener_participantes(cid)
-        otro = [m for m in miembros if m != user][0] if len(miembros) == 2 else None
-
-        info_otro = model.obtener_usuario(otro) if otro else None
-        if not info_otro:
-            # Si no hay datos del otro participante, saltamos esta conversación para no romper la API
-            continue
-
-        # obtener último mensaje
-        last = model.obtener_ultimo_mensaje(cid)
-
-        unread = model.contar_no_leidos(cid, user)
-
-        lista.append({
-            "conversacion_id": cid,
-            "usuario": info_otro,
-            "ultimo_mensaje": last["contenido"] if last else "",
-            "fecha": last["fecha_envio"] if last else conv.get("fecha_creacion"),
-            "unread": unread,
-            "is_online": bool(info_otro and info_otro.get("rut_usuario") in conectados_set)
+    try:
+        # Obtener conversaciones de forma optimizada
+        lista = model.obtener_conversaciones_optimizado(user)
+        
+        # usuarios conectados (timeout 5 minutos para ser más tolerante)
+        conectados, detalles = obtener_usuarios_conectados(timeout_minutos=5)
+        conectados_set = set(conectados or [])
+        
+        # Agregar info de conectados
+        for item in lista:
+            if item.get("usuario"):
+                rut = item["usuario"].get("rut_usuario")
+                item["is_online"] = bool(rut in conectados_set)
+        
+        # Ordenar por fecha
+        lista.sort(key=lambda x: x.get("fecha", ""), reverse=True)
+        
+        return jsonify({
+            "success": True,
+            "lista": lista
         })
-
-    # Ordenar
-    lista.sort(key=lambda x: x["fecha"], reverse=True)
-
-    return jsonify({
-        "success": True,
-        "lista": lista
-    })
+    except Exception as e:
+        print(f"[CHAT_API] Error en conversaciones: {e}")
+        return jsonify({
+            "success": True,
+            "lista": []
+        })
     
 
 # =============================================
@@ -149,6 +135,7 @@ def chat_enviar_mensaje():
     contenido = (payload.get("contenido") or "").strip()
     conversacion_id = payload.get("conversacion_id")
     destinatario_id = payload.get("destinatario_id") or payload.get("rut_destino")
+    reply_to = payload.get("reply_to")
 
     if not contenido:
         return jsonify({"success": False, "msg": "Mensaje vacio"}), 400
@@ -159,13 +146,18 @@ def chat_enviar_mensaje():
             res = svc.enviar_mensaje(user_id=user, destinatario_id=destinatario_id, contenido=contenido)
             conv_id = str(res["conversacion_id"])
             msg = res["mensaje"]
+            
+            # Si tiene reply_to, actualizar el mensaje
+            if reply_to and msg.get("id"):
+                model.supabase.table("chat_mensajes").update({"reply_to": reply_to}).eq("id", msg["id"]).execute()
+                msg["reply_to"] = reply_to
         elif conversacion_id is not None:
             try:
                 conv_int = int(conversacion_id)
             except (TypeError, ValueError):
                 return jsonify({"success": False, "msg": "conversacion_id invalido"}), 400
 
-            msg = svc.guardar_mensaje(conv_int, user, contenido)
+            msg = svc.guardar_mensaje(conv_int, user, contenido, reply_to)
             conv_id = str(conv_int)
         else:
             return jsonify({"success": False, "msg": "Falta destinatario"}), 400
@@ -197,3 +189,134 @@ def chat_enviar_mensaje():
         "conversacion_id": conv_id,
         "mensaje": msg,
     })
+
+
+# =============================================
+# 4. Agregar reacción a un mensaje
+# =============================================
+
+@bp_chat.post("/mensajes/<int:mensaje_id>/reaccion")
+def agregar_reaccion(mensaje_id):
+    user = session.get("usuario_id")
+    if not user:
+        return jsonify({"success": False, "msg": "No autenticado"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    emoji = payload.get("emoji", "").strip()
+
+    if not emoji:
+        return jsonify({"success": False, "msg": "Emoji requerido"}), 400
+
+    try:
+        # Obtener el mensaje para validar acceso
+        mensaje = model.obtener_mensaje_por_id(mensaje_id)
+        if not mensaje:
+            return jsonify({"success": False, "msg": "Mensaje no encontrado"}), 404
+
+        # Validar que el usuario tenga acceso a la conversación
+        conv_id = mensaje.get("conversacion_id")
+        if not svc.usuario_puede_ver(conv_id, user):
+            return jsonify({"success": False, "msg": "Sin acceso"}), 403
+
+        # Guardar reacción
+        svc.agregar_reaccion_mensaje(mensaje_id, user, emoji)
+
+        # Emitir por WebSocket
+        try:
+            from app import socketio_instance
+            if socketio_instance:
+                socketio_instance.emit("reaccion_agregada", {
+                    "mensaje_id": mensaje_id,
+                    "usuario_id": user,
+                    "emoji": emoji
+                }, to=str(conv_id))
+        except Exception:
+            pass
+
+        return jsonify({"success": True, "emoji": emoji})
+
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+
+# =============================================
+# 5. Eliminar mensaje (anular envío)
+# =============================================
+
+@bp_chat.delete("/mensajes/<int:mensaje_id>")
+def eliminar_mensaje(mensaje_id):
+    user = session.get("usuario_id")
+    if not user:
+        return jsonify({"success": False, "msg": "No autenticado"}), 401
+
+    try:
+        # Obtener el mensaje
+        mensaje = model.obtener_mensaje_por_id(mensaje_id)
+        if not mensaje:
+            return jsonify({"success": False, "msg": "Mensaje no encontrado"}), 404
+
+        # Solo el autor puede eliminar
+        if mensaje.get("usuario_id") != user:
+            return jsonify({"success": False, "msg": "Solo puedes eliminar tus propios mensajes"}), 403
+
+        conv_id = mensaje.get("conversacion_id")
+
+        # Eliminar mensaje
+        svc.eliminar_mensaje(mensaje_id)
+
+        # Emitir por WebSocket
+        try:
+            from app import socketio_instance
+            if socketio_instance:
+                socketio_instance.emit("mensaje_eliminado", {
+                    "mensaje_id": mensaje_id
+                }, to=str(conv_id))
+        except Exception:
+            pass
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+
+# =============================================
+# 6. Fijar mensaje
+# =============================================
+
+@bp_chat.post("/mensajes/<int:mensaje_id>/fijar")
+def fijar_mensaje(mensaje_id):
+    user = session.get("usuario_id")
+    if not user:
+        return jsonify({"success": False, "msg": "No autenticado"}), 401
+
+    try:
+        # Obtener el mensaje
+        mensaje = model.obtener_mensaje_por_id(mensaje_id)
+        if not mensaje:
+            return jsonify({"success": False, "msg": "Mensaje no encontrado"}), 404
+
+        conv_id = mensaje.get("conversacion_id")
+        
+        # Validar que el usuario tenga acceso
+        if not svc.usuario_puede_ver(conv_id, user):
+            return jsonify({"success": False, "msg": "Sin acceso"}), 403
+
+        # Fijar mensaje
+        svc.fijar_mensaje(conv_id, mensaje_id)
+
+        # Emitir por WebSocket
+        try:
+            from app import socketio_instance
+            if socketio_instance:
+                socketio_instance.emit("mensaje_fijado", {
+                    "mensaje_id": mensaje_id
+                }, to=str(conv_id))
+        except Exception:
+            pass
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+

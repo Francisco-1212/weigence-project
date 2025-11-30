@@ -196,11 +196,11 @@ def api_usuarios_activos():
         # Obtener usuarios conectados del sistema de heartbeat (últimos 30 minutos para ser más permisivo)
         usuarios_conectados_ruts, detalles_conectados = obtener_usuarios_conectados(timeout_minutos=30)
         
-        logger.info(f"Usuarios conectados desde heartbeat: {len(usuarios_conectados_ruts)} - {usuarios_conectados_ruts}")
+        logger.info(f"[USUARIOS-ACTIVOS] Conectados desde heartbeat: {len(usuarios_conectados_ruts)}")
         
-        # Consultar todos los usuarios de la base de datos
+        # Consultar todos los usuarios de la base de datos (sin apellido porque no existe esa columna)
         usuarios_result = supabase.table('usuarios')\
-            .select('rut_usuario, nombre, apellido, correo, rol')\
+            .select('rut_usuario, nombre, correo, rol')\
             .execute()
         
         if not usuarios_result.data:
@@ -241,13 +241,15 @@ def api_usuarios_activos():
                         logger.error(f"Error procesando ultima_actividad del heartbeat: {e}")
                         tiempo_relativo = 'Activo ahora'
             
+            nombre = usuario.get('nombre') or ''
+            
             usuarios_con_actividad.append({
                 'rut': rut,
-                'nombre': usuario.get('nombre', ''),
-                'apellido': usuario.get('apellido', ''),
+                'nombre': nombre,
+                'apellido': '',  # La columna apellido no existe en la BD
                 'correo': usuario.get('correo', ''),
                 'rol': usuario.get('rol', ''),
-                'nombre_completo': f"{usuario.get('nombre', '')} {usuario.get('apellido', '')}",
+                'nombre_completo': nombre,
                 'ultima_actividad': ultima_actividad_iso,
                 'tiempo_relativo': tiempo_relativo,
                 'activo': es_activo
@@ -267,8 +269,10 @@ def api_usuarios_activos():
         })
         
     except Exception as e:
-        logger.error(f"Error al obtener usuarios activos: {e}")
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_detail = traceback.format_exc()
+        logger.error(f"[USUARIOS-ACTIVOS] Error completo:\n{error_detail}")
+        return jsonify({'error': str(e), 'detail': error_detail}), 500
 
 
 @bp.route('/api/auditoria/recalibrar', methods=['POST'])

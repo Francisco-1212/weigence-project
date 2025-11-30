@@ -169,9 +169,15 @@
   <!-- Boton Perfil -->
   <div class="px-2 lg:px-3 py-2 lg:py-3">
     <div id="profile-trigger" class="flex items-center gap-3 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3 py-2 rounded-lg transition-colors duration-200 w-full" tabindex="0">
-      <span class="material-symbols-outlined text-xl text-neutral-600 dark:text-neutral-400">account_circle</span>
-      <div>
-        <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ session["usuario_nombre"] }}</p>
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center overflow-hidden flex-shrink-0">
+        {% if session.get('usuario_foto_perfil') %}
+          <img src="{{ session.get('usuario_foto_perfil') }}" alt="" class="w-full h-full object-cover">
+        {% else %}
+          <span class="text-lg font-bold text-white">{{ session["usuario_nombre"][0].upper() }}</span>
+        {% endif %}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{{ session["usuario_nombre"] }}</p>
         <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ session["usuario_rol"] }}</p>
       </div>
     </div>

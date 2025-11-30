@@ -39,13 +39,13 @@ def enviar_mensaje(user_id, destinatario_id, contenido):
 # 3b. Enviar mensaje para WebSocket
 # ============================================================
 
-def guardar_mensaje(conversacion_id, usuario_id, contenido):
+def guardar_mensaje(conversacion_id, usuario_id, contenido, reply_to=None):
     if not contenido or not contenido.strip():
         raise ValueError("Mensaje vacio")
     if not model.validar_usuario_en_conversacion(conversacion_id, usuario_id):
         raise PermissionError("No pertenece a la conversacion")
 
-    msg = model.insertar_mensaje(conversacion_id, usuario_id, contenido)
+    msg = model.insertar_mensaje(conversacion_id, usuario_id, contenido, reply_to)
     return _msg_payload(msg)
 
 
@@ -94,7 +94,7 @@ def usuario_puede_ver(conv_id, user):
 
 def _msg_payload(msg):
     user = model.obtener_usuario(msg["usuario_id"])
-    return {
+    payload = {
         "id": msg["id"],
         "conversacion_id": msg["conversacion_id"],
         "usuario_id": msg["usuario_id"],
@@ -106,3 +106,40 @@ def _msg_payload(msg):
             "rol": user["rol"],
         },
     }
+    
+    # Si es una respuesta, incluir el contenido del mensaje original
+    if msg.get("reply_to"):
+        payload["reply_to"] = msg["reply_to"]
+        try:
+            original = model.obtener_mensaje_por_id(msg["reply_to"])
+            if original:
+                payload["reply_to_content"] = original.get("contenido", "")
+        except Exception:
+            pass
+    
+    return payload
+
+
+# ============================================================
+# 6. Funciones adicionales (Reacciones, Eliminar, Fijar)
+# ============================================================
+
+def agregar_reaccion_mensaje(mensaje_id, usuario_id, emoji):
+    """Agrega una reacción a un mensaje."""
+    return model.agregar_reaccion(mensaje_id, usuario_id, emoji)
+
+
+def eliminar_mensaje(mensaje_id):
+    """Elimina un mensaje."""
+    return model.eliminar_mensaje_db(mensaje_id)
+
+
+def fijar_mensaje(conversacion_id, mensaje_id):
+    """Fija un mensaje en una conversación."""
+    return model.fijar_mensaje_db(conversacion_id, mensaje_id)
+
+
+def obtener_reacciones(mensaje_id):
+    """Obtiene las reacciones de un mensaje."""
+    return model.obtener_reacciones_mensaje(mensaje_id)
+

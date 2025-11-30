@@ -167,33 +167,19 @@
           <span class="text-xs text-red-500 hidden" id="error-rut"></span>
         </div>
 
-        <!-- Nombre -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-1.5 sm:mb-2">
-              Nombre <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="usuario-nombre" 
-              placeholder="Juan"
-              class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span class="text-xs text-red-500 hidden" id="error-nombre"></span>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-1.5 sm:mb-2">
-              Apellido <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="usuario-apellido" 
-              placeholder="Pérez"
-              class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span class="text-xs text-red-500 hidden" id="error-apellido"></span>
-          </div>
+        <!-- Nombre y Apellido -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 dark:text-white mb-1.5 sm:mb-2">
+            Nombre Completo <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="usuario-nombre" 
+            placeholder="Nombre Apellido"
+            class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <span class="text-xs text-red-500 hidden" id="error-nombre"></span>
+          <input type="hidden" id="usuario-apellido" value="" />
         </div>
 
         <!-- Correo -->

@@ -34,15 +34,20 @@
             </div>
 
             <!-- MENSAJES -->
-            <div id="chat-body" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+            <div id="chat-body" class="flex-1 overflow-y-auto overflow-x-hidden"></div>
 
             <!-- INPUT -->
-            <div class="p-3 border-t">
-                <input
-                    id="chat-input"
-                    type="text"
-                    class="w-full rounded-lg px-3 py-2 bg-neutral-200 dark:bg-neutral-800 outline-none"
-                    placeholder="Escribe un mensaje...">
+            <div class="p-3 border-t bg-white dark:bg-neutral-900">
+                <div class="flex items-center gap-2">
+                    <input
+                        id="chat-input"
+                        type="text"
+                        class="flex-1 rounded-lg px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm"
+                        placeholder="Escribe un mensaje...">
+                    <button id="chat-send-btn" class="hidden p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
+                        <span class="material-symbols-outlined text-xl">send</span>
+                    </button>
+                </div>
             </div>
         </div>
 
