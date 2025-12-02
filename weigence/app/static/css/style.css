@@ -649,3 +649,12 @@ html.dark .timeline-item:focus, html.dark .timeline-item:active, html.dark .time
 .audit-msg {
   color: #d1d5db; /* gray-300 */
 }
+
+/* Modal de detalles de auditoría */
+.modal-content-custom {
+  background: #e8ecf0;
+}
+
+.dark .modal-content-custom {
+  background: #1b1b1b;
+}

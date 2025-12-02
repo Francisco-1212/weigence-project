@@ -530,7 +530,7 @@
     modal.style.animation = "fadeIn 0.2s ease-out";
     
     modal.innerHTML = `
-      <div class="bg-gradient-to-br from-white to-neutral-50 dark:from-gray-900 dark:to-gray-800 border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl" style="animation: slideUp 0.3s ease-out;">
+      <div class="border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl" style="background: #e8ecf0; animation: slideUp 0.3s ease-out;">
         <div class="flex items-center justify-between border-b border-neutral-300 dark:border-gray-700 pb-4">
           <div class="flex items-center gap-4">
             <div style="
