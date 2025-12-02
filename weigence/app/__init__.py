@@ -116,13 +116,22 @@ def create_app(config_name=None):
         Fuerza logout si la sesión está corrupta o inválida.
         """
         # Excluir rutas públicas y archivos estáticos
-        public_routes = ['/login', '/logout', '/password-reset', '/static', '/api/reset-password', '/api/validate-reset-token']
+        public_routes = [
+            '/login', 
+            '/logout', 
+            '/password-reset', 
+            '/static', 
+            '/api/reset-password', 
+            '/api/validate-reset-token',
+            '/api/validate-session'  # Agregar validación de sesión
+        ]
         
         if any(request.path.startswith(route) for route in public_routes):
             return None
         
         # Si hay "intento" de sesión pero está incompleta, forzar limpieza
-        if session.get('usuario_logueado'):
+        # SOLO si no es una petición AJAX o API
+        if session.get('usuario_logueado') and not request.path.startswith('/api/'):
             if not session.get('usuario_id') or not session.get('usuario_nombre'):
                 logger.warning(f"[SECURITY] Sesión corrupta detectada en {request.path} - forzando logout")
                 session.clear()
@@ -219,8 +228,11 @@ def create_app(config_name=None):
     def check_session_permanent():
         """Control de persistencia de sesion segun "Recordarme"."""
         if session.get("usuario_logueado"):
-            session.permanent = bool(session.get("recordarme_activado", False))
-        session.modified = True
+            # Solo configurar permanencia si no está ya configurada
+            should_be_permanent = bool(session.get("recordarme_activado", False))
+            if session.permanent != should_be_permanent:
+                session.permanent = should_be_permanent
+                session.modified = True  # Solo marcar como modificada cuando cambia
 
     @app.context_processor
     def utility_processor():

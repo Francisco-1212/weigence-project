@@ -103,8 +103,8 @@ def login():
                     session.permanent = False
                     logger.info(f"[LOGIN] Sesión TEMPORAL (cierre navegador) para: {usuario_input}")
                 
-                # Marcar como modificado para que se guarde
-                session.modified = True
+                # Flask guardará automáticamente la sesión al finalizar el request
+                # No es necesario session.modified = True aquí
                 
                 return redirect(url_for("main.dashboard"))
             else:
@@ -364,3 +364,39 @@ def logout():
     response.set_cookie('session', '', expires=0)
     
     return response
+
+
+@bp.route("/api/validate-session", methods=["GET"])
+def validate_session():
+    """
+    Endpoint para validar si la sesión actual es válida.
+    Retorna True si el usuario está autenticado, False en caso contrario.
+    """
+    try:
+        # Verificar si hay sesión activa
+        if session.get("usuario_logueado"):
+            # Validar que tenga los datos básicos
+            if session.get("usuario_id") and session.get("usuario_nombre"):
+                return jsonify({
+                    "ok": True,
+                    "valid": True,
+                    "user": {
+                        "id": session.get("usuario_id"),
+                        "nombre": session.get("usuario_nombre"),
+                        "rol": session.get("usuario_rol")
+                    }
+                })
+        
+        # Sesión inválida o inexistente
+        return jsonify({
+            "ok": True,
+            "valid": False
+        })
+    
+    except Exception as e:
+        logger.error(f"[VALIDATE-SESSION] Error validando sesión: {e}")
+        return jsonify({
+            "ok": False,
+            "valid": False,
+            "error": str(e)
+        }), 500
