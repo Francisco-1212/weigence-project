@@ -24,6 +24,8 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    SESSION_COOKIE_NAME = "weigence_session"  # Nombre único para evitar conflictos
+    SESSION_REFRESH_EACH_REQUEST = False  # No regenerar cookie en cada request
     
     # ========== SUPABASE ==========
     SUPABASE_URL = os.getenv("SUPABASE_URL")

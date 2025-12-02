@@ -68,7 +68,7 @@
       // Función para verificar sesión contra el servidor
       async function verificarSesionServidor() {
         try {
-          const response = await fetch('/api/verify-session', {
+          const response = await fetch('/api/validate-session', {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -76,7 +76,7 @@
             }
           });
           const data = await response.json();
-          return data.authenticated === true;
+          return data.valid === true;
         } catch (error) {
           console.error('[SECURITY] Error verificando sesión:', error);
           return false;
@@ -113,21 +113,6 @@
         }
       }
 
-      // SOLO verificar con servidor si es navegación desde caché
-      if (esNavegacionCache) {
-        console.log('[SECURITY] Verificando sesión con servidor...');
-        (async function() {
-          const isValid = await verificarSesionServidor();
-          if (!isValid) {
-            console.warn('[SECURITY] Sesión inválida - redirigiendo al login');
-            window.location.replace("{{ url_for('main.login') }}");
-          } else {
-            console.log('[SECURITY] Sesión válida - permitiendo acceso');
-          }
-        })();
-        return;
-      }
-
       // Prevenir navegación hacia atrás después de logout
       function prevenirRetroceso() {
         window.history.pushState(null, document.title, window.location.href);
@@ -137,38 +122,19 @@
 
       // Interceptar botón atrás y adelante
       window.addEventListener('popstate', function(event) {
-        console.log('[SECURITY] Evento popstate detectado - validando sesión...');
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // Verificar con el servidor inmediatamente
-        verificarSesionServidor().then(function(isValid) {
-          if (!isValid) {
-            console.warn('[SECURITY] Sesión inválida - redirigiendo al login');
-            window.location.replace("{{ url_for('main.login') }}");
-          } else {
-            console.log('[SECURITY] Sesión válida - previniendo navegación');
-            prevenirRetroceso();
-            // Forzar recarga para asegurar datos frescos del servidor
-            window.location.reload(true);
-          }
-        });
+        console.log('[SECURITY] Evento popstate detectado');
+        prevenirRetroceso();
+        // NO recargar la página automáticamente
       });
 
       // Detectar página desde caché (bfcache) - Chrome específico
       window.addEventListener('pageshow', function(event) {
         if (event.persisted) {
-          console.log('[SECURITY] Página restaurada desde bfcache - verificando sesión...');
-          
-          // Verificar sesión con el servidor
-          verificarSesionServidor().then(function(isValid) {
-            if (!isValid) {
-              window.location.replace("{{ url_for('main.login') }}");
-            } else {
-              // Forzar recarga completa desde el servidor
-              window.location.reload(true);
-            }
-          });
+          console.log('[SECURITY] Página restaurada desde bfcache');
+          // Solo verificar sesión local, no forzar recarga
+          if (!validarSesionLocal()) {
+            window.location.replace("{{ url_for('main.login') }}");
+          }
         }
       });
 
@@ -176,17 +142,6 @@
       window.addEventListener('beforeunload', function() {
         if (window.CURRENT_USER && window.CURRENT_USER.id) {
           sessionStorage.setItem('lastPage', window.location.pathname);
-        }
-      });
-
-      // Validar sesión cuando la página recupera el foco
-      document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-          verificarSesionServidor().then(function(isValid) {
-            if (!isValid) {
-              window.location.replace("{{ url_for('main.login') }}");
-            }
-          });
         }
       });
 

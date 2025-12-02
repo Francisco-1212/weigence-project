@@ -78,18 +78,22 @@ class AdvancedMLInsights:
             
             products_without_stock = []
             products_below_min = []
+            above_max = []
             
             if response.data:
                 for prod in response.data:
                     stock = int(prod.get('stock', 0))
                     nombre = prod.get('nombre', 'Producto sin nombre')
+                    id_estante = prod.get('id_estante')
                     
                     if stock <= 0:
                         products_without_stock.append(nombre)
                     elif stock <= 5:  # Umbral bajo (configurable)
                         products_below_min.append({
                             'nombre': nombre,
-                            'stock': stock
+                            'stock': stock,
+                            'min': 5,
+                            'ubicacion': f"Estante {id_estante}" if id_estante else "Sin asignar"
                         })
             
             # Estantes con peso excedido
@@ -110,10 +114,19 @@ class AdvancedMLInsights:
                             'maximo': peso_max,
                             'exceso_porcentaje': round(((peso_actual - peso_max) / peso_max) * 100, 1)
                         })
+                        
+                        above_max.append({
+                            'nombre': shelf.get('nombre', f"Estante {shelf['id_estante']}"),
+                            'stock': peso_actual,
+                            'max': peso_max,
+                            'ubicacion': shelf.get('nombre', f"Estante {shelf['id_estante']}")
+                        })
             
             return {
                 'without_stock': products_without_stock,
-                'below_minimum': products_below_min,
+                'below_min': products_below_min,
+                'below_minimum': products_below_min,  # Alias
+                'above_max': above_max,
                 'shelves_exceeded': shelves_exceeded,
                 'total_issues': len(products_without_stock) + len(products_below_min) + len(shelves_exceeded)
             }
@@ -121,7 +134,14 @@ class AdvancedMLInsights:
         except Exception as e:
             logger.error(f"Error analizando capacidad inventario: {e}")
         
-        return {'without_stock': [], 'below_minimum': [], 'shelves_exceeded': [], 'total_issues': 0}
+        return {
+            'without_stock': [],
+            'below_min': [],
+            'below_minimum': [],
+            'above_max': [],
+            'shelves_exceeded': [],
+            'total_issues': 0
+        }
     
     # ==================== MOVIMIENTOS ====================
     
@@ -192,17 +212,51 @@ class AdvancedMLInsights:
             else:
                 change_percent = 100.0 if recent_total > 0 else 0.0
             
+            # Obtener producto más vendido
+            top_product_name = 'N/A'
+            top_product_qty = 0
+            
+            try:
+                detalle_response = self.supabase.table('detalle_ventas') \
+                    .select('productos(nombre), cantidad') \
+                    .gte('fecha_detalle', last_24h.isoformat()) \
+                    .execute()
+                
+                if detalle_response.data:
+                    product_sales = {}
+                    for item in detalle_response.data:
+                        if item.get('productos'):
+                            prod_name = item['productos']['nombre']
+                            qty = float(item.get('cantidad', 0))
+                            product_sales[prod_name] = product_sales.get(prod_name, 0) + qty
+                    
+                    if product_sales:
+                        top_product = max(product_sales.items(), key=lambda x: x[1])
+                        top_product_name = top_product[0]
+                        top_product_qty = top_product[1]
+            except Exception as e:
+                logger.debug(f"No se pudo obtener top producto: {e}")
+            
             return {
                 'recent_total': recent_total,
                 'previous_total': previous_total,
                 'change_percent': change_percent,
-                'is_increase': recent_total > previous_total
+                'is_increase': recent_total > previous_total,
+                'top_product': top_product_name,
+                'top_product_qty': top_product_qty
             }
             
         except Exception as e:
             logger.error(f"Error comparando ventas 48h: {e}")
         
-        return {'recent_total': 0, 'previous_total': 0, 'change_percent': 0, 'is_increase': False}
+        return {
+            'recent_total': 0,
+            'previous_total': 0,
+            'change_percent': 0,
+            'is_increase': False,
+            'top_product': 'N/A',
+            'top_product_qty': 0
+        }
     
     # ==================== ALERTAS ====================
     
@@ -229,7 +283,8 @@ class AdvancedMLInsights:
                         'descripcion': alert.get('descripcion', ''),
                         'tipo': alert.get('tipo_color', 'warning'),
                         'producto': prod_name,
-                        'resolucion': resolution
+                        'resolucion': resolution,
+                        'resolution': resolution  # Alias para compatibilidad
                     })
             
             return {
