@@ -278,17 +278,12 @@
       }
     });
 
-    // Mostrar notificación de nuevos eventos (solo si hay más de 2 nuevos)
-    if (cantidadNuevos > 2) {
-      showNotification(`${cantidadNuevos} nuevos eventos`, "info");
-      
-      // Parpadeo en el indicador de estado
-      if (el.streamStatus) {
-        el.streamStatus.style.animation = 'none';
-        setTimeout(() => {
-          el.streamStatus.style.animation = 'pulse-glow 2s ease-in-out infinite';
-        }, 100);
-      }
+    // Parpadeo en el indicador de estado para eventos nuevos
+    if (cantidadNuevos > 2 && el.streamStatus) {
+      el.streamStatus.style.animation = 'none';
+      setTimeout(() => {
+        el.streamStatus.style.animation = 'pulse-glow 2s ease-in-out infinite';
+      }, 100);
     }
 
     // Reconstruir todo el contenedor para mantener orden correcto
@@ -961,7 +956,7 @@
         }
       }, 150);
     });
-    showNotification("📅 Mostrando eventos de hoy (últimas 24h)", "info");
+    showNotification("📅 Eventos de hoy (últimas 24h)", "info");
   }
   
   function filtrarSemana() {
@@ -971,16 +966,15 @@
     state.renderedLogIds.clear();
     el.logStream.innerHTML = "";
     renderFilterChips();
+    showNotification("📅 Últimos 7 días", "info");
     loadLogs().then(() => {
       // Auto-scroll al inicio (eventos más antiguos) para SEMANA
       setTimeout(() => {
         if (el.logStream) {
           el.logStream.scrollTop = 0;
-          showNotification("📜 Mostrando desde el evento más antiguo de la semana", "success");
         }
       }, 150);
     });
-    showNotification("📅 Cargando eventos de los últimos 7 días...", "info");
   }
   
   function filtrarMes() {
@@ -990,16 +984,15 @@
     state.renderedLogIds.clear();
     el.logStream.innerHTML = "";
     renderFilterChips();
+    showNotification("📅 Último mes", "info");
     loadLogs().then(() => {
       // Auto-scroll al inicio (eventos más antiguos) para MES
       setTimeout(() => {
         if (el.logStream) {
           el.logStream.scrollTop = 0;
-          showNotification("📜 Mostrando desde el evento más antiguo del mes", "success");
         }
       }, 150);
     });
-    showNotification("📅 Cargando eventos del último mes...", "info");
   }
   
   // Conectar botones del header con funciones de filtrado

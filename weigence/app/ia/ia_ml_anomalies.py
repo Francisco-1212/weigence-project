@@ -221,14 +221,14 @@ class AnomalyDetector:
             
             if is_anomaly:
                 if is_critical_anomaly and prediction != -1:
-                    logger.warning(
-                        "[ML] ⚠️ ANOMALÍA CRÍTICA (reglas) - Score: %.3f | "
+                    logger.info(
+                        "[ML] ANOMALÍA detectada - Score: %.3f | "
                         "Críticas=%d, Tendencia=%.1f%%, Inactividad=%.1fh",
                         anomaly_score, snapshot.critical_alerts, 
                         snapshot.sales_trend_percent, snapshot.inactivity_hours
                     )
                 else:
-                    logger.info("[ML] ⚠️ ANOMALÍA DETECTADA - Score: %.3f", anomaly_score)
+                    logger.debug("[ML] Anomalía detectada - Score: %.3f", anomaly_score)
             else:
                 logger.debug("[ML] Comportamiento normal - Score: %.3f", anomaly_score)
             
@@ -417,153 +417,285 @@ class AnomalyDetector:
         severity: str,
     ) -> List[Dict[str, str]]:
         """
-        Genera EXACTAMENTE 6 hallazgos (uno por módulo) con análisis ML avanzado.
+        Genera hallazgos detallados para los 6 módulos del sistema.
+        Cada módulo puede generar MÚLTIPLES hallazgos según los problemas detectados.
         
         Módulos:
-        1. Dashboard (rankings de productos)
-        2. Inventario (capacidad estantes, stock)
-        3. Movimientos (retiros no justificados)
-        4. Ventas (comparación 48h)
-        5. Alertas (críticas con resoluciones)
-        6. Auditoría (anomalías de usuarios)
+        1. Dashboard (rankings, alertas críticas, inactividad)
+        2. Inventario (productos agotados, sobrecapacidad, stock bajo, sensores)
+        3. Movimientos (retiros sin justificar, inactividad, baja actividad)
+        4. Ventas (cambios significativos, productos top, caídas críticas)
+        5. Alertas (alertas críticas individuales con resoluciones)
+        6. Auditoría (usuarios con patrones atípicos, actividad anómala)
+        
+        Returns:
+            List[Dict]: Hallazgos individuales para navegación en header.
+                       Cada módulo puede tener 1 o más hallazgos dependiendo de problemas detectados.
         """
         findings = []
         insights = get_advanced_insights()
         
-        # 1️⃣ DASHBOARD - Rankings y top productos
+        # 1️⃣ DASHBOARD - Rankings y top productos (MÚLTIPLES HALLAZGOS)
         try:
             rankings = insights.analyze_dashboard_rankings()
+            has_dashboard_findings = False
+            
+            # Top productos (puede haber múltiples destacados)
             if rankings['top_5']:
-                top_product = rankings['top_5'][0]
+                for idx, (prod_name, prod_qty) in enumerate(rankings['top_5'][:2], 1):  # Top 2
+                    findings.append({
+                        'emoji': '🏆' if idx == 1 else '🥈',
+                        'modulo': 'dashboard',
+                        'titulo': f'#{idx}: "{prod_name}" en alta demanda',
+                        'descripcion': f'{prod_qty:.0f} unidades vendidas en 48h. {"Líder absoluto del catálogo" if idx == 1 else "Segundo mejor rendimiento"}.',
+                        'ml_severity': 'low',
+                        'plan_accion': f'Asegurar stock suficiente de "{prod_name}". Analizar márgenes y promociones.'
+                    })
+                    has_dashboard_findings = True
+            
+            # Productos de bajo rendimiento
+            if rankings['bottom_5']:
+                for bottom_product in rankings['bottom_5'][:2]:  # Worst 2
+                    findings.append({
+                        'emoji': '📉',
+                        'modulo': 'dashboard',
+                        'titulo': f'"{bottom_product[0]}" con baja rotación',
+                        'descripcion': f'Solo {bottom_product[1]:.0f} unidades en 48h. Requiere impulso comercial.',
+                        'ml_severity': 'medium',
+                        'plan_accion': f'Revisar precio y visibilidad de "{bottom_product[0]}". Considerar promoción o reubicación.'
+                    })
+                    has_dashboard_findings = True
+            
+            # Alertas críticas (si existen)
+            if snapshot.critical_alerts >= 3:
                 findings.append({
-                    'emoji': '🏆',
+                    'emoji': '🚨',
                     'modulo': 'dashboard',
-                    'titulo': f'Dashboard: "{top_product[0]}" lidera ventas',
-                    'descripcion': f'Top 1 con {top_product[1]:.0f} unidades vendidas en 48h. Total {rankings["total_products"]} productos activos.',
-                    'ml_severity': 'low',
-                    'plan_accion': f'Asegurar stock suficiente de "{top_product[0]}". Replicar estrategia con productos similares.'
+                    'titulo': f'{snapshot.critical_alerts} alertas críticas activas',
+                    'descripcion': 'Múltiples problemas requieren atención inmediata del supervisor.',
+                    'ml_severity': 'critical',
+                    'plan_accion': 'Revisar panel de alertas. Atender las rojas primero. Coordinar con equipo.'
                 })
-            elif rankings['bottom_5']:
-                bottom_product = rankings['bottom_5'][0]
+                has_dashboard_findings = True
+            
+            # Inactividad prolongada
+            if snapshot.inactivity_hours >= 4:
                 findings.append({
-                    'emoji': '📉',
+                    'emoji': '⏱️',
                     'modulo': 'dashboard',
-                    'titulo': f'Dashboard: "{bottom_product[0]}" con ventas bajas',
-                    'descripcion': f'Solo {bottom_product[1]:.0f} unidades en 48h. Requiere atención comercial.',
-                    'ml_severity': 'medium',
-                    'plan_accion': f'Revisar precio y promociones de "{bottom_product[0]}". Considerar descuento o retiro del catálogo.'
+                    'titulo': f'{snapshot.inactivity_hours:.0f}h sin movimientos',
+                    'descripcion': 'Sistema sin registrar actividad. Posible problema de conectividad o cierre no registrado.',
+                    'ml_severity': 'high',
+                    'plan_accion': 'Verificar conexión de sensores y dispositivos. Confirmar estado operativo del local.'
                 })
-            else:
+                has_dashboard_findings = True
+            
+            # Si no hay hallazgos, mensaje positivo
+            if not has_dashboard_findings:
                 findings.append({
                     'emoji': '📊',
                     'modulo': 'dashboard',
-                    'titulo': 'Dashboard: Sin datos de productos',
-                    'descripcion': 'No hay suficiente historial de ventas para análisis.',
+                    'titulo': 'Operación estable',
+                    'descripcion': f'Catálogo de {rankings["total_products"]} productos. Indicadores dentro de rangos normales.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Continuar registrando ventas para generar insights.'
+                    'plan_accion': 'Continuar con estrategia actual. El sistema monitorea en tiempo real.'
                 })
         except Exception as e:
             logger.error(f"Error en análisis dashboard: {e}")
             findings.append({
                 'emoji': '📊',
                 'modulo': 'dashboard',
-                'titulo': 'Dashboard: Operación normal',
-                'descripcion': 'Todos los indicadores dentro de lo esperado.',
+                'titulo': 'Todo fluye correctamente',
+                'descripcion': 'Indicadores clave de rendimiento dentro de rangos óptimos. No se detectaron anomalías.',
                 'ml_severity': 'low',
-                'plan_accion': 'Continuar con operaciones normales y monitoreo preventivo.'
+                'plan_accion': 'Mantener estrategia actual. El sistema continúa monitoreando patrones en tiempo real.'
             })
         
-        # 2️⃣ INVENTARIO - Capacidad y stock
+        # 2️⃣ INVENTARIO - Capacidad y stock (MÚLTIPLES HALLAZGOS)
         try:
             inventory = insights.analyze_inventory_capacity()
+            has_inventory_findings = False
+            
+            # Productos agotados (CRÍTICO - cada uno es un hallazgo)
             if inventory['without_stock']:
                 count = len(inventory['without_stock'])
-                productos = ', '.join(inventory['without_stock'][:3])
+                # Generar hallazgo por cada producto agotado (máximo 3)
+                for prod_name in inventory['without_stock'][:3]:
+                    findings.append({
+                        'emoji': '🚨',
+                        'modulo': 'inventario',
+                        'titulo': f'Stock cero: "{prod_name}"',
+                        'descripcion': f'Producto completamente agotado. Impacto directo en disponibilidad y ventas.',
+                        'ml_severity': 'critical',
+                        'plan_accion': f'Acción inmediata: Generar orden de reposición para "{prod_name}". Contactar proveedor prioritario.'
+                    })
+                    has_inventory_findings = True
+                
+                # Si hay más de 3, agregar hallazgo resumen
+                if count > 3:
+                    findings.append({
+                        'emoji': '🚨',
+                        'modulo': 'inventario',
+                        'titulo': f'{count - 3} productos agotados adicionales',
+                        'descripcion': f'Total de {count} productos sin stock. Revisar panel de inventario completo.',
+                        'ml_severity': 'critical',
+                        'plan_accion': 'Generar reporte de agotados. Activar protocolo de emergencia con proveedores.'
+                    })
+            
+            # Estantes con sobrecapacidad de PESO (RESUMEN UNIFICADO)
+            if inventory.get('shelves_exceeded'):
+                # Tomar el estante más crítico (mayor porcentaje de sobrecarga)
+                estante_critico = max(inventory['shelves_exceeded'], key=lambda x: x['exceso_porcentaje'])
+                porcentaje_ocupacion = (estante_critico['actual'] / estante_critico['maximo']) * 100
+                
+                # Mensaje unificado
+                if len(inventory['shelves_exceeded']) == 1:
+                    titulo = f'Estante {estante_critico["nombre"]} sobrecargado'
+                    descripcion = f'Ocupación al {porcentaje_ocupacion:.0f}%. Peso actual: {estante_critico["actual"]:.1f}kg de {estante_critico["maximo"]:.1f}kg máximo.'
+                else:
+                    titulo = f'{len(inventory["shelves_exceeded"])} estantes sobrecargados'
+                    descripcion = f'Crítico: Estante {estante_critico["nombre"]} al {porcentaje_ocupacion:.0f}% ({estante_critico["actual"]:.1f}kg de {estante_critico["maximo"]:.1f}kg).'
+                
                 findings.append({
-                    'emoji': '🚨',
+                    'emoji': '⚖️',
                     'modulo': 'inventario',
-                    'titulo': f'Inventario: {count} productos SIN STOCK',
-                    'descripcion': f'Crítico: {productos}{"..." if count > 3 else ""}. Riesgo de pérdida de ventas.',
+                    'titulo': titulo,
+                    'descripcion': descripcion,
                     'ml_severity': 'critical',
-                    'plan_accion': f'URGENTE: Generar orden de compra para {count} productos. Contactar proveedores HOY.'
+                    'plan_accion': f'Redistribuir productos del estante {estante_critico["nombre"]}. Riesgo estructural por sobrepeso de {estante_critico["actual"] - estante_critico["maximo"]:.1f}kg.'
                 })
-            elif inventory['above_max']:
-                prod = inventory['above_max'][0]
-                findings.append({
-                    'emoji': '📦',
-                    'modulo': 'inventario',
-                    'titulo': f'Inventario: "{prod["nombre"]}" excede capacidad',
-                    'descripcion': f'Stock actual: {prod["stock"]:.0f} > Máximo: {prod["max"]:.0f}. Ubicación: {prod["ubicacion"]}.',
-                    'ml_severity': 'high',
-                    'plan_accion': f'Reubicar exceso de "{prod["nombre"]}". Ajustar niveles máximos o habilitar espacio adicional.'
-                })
-            elif inventory['below_min']:
+                has_inventory_findings = True
+            
+            # Sobrecapacidad de productos (cada producto es un hallazgo)
+            if inventory['above_max']:
+                for prod in inventory['above_max'][:2]:  # Máximo 2 hallazgos
+                    findings.append({
+                        'emoji': '📦',
+                        'modulo': 'inventario',
+                        'titulo': f'Sobrecapacidad: "{prod["nombre"]}"',
+                        'descripcion': f'Stock actual ({prod["stock"]:.0f}) supera máximo ({prod["max"]:.0f}). Ubicación: {prod["ubicacion"]}.',
+                        'ml_severity': 'high',
+                        'plan_accion': f'Redistribuir excedente de "{prod["nombre"]}". Recalibrar límites máximos.'
+                    })
+                    has_inventory_findings = True
+            
+            # Stock bajo (productos en punto de reorden)
+            if inventory['below_min']:
                 count = len(inventory['below_min'])
-                prod = inventory['below_min'][0]
+                # Primeros 2 productos con stock crítico
+                for prod in inventory['below_min'][:2]:
+                    findings.append({
+                        'emoji': '⚠️',
+                        'modulo': 'inventario',
+                        'titulo': f'Stock bajo: "{prod["nombre"]}"',
+                        'descripcion': f'Solo {prod["stock"]:.0f} unidades (mínimo: {prod["min"]:.0f}). Ubicación: {prod["ubicacion"]}.',
+                        'ml_severity': 'medium',
+                        'plan_accion': f'Programar reposición de "{prod["nombre"]}" en 48-72h. Riesgo de quiebre.'
+                    })
+                    has_inventory_findings = True
+                
+                # Si hay más, resumen
+                if count > 2:
+                    findings.append({
+                        'emoji': '⚠️',
+                        'modulo': 'inventario',
+                        'titulo': f'{count - 2} productos adicionales en punto de reorden',
+                        'descripcion': f'Total de {count} productos requieren reposición próximamente.',
+                        'ml_severity': 'medium',
+                        'plan_accion': 'Revisar panel completo de inventario. Priorizar según demanda.'
+                    })
+            
+            # Peso inestable en sensores
+            if snapshot.weight_volatility > 0.5:
                 findings.append({
-                    'emoji': '⚠️',
+                    'emoji': '⚖️',
                     'modulo': 'inventario',
-                    'titulo': f'Inventario: {count} productos bajo mínimo',
-                    'descripcion': f'"{prod["nombre"]}" con {prod["stock"]:.0f} unidades (mín: {prod["min"]:.0f}). Ubicación: {prod["ubicacion"]}.',
-                    'ml_severity': 'medium',
-                    'plan_accion': f'Planificar reposición de {count} productos esta semana. Priorizar "{prod["nombre"]}".'
+                    'titulo': 'Sensores de peso inestables',
+                    'descripcion': 'Lecturas inconsistentes detectadas. Posible problema técnico o manipulación incorrecta.',
+                    'ml_severity': 'high',
+                    'plan_accion': 'Verificar calibración de sensores. Revisar protocolo de pesaje con personal.'
                 })
-            else:
+                has_inventory_findings = True
+            
+            # Si no hay problemas, mensaje positivo
+            if not has_inventory_findings:
                 findings.append({
                     'emoji': '✅',
                     'modulo': 'inventario',
-                    'titulo': 'Inventario: Niveles óptimos',
-                    'descripcion': 'Todos los productos dentro de rangos saludables.',
+                    'titulo': 'Inventario balanceado',
+                    'descripcion': 'Todos los productos operan dentro de parámetros óptimos. Stock suficiente sin excesos.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Mantener monitoreo regular y ajustar niveles según demanda.'
+                    'plan_accion': 'Mantener monitoreo continuo. El algoritmo ajustará alertas automáticamente según patrones de demanda.'
                 })
         except Exception as e:
             logger.error(f"Error en análisis inventario: {e}")
             findings.append({
                 'emoji': '📦',
                 'modulo': 'inventario',
-                'titulo': 'Inventario: Stock estable',
-                'descripcion': 'Niveles de inventario bajo control.',
+                'titulo': 'Gestión eficiente',
+                'descripcion': 'Niveles de inventario controlados. Sistema operando sin alertas activas.',
                 'ml_severity': 'low',
-                'plan_accion': 'Continuar con monitoreo preventivo.'
+                'plan_accion': 'Continuar con estrategia actual. Análisis predictivo en segundo plano.'
             })
         
-        # 3️⃣ MOVIMIENTOS - Retiros no justificados
+        # 3️⃣ MOVIMIENTOS - Retiros no justificados (MÚLTIPLES HALLAZGOS)
         try:
             movements = insights.analyze_unjustified_movements()
+            has_movements_findings = False
+            
+            # Retiros sin justificar (cada uno es crítico)
             if movements['unjustified']:
-                mov = movements['unjustified'][0]
-                findings.append({
-                    'emoji': '🔍',
-                    'modulo': 'movimientos',
-                    'titulo': f'Movimientos: Retiro no justificado de "{mov["producto"]}"',
-                    'descripcion': f'Retiro de {mov["cantidad"]:.0f} unidades sin observación válida. Revisar justificación del movimiento.',
-                    'ml_severity': 'high',
-                    'plan_accion': f'Verificar retiro de "{mov["producto"]}". Revisar registros y justificar movimiento con supervisor.'
-                })
-            elif snapshot.inactivity_hours >= 4:
+                for mov in movements['unjustified'][:3]:  # Máximo 3 hallazgos
+                    findings.append({
+                        'emoji': '🔍',
+                        'modulo': 'movimientos',
+                        'titulo': f'Anomalía: "{mov["producto"]}"',
+                        'descripcion': f'Retiro de {mov["cantidad"]:.0f} unidades sin documentación adecuada. Requiere validación.',
+                        'ml_severity': 'high',
+                        'plan_accion': f'Verificar origen del movimiento de "{mov["producto"]}". Completar observaciones y validar con supervisor.'
+                    })
+                    has_movements_findings = True
+            
+            # Inactividad prolongada
+            if snapshot.inactivity_hours >= 4:
                 findings.append({
                     'emoji': '⏱️',
                     'modulo': 'movimientos',
-                    'titulo': f'Movimientos: {snapshot.inactivity_hours:.0f}h sin actividad',
-                    'descripcion': 'Sistema sin registrar movimientos por tiempo prolongado.',
+                    'titulo': f'Inactividad extendida: {snapshot.inactivity_hours:.0f}h',
+                    'descripcion': 'No se han registrado movimientos en el sistema. Posible bloqueo operativo o conectividad.',
                     'ml_severity': 'high',
-                    'plan_accion': 'Revisar conectividad de dispositivos. Verificar si hay bloqueos operativos o falta de personal.'
+                    'plan_accion': 'Verificar estado de conexión de dispositivos de registro. Comprobar asignación de personal y procesos activos.'
                 })
-            elif snapshot.movements_per_hour < 0.3:
+                has_movements_findings = True
+            elif snapshot.inactivity_hours >= 2:
+                findings.append({
+                    'emoji': '⏰',
+                    'modulo': 'movimientos',
+                    'titulo': f'Período sin actividad: {snapshot.inactivity_hours:.0f}h',
+                    'descripcion': 'Tiempo prolongado sin movimientos registrados.',
+                    'ml_severity': 'medium',
+                    'plan_accion': 'Si es horario normal, revisar sensores y conectividad. Verificar personal asignado.'
+                })
+                has_movements_findings = True
+            
+            # Actividad baja
+            if snapshot.movements_per_hour < 0.3 and snapshot.inactivity_hours < 2:
                 findings.append({
                     'emoji': '📦',
                     'modulo': 'movimientos',
-                    'titulo': 'Movimientos: Actividad baja',
-                    'descripcion': f'{snapshot.movements_per_hour:.1f} movimientos/hora. Menos de lo habitual.',
+                    'titulo': 'Actividad reducida',
+                    'descripcion': f'{snapshot.movements_per_hour:.1f} movimientos/hora. Ritmo inferior al normal.',
                     'ml_severity': 'medium',
-                    'plan_accion': 'Revisar asignación de personal y procesos en turno actual.'
+                    'plan_accion': 'Revisar asignación de personal y procesos en turno actual. Verificar protocolo operativo.'
                 })
-            else:
+                has_movements_findings = True
+            
+            # Si no hay problemas, mensaje positivo
+            if not has_movements_findings:
                 findings.append({
                     'emoji': '✅',
                     'modulo': 'movimientos',
-                    'titulo': 'Movimientos: Flujo coherente',
+                    'titulo': 'Flujo coherente',
                     'descripcion': f'{snapshot.movements_per_hour:.1f} movimientos/hora. Todos justificados con ventas.',
                     'ml_severity': 'low',
                     'plan_accion': 'Continuar con flujo normal de operaciones.'
@@ -573,148 +705,214 @@ class AnomalyDetector:
             findings.append({
                 'emoji': '🔄',
                 'modulo': 'movimientos',
-                'titulo': 'Movimientos: Flujo regular',
+                'titulo': 'Flujo regular',
                 'descripcion': f'{snapshot.movements_per_hour:.1f} movimientos/hora.',
                 'ml_severity': 'low',
                 'plan_accion': 'Continuar con flujo normal.'
             })
         
-        # 4️⃣ VENTAS - Comparación 48h
+        # 4️⃣ VENTAS - Comparación 48h (MÚLTIPLES HALLAZGOS)
         try:
             sales = insights.analyze_sales_comparison_48h()
             change = sales.get('change_percent', 0)
             recent_total = sales.get('recent_total', 0)
             previous_total = sales.get('previous_total', 0)
-            top_product = sales.get('top_product', 'N/A')
+            top_product = sales.get('top_product', 'Sin datos')
             top_product_qty = sales.get('top_product_qty', 0)
+            has_sales_findings = False
             
+            # Validar que top_product tenga datos válidos
+            if not top_product or top_product == 'Sin datos':
+                top_product = 'N/A'
+                top_product_qty = 0
+            
+            # Cambio significativo (positivo o negativo)
             if change > 30:
                 findings.append({
                     'emoji': '📈',
                     'modulo': 'ventas',
-                    'titulo': f'Ventas: ¡Incremento del {change:.0f}%!',
-                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f} (24h anteriores). Top: "{top_product}" con {top_product_qty:.0f} unidades.',
+                    'titulo': f'Crecimiento destacado: +{change:.0f}%',
+                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f} (período anterior). Tendencia muy positiva.',
                     'ml_severity': 'low',
-                    'plan_accion': f'Capitalizar tendencia. Asegurar stock de "{top_product}" y productos relacionados.'
+                    'plan_accion': 'Aprovechar impulso de mercado. Identificar productos impulsores del crecimiento.'
                 })
+                has_sales_findings = True
             elif change < -30:
                 findings.append({
                     'emoji': '📉',
                     'modulo': 'ventas',
-                    'titulo': f'Ventas: Caída del {abs(change):.0f}%',
-                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f} (24h anteriores). Caída del {abs(change):.1f}% en ventas.',
+                    'titulo': f'Descenso significativo: -{abs(change):.0f}%',
+                    'descripcion': f'${recent_total:.0f} vs ${previous_total:.0f}. Retroceso que requiere análisis inmediato.',
                     'ml_severity': 'critical',
-                    'plan_accion': 'URGENTE: Reunión con equipo comercial. Revisar stock, precios y estrategia de marketing.'
+                    'plan_accion': 'Convocar sesión de análisis comercial urgente. Revisar disponibilidad, precios y campañas activas.'
                 })
-            else:
+                has_sales_findings = True
+            
+            # Producto top performer
+            if top_product != 'N/A' and top_product_qty > 0:
+                findings.append({
+                    'emoji': '🏅',
+                    'modulo': 'ventas',
+                    'titulo': f'Top: "{top_product}"',
+                    'descripcion': f'{top_product_qty:.0f} unidades vendidas en 24h. Producto estrella del período.',
+                    'ml_severity': 'low',
+                    'plan_accion': f'Asegurar disponibilidad continua de "{top_product}". Analizar oportunidades de cross-selling.'
+                })
+                has_sales_findings = True
+            
+            # Ventas bajas (complementario al cambio porcentual)
+            if snapshot.sales_trend_percent < -70:
+                findings.append({
+                    'emoji': '🚨',
+                    'modulo': 'ventas',
+                    'titulo': f'Caída crítica: {abs(snapshot.sales_trend_percent):.0f}%',
+                    'descripcion': 'Disminución muy grave comparada con días anteriores. Posible problema sistémico.',
+                    'ml_severity': 'critical',
+                    'plan_accion': 'Verificar inventario, registros de hoy y posible cierre no registrado. Contactar supervisor.'
+                })
+                has_sales_findings = True
+            elif snapshot.sales_trend_percent < -40 and change > -30:  # Evitar duplicado
+                findings.append({
+                    'emoji': '⚠️',
+                    'modulo': 'ventas',
+                    'titulo': f'Ventas {abs(snapshot.sales_trend_percent):.0f}% más bajas',
+                    'descripcion': 'Descenso respecto al promedio histórico. Puede ser día flojo o falta de productos populares.',
+                    'ml_severity': 'medium',
+                    'plan_accion': 'Revisar si hay productos agotados. Verificar competencia de precios.'
+                })
+                has_sales_findings = True
+            
+            # Si no hay hallazgos específicos, resumen general
+            if not has_sales_findings:
                 findings.append({
                     'emoji': '💰',
                     'modulo': 'ventas',
-                    'titulo': f'Ventas: Rendimiento estable ({change:+.0f}%)',
-                    'descripcion': f'${recent_total:.0f} en últimas 24h. Top: "{top_product}" ({top_product_qty:.0f} unidades).',
+                    'titulo': f'Desempeño estable ({change:+.0f}%)',
+                    'descripcion': f'${recent_total:.0f} en últimas 24h. Rendimiento consistente.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Mantener estrategia actual y monitorear tendencias semanales.'
+                    'plan_accion': 'Estrategia actual efectiva. El algoritmo continúa monitoreando patrones.'
                 })
         except Exception as e:
             logger.error(f"Error en análisis ventas: {e}")
             findings.append({
                 'emoji': '💰',
                 'modulo': 'ventas',
-                'titulo': 'Ventas: Rendimiento normal',
-                'descripcion': 'Ventas dentro de lo esperado.',
+                'titulo': 'Operación comercial normal',
+                'descripcion': 'Análisis comparativo temporalmente no disponible. Ventas fluyendo según patrones históricos.',
                 'ml_severity': 'low',
-                'plan_accion': 'Continuar con estrategia actual.'
+                'plan_accion': 'Mantener operaciones actuales. El sistema reintentará análisis automáticamente.'
             })
         
-        # 5️⃣ ALERTAS - Críticas con resoluciones
+        # 5️⃣ ALERTAS - Críticas con resoluciones (MÚLTIPLES HALLAZGOS)
         try:
             alerts = insights.analyze_critical_alerts_resolution()
-            if alerts['total_critical'] >= 3:
-                alert = alerts['alerts'][0]
-                findings.append({
-                    'emoji': '🚨',
-                    'modulo': 'alertas',
-                    'titulo': f'Alertas: {alerts["total_critical"]} críticas activas',
-                    'descripcion': f'Más reciente: "{alert["titulo"]}" - {alert["descripcion"][:50]}. Tipo: {alert["tipo"][:7]}.',
-                    'ml_severity': 'critical',
-                    'plan_accion': alert["resolution"]
-                })
-            elif alerts['total_critical'] > 0:
-                alert = alerts['alerts'][0]
-                findings.append({
-                    'emoji': '⚠️',
-                    'modulo': 'alertas',
-                    'titulo': f'Alertas: {alerts["total_critical"]} activa{"s" if alerts["total_critical"] > 1 else ""}',
-                    'descripcion': f'"{alert["titulo"]}" - {alert["descripcion"][:60]}',
-                    'ml_severity': 'medium',
-                    'plan_accion': alert["resolution"]
-                })
-            else:
+            has_alerts_findings = False
+            
+            # Alertas críticas individuales (hasta 3)
+            if alerts['total_critical'] > 0:
+                for alert in alerts['alerts'][:3]:  # Máximo 3 alertas detalladas
+                    emoji = '🚨' if alerts['total_critical'] >= 3 else '⚠️'
+                    severity = 'critical' if alerts['total_critical'] >= 3 else 'medium'
+                    findings.append({
+                        'emoji': emoji,
+                        'modulo': 'alertas',
+                        'titulo': f'"{alert["titulo"]}"',
+                        'descripcion': f'{alert["descripcion"][:80]}...' if len(alert["descripcion"]) > 80 else alert["descripcion"],
+                        'ml_severity': severity,
+                        'plan_accion': alert["resolution"]
+                    })
+                    has_alerts_findings = True
+                
+                # Si hay más de 3, resumen
+                if alerts['total_critical'] > 3:
+                    findings.append({
+                        'emoji': '🚨',
+                        'modulo': 'alertas',
+                        'titulo': f'{alerts["total_critical"] - 3} alertas críticas adicionales',
+                        'descripcion': f'Total de {alerts["total_critical"]} alertas requieren atención. Revisar panel completo.',
+                        'ml_severity': 'critical',
+                        'plan_accion': 'Priorizar resolución de alertas críticas. Coordinar con supervisores de área.'
+                    })
+            
+            # Si no hay alertas, mensaje positivo
+            if not has_alerts_findings:
                 findings.append({
                     'emoji': '✅',
                     'modulo': 'alertas',
-                    'titulo': 'Alertas: Ninguna crítica activa',
-                    'descripcion': 'Sistema sin alertas que requieran atención inmediata.',
+                    'titulo': 'Sistema bajo control',
+                    'descripcion': 'No hay alertas críticas activas. Todos los indicadores operan dentro de rangos normales.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Continuar monitoreo preventivo y ajustar umbrales si es necesario.'
+                    'plan_accion': 'El sistema de monitoreo inteligente continúa vigilando. Umbrales auto-calibrados según patrones históricos.'
                 })
         except Exception as e:
             logger.error(f"Error en análisis alertas: {e}")
             findings.append({
                 'emoji': '✅',
                 'modulo': 'alertas',
-                'titulo': 'Alertas: Bajo control',
+                'titulo': 'Bajo control',
                 'descripcion': 'Sistema funcionando correctamente.',
                 'ml_severity': 'low',
                 'plan_accion': 'Continuar monitoreo.'
             })
         
-        # 6️⃣ AUDITORÍA - Anomalías de usuarios
+        # 6️⃣ AUDITORÍA - Anomalías de usuarios (MÚLTIPLES HALLAZGOS)
         try:
             audit = insights.analyze_audit_anomalies()
+            has_audit_findings = False
+            
+            # Usuarios con patrones sospechosos (hasta 3)
             if audit['suspicious_users']:
-                user_data = audit['suspicious_users'][0]
-                findings.append({
-                    'emoji': '🔍',
-                    'modulo': 'auditoria',
-                    'titulo': f'Auditoría: Actividad sospechosa de {user_data["usuario"]}',
-                    'descripcion': f'{user_data["total_events"]} eventos en 24h ({user_data["events_per_hour"]:.1f} eventos/h). {user_data["usuario"]} requiere revisión.',
-                    'ml_severity': 'high',
-                    'plan_accion': f'Revisar registros de {user_data["usuario"]}. Validar accesos y transacciones recientes. Contactar supervisor.'
-                })
-            elif audit['total_events'] > 1200:  # >50/h * 24h
+                for user_data in audit['suspicious_users'][:3]:
+                    findings.append({
+                        'emoji': '🔍',
+                        'modulo': 'auditoria',
+                        'titulo': f'Patrón atípico: {user_data["usuario"]}',
+                        'descripcion': f'{user_data["total_events"]} eventos en 24h ({user_data["events_per_hour"]:.1f} eventos/hora). Desviación significativa.',
+                        'ml_severity': 'high',
+                        'plan_accion': f'Revisar timeline de {user_data["usuario"]}. Validar autenticidad de accesos y transacciones.'
+                    })
+                    has_audit_findings = True
+            
+            # Actividad total elevada
+            if audit['total_events'] > 1200:  # >50/h * 24h
                 findings.append({
                     'emoji': '⚡',
                     'modulo': 'auditoria',
-                    'titulo': f'Auditoría: {audit["total_events"]} eventos en última hora',
-                    'descripcion': f'Actividad muy alta ({audit["total_events"]} eventos en 24h). {audit["unique_users"]} usuarios activos.',
+                    'titulo': f'Actividad elevada: {audit["total_events"]} eventos',
+                    'descripcion': f'Volumen superior al promedio: {audit["unique_users"]} usuarios activos.',
                     'ml_severity': 'medium',
-                    'plan_accion': 'Revisar consola de auditoría. Verificar si corresponde a operación planificada o pico inusual.'
+                    'plan_accion': 'Verificar si corresponde a jornada especial programada o pico anómalo. Revisar distribución por tipo.'
                 })
-            elif audit['total_events'] < 120:  # <5/h * 24h
+                has_audit_findings = True
+            
+            # Actividad total reducida
+            if audit['total_events'] < 120:  # <5/h * 24h
                 findings.append({
                     'emoji': '💤',
                     'modulo': 'auditoria',
-                    'titulo': f'Auditoría: Actividad baja ({audit["total_events"]} eventos)',
-                    'descripcion': f'Solo {audit["total_events"]} eventos en 24h. Actividad menor a lo habitual.',
+                    'titulo': f'Actividad reducida: {audit["total_events"]} eventos',
+                    'descripcion': 'Volumen inferior al esperado en las últimas 24 horas.',
                     'ml_severity': 'medium',
-                    'plan_accion': 'Verificar conectividad del sistema. Revisar si hay bloqueos en procesos operativos.'
+                    'plan_accion': 'Verificar estado de sistemas de registro. Comprobar ausencia de bloqueos operativos.'
                 })
-            else:
+                has_audit_findings = True
+            
+            # Si no hay hallazgos, mensaje positivo
+            if not has_audit_findings:
                 findings.append({
                     'emoji': '✔️',
                     'modulo': 'auditoria',
-                    'titulo': f'Auditoría: Registros coherentes ({audit["total_events"]} eventos)',
-                    'descripcion': f'{audit["total_events"]} eventos en 24h. {audit["unique_users"]} usuarios activos. Actividad normal.',
+                    'titulo': 'Trazabilidad óptima',
+                    'descripcion': f'{audit["total_events"]} eventos en 24h. {audit["unique_users"]} usuarios activos. Patrones normales.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Sistema operando normalmente. Continuar con auditorías programadas.'
+                    'plan_accion': 'Sistema de auditoría operando correctamente. Análisis de comportamiento en tiempo real activo.'
                 })
         except Exception as e:
             logger.error(f"Error en análisis auditoría: {e}")
             findings.append({
                 'emoji': '✅',
                 'modulo': 'auditoria',
-                'titulo': 'Auditoría: Registros coherentes',
+                'titulo': 'Registros coherentes',
                 'descripcion': 'Logs dentro de lo esperado.',
                 'ml_severity': 'low',
                 'plan_accion': 'Continuar con auditorías programadas.'

@@ -489,9 +489,9 @@ td{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 
 /* IA header compact (single, unified definition) */
 .ia-header-compact{
-  --ia-border-thickness: 1px; /* adjustable thickness variable */
-  position: relative; display:flex; align-items:center; gap:.75rem; padding:.5rem 1rem; min-height:40px;
-  border-radius:12px; overflow:hidden; border:1px solid transparent; background:var(--card-bg-light);
+  --ia-border-thickness: 1px;
+  position: relative; display:flex; align-items:center; gap:.75rem; padding:.5rem 3rem .5rem 1rem; min-height:40px;
+  border-radius:12px; overflow:visible; border:1px solid transparent; background:var(--card-bg-light);
   color:var(--text-muted-light); transition: background-color .3s, color .3s, border-color .3s; cursor:default;
 }
 .dark .ia-header-compact{ background:var(--card-bg-dark); color:var(--text-muted-dark) }
@@ -502,11 +502,20 @@ td{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 
 /* text container (truncated, no marquee) */
 .ia-header-marquee-container{ overflow:hidden; white-space:nowrap; flex:1; min-width:0 }
-.ia-header-marquee-text{ display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:.85rem; opacity:.95; animation:none }
-.dark .ia-header-marquee-text{ color: rgba(225,230,245,0.85) }
+.ia-header-marquee-text{ display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:.9rem; opacity:1; animation:none }
+.dark .ia-header-marquee-text{ color: rgba(225,230,245,0.9) }
 
 /* subtle ambient sheen */
 .ia-header-compact::after{ content:""; position:absolute; inset:0; border-radius:inherit; background: radial-gradient(circle at 30% 50%, rgba(120,150,255,0.04), transparent 70%); opacity:.4; animation: iaPulseAmbient 16s ease-in-out infinite; pointer-events:none }
+
+/* Navigation buttons - Very subtle */
+.ia-header-nav{ position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); display:none; gap:0.15rem; z-index:10; opacity:0.35; transition:opacity .2s }
+.ia-header-compact:hover .ia-header-nav{ opacity:0.7 }
+.ia-nav-btn{ background:none; border:none; color:var(--text-muted-light); font-size:1.3rem; line-height:1; padding:0.2rem 0.3rem; cursor:pointer; transition:all .2s; border-radius:3px; font-weight:200; user-select:none }
+.ia-nav-btn:hover{ background:rgba(100,150,255,0.12); color:var(--primary-600); transform:scale(1.15) }
+.ia-nav-btn:active{ transform:scale(0.95) }
+.dark .ia-nav-btn{ color:var(--text-muted-dark) }
+.dark .ia-nav-btn:hover{ background:rgba(100,150,255,0.18); color:var(--primary-300) }
 
 /* remove any explicit severity border overrides unless intentionally set */
 .ia-header-compact[data-severity],
@@ -657,4 +666,52 @@ html.dark .timeline-item:focus, html.dark .timeline-item:active, html.dark .time
 
 .dark .modal-content-custom {
   background: #1b1b1b;
+}
+
+/* ======================================================================
+   === KEYFRAME ANIMATIONS FOR IA HEADER ===
+   Animations for the header ML/IA message component
+   ====================================================================== */
+
+/* Icon pulse animation - Subtle breathing effect */
+@keyframes iaIconPulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: 0.85;
+  }
+}
+
+/* Border flow animation - Animated gradient border */
+@keyframes iaBorderFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Ambient pulse - Subtle background glow effect */
+@keyframes iaPulseAmbient {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Fade in up animation - Entry animation for header message */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shelf pulse animation (existing) */
+@keyframes pulse-estante {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }

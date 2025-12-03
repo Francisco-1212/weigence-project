@@ -96,30 +96,46 @@ class AdvancedMLInsights:
                             'ubicacion': f"Estante {id_estante}" if id_estante else "Sin asignar"
                         })
             
-            # Estantes con peso excedido
+            # Estantes con peso excedido - CALCULAR PESO REAL desde productos
             estantes_response = self.supabase.table('estantes') \
-                .select('id_estante, nombre, peso_actual, peso_maximo') \
+                .select('id_estante, nombre, peso_maximo') \
                 .execute()
             
             shelves_exceeded = []
             if estantes_response.data:
+                # Obtener productos por estante para calcular peso real
+                productos_response = self.supabase.table('productos') \
+                    .select('id_estante, peso, stock') \
+                    .execute()
+                
+                # Calcular peso actual por estante
+                peso_por_estante = {}
+                if productos_response.data:
+                    for prod in productos_response.data:
+                        id_est = prod.get('id_estante')
+                        if id_est:
+                            peso = float(prod.get('peso', 0))
+                            stock = float(prod.get('stock', 0))
+                            # CORRECCIÓN: Los pesos en BD están en gramos * 1000, dividir por 1000
+                            # Para convertir a kg reales, dividir entre 1000
+                            peso_kg_real = peso / 1000  # Convertir a kg
+                            peso_total = peso_kg_real * stock
+                            
+                            if id_est not in peso_por_estante:
+                                peso_por_estante[id_est] = 0
+                            peso_por_estante[id_est] += peso_total
+                
                 for shelf in estantes_response.data:
-                    peso_actual = float(shelf.get('peso_actual', 0))
+                    id_estante = shelf['id_estante']
+                    peso_actual = peso_por_estante.get(id_estante, 0)
                     peso_max = float(shelf.get('peso_maximo', 0))
                     
                     if peso_max > 0 and peso_actual > peso_max:
                         shelves_exceeded.append({
-                            'nombre': shelf.get('nombre', f"Estante {shelf['id_estante']}"),
+                            'nombre': shelf.get('nombre', f"Estante {id_estante}"),
                             'actual': peso_actual,
                             'maximo': peso_max,
                             'exceso_porcentaje': round(((peso_actual - peso_max) / peso_max) * 100, 1)
-                        })
-                        
-                        above_max.append({
-                            'nombre': shelf.get('nombre', f"Estante {shelf['id_estante']}"),
-                            'stock': peso_actual,
-                            'max': peso_max,
-                            'ubicacion': shelf.get('nombre', f"Estante {shelf['id_estante']}")
                         })
             
             return {
@@ -263,10 +279,11 @@ class AdvancedMLInsights:
     def analyze_critical_alerts_resolution(self) -> Dict[str, any]:
         """Obtiene alertas críticas activas con planes de resolución."""
         try:
+            # Obtener alertas críticas (rojo, amarilla/amarillo, naranja)
             response = self.supabase.table('alertas') \
                 .select('id, titulo, descripcion, tipo_color, idproducto, productos(nombre)') \
-                .eq('estado', 'activa') \
-                .in_('tipo_color', ['danger', 'warning']) \
+                .eq('estado', 'pendiente') \
+                .in_('tipo_color', ['rojo', 'amarilla', 'amarillo', 'naranja']) \
                 .execute()
             
             critical_alerts = []
@@ -286,6 +303,8 @@ class AdvancedMLInsights:
                         'resolucion': resolution,
                         'resolution': resolution  # Alias para compatibilidad
                     })
+            
+            logger.info(f"[ALERTAS] {len(critical_alerts)} alertas críticas detectadas")
             
             return {
                 'alerts': critical_alerts,

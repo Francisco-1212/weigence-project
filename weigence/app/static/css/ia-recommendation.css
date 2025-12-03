@@ -10,9 +10,9 @@
   background: var(--card-bg-light);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(59, 131, 246, 0.137), 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
-  border: 1px solid rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 131, 246, 0.279);
   overflow: hidden;
 }
 
@@ -23,9 +23,9 @@
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.03) 0%,
-    rgba(139, 92, 246, 0.02) 50%,
-    rgba(236, 72, 153, 0.02) 100%
+    rgba(132, 153, 186, 0.024) 0%,
+    rgba(157, 129, 221, 0.065) 50%,
+    rgba(163, 106, 133, 0.166) 100%
   );
   background-size: 200% 200%;
   animation: aiGlow 15s ease infinite;
@@ -44,10 +44,7 @@
   z-index: 1;
 }
 
-.ia-recommendation:hover {
-  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-}
+/* Hover deshabilitado para mantener diseño profesional */
 
 /* Borde gradiente animado sutil */
 .ia-recommendation::before {
@@ -58,9 +55,9 @@
   padding: 2px;
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.3),
-    rgba(139, 92, 246, 0.25),
-    rgba(59, 130, 246, 0.2)
+    rgba(59, 131, 246, 0.884),
+    rgba(138, 92, 246, 0.827),
+    rgba(98, 155, 247, 0.937)
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -89,16 +86,14 @@
 .dark .ia-recommendation::after {
   background: linear-gradient(
     135deg,
-    rgba(96, 165, 250, 0.08) 0%,
-    rgba(167, 139, 250, 0.06) 50%,
-    rgba(236, 72, 153, 0.05) 100%
+    rgba(96, 165, 250, 0.192) 0%,
+    rgba(167, 139, 250, 0.134) 50%,
+    rgba(236, 72, 154, 0.087) 100%
   );
   background-size: 200% 200%;
 }
 
-.dark .ia-recommendation:hover {
-  box-shadow: 0 8px 30px rgba(96, 165, 250, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
-}
+/* Hover deshabilitado en modo oscuro */
 
 .dark .ia-recommendation::before {
   background: linear-gradient(

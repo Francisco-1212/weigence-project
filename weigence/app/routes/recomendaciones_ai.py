@@ -69,7 +69,7 @@ def api_recomendacion(contexto: str):
 
 @bp.route('/api/recomendacion/header')
 def api_recomendacion_header():
-    """Devuelve un mensaje IA breve para el header según la página."""
+    """Devuelve un array de mensajes IA para el header según la página."""
     try:
         import inspect, sys
 
@@ -77,14 +77,24 @@ def api_recomendacion_header():
         body_data = request.get_json(silent=True)
         data = _parse_payload(body_data if isinstance(body_data, dict) else {})
 
-        recomendacion = generar_recomendacion(contexto=page, data=data, modo="header")
-        return _success_response(recomendacion)
+        recomendaciones = generar_recomendacion(contexto=page, data=data, modo="header")
+        
+        # Si es un array (nuevo formato), devolverlo directamente
+        if isinstance(recomendaciones, list):
+            return jsonify({
+                "ok": True,
+                "data": recomendaciones,
+                "mensaje": f"{len(recomendaciones)} mensajes disponibles"
+            })
+        
+        # Si es un objeto (compatibilidad con formato antiguo), envolverlo en array
+        return _success_response(recomendaciones)
 
     except Exception as exc:
-        print("[DEBUG] Error:", exc)
-        return _error_response("Error durante depuración", detail=str(exc))
-
-        return _success_response(recomendacion)
+        print("[DEBUG] Error en api_recomendacion_header:", exc)
+        import traceback
+        traceback.print_exc()
+        return _error_response("Error al generar recomendaciones", detail=str(exc))
 
 
 

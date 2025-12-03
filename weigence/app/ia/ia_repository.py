@@ -152,19 +152,19 @@ class IARepository:
     def registrar_evento_auditoria(self, payload: AuditLogPayload) -> bool:
         """Persiste el resultado IA con fallback transparente en caso de error."""
 
-        logger.info("[IA] Registrando auditoría del módulo %s...", payload.tipo)
+        logger.debug("[IA] Registrando auditoría del módulo %s...", payload.tipo)
         if self._insert("ia_auditoria_logs", payload.primary_record()):
-            logger.info("[IA] Auditoría almacenada correctamente en ia_auditoria_logs.")
+            logger.debug("[IA] Auditoría almacenada en ia_auditoria_logs.")
             return True
 
         logger.warning(
-            "[IA] No fue posible registrar en ia_auditoria_logs; intentando fallback en ia_registros."
+            "[IA] Fallback a ia_registros para auditoría."
         )
         if self._insert("ia_registros", payload.fallback_record()):
-            logger.info("[IA] Registro guardado en tabla histórica ia_registros.")
+            logger.debug("[IA] Registro guardado en tabla histórica ia_registros.")
             return True
 
-        logger.error("[IA] Falló el registro de auditoría en todas las tablas disponibles.")
+        logger.error("[IA] Falló el registro de auditoría en todas las tablas.")
         return False
 
 

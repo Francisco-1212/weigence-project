@@ -116,7 +116,7 @@ class IAService:
             resultado["mensaje"] = resumen_situacion
 
         if modo == "header":
-            header_message = get_header_message(
+            header_messages = get_header_message(
                 contexto_key,
                 {
                     "n_alerts": int(final_snapshot.critical_alerts + final_snapshot.warning_alerts),
@@ -124,8 +124,10 @@ class IAService:
                     "ml_insights_cards": insights_cards,  # Pasar hallazgos ML para contexto
                 },
             )
-            resultado["mensaje"] = header_message
-            resultado["mensaje_resumen"] = header_message
+            # Retornar array de mensajes para rotación
+            resultado["mensajes"] = header_messages
+            resultado["mensaje"] = header_messages[0]["mensaje"] if header_messages else "Sistema funcionando correctamente."
+            resultado["mensaje_resumen"] = resultado["mensaje"]
             resultado.setdefault("detalle", resultado["mensaje_detallado"])
 
         metadata = self._construir_metadata(insight, final_snapshot)
@@ -175,17 +177,17 @@ class IAService:
     def _generar_insights_cards(self, snapshot: "IASnapshot", ml_insights: Dict[str, Any]) -> list:
         """
         Genera tarjetas individuales de insights para el carrusel.
-        Siempre retorna 6 tarjetas (una por módulo).
+        Retorna los hallazgos ML (puede ser más de 6 si hay múltiples problemas por módulo).
         """
-        # 🎯 ML ya genera las 6 tarjetas que necesitamos
+        # 🎯 ML genera múltiples hallazgos por módulo cuando detecta problemas
         ml_findings = ml_insights.get('findings', [])
         
-        # ML debería retornar siempre 6 hallazgos
-        if len(ml_findings) == 6:
+        # Si ML retornó hallazgos, usarlos directamente
+        if ml_findings:
             return ml_findings
         
-        # Fallback: si ML no retornó 6, generar tarjetas básicas
-        logger.warning(f"[IAService] ML retornó {len(ml_findings)} hallazgos, se esperaban 6")
+        # Fallback: si ML no retornó hallazgos, generar tarjetas básicas (6 módulos)
+        logger.warning(f"[IAService] ML no retornó hallazgos, usando fallback")
         
         return [
             {

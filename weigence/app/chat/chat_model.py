@@ -15,11 +15,10 @@ def obtener_usuario(rut):
             supabase.table("usuarios")
             .select("rut_usuario, nombre, rol")
             .eq("rut_usuario", rut)
-            .single()
             .execute()
         )
-        return r.data
-    except APIError:
+        return r.data[0] if r.data else None
+    except (APIError, IndexError):
         return None
 
 
@@ -33,11 +32,10 @@ def obtener_conversacion_por_id(conv_id):
             supabase.table("chat_conversaciones")
             .select("*")
             .eq("id", conv_id)
-            .single()
             .execute()
         )
-        return r.data
-    except APIError:
+        return r.data[0] if r.data else None
+    except (APIError, IndexError):
         return None
 
 
@@ -141,10 +139,9 @@ def validar_usuario_en_conversacion(conversacion_id, usuario_id):
             .select("id")
             .eq("conversacion_id", conversacion_id)
             .eq("usuario_id", usuario_id)
-            .single()
             .execute()
         )
-        return bool(r.data)
+        return bool(r.data and len(r.data) > 0)
     except APIError:
         return False
 
@@ -156,11 +153,10 @@ def obtener_participacion(conversacion_id, usuario_id):
             .select("ultimo_mensaje_leido")
             .eq("conversacion_id", conversacion_id)
             .eq("usuario_id", usuario_id)
-            .single()
             .execute()
         )
-        return r.data
-    except APIError:
+        return r.data[0] if r.data else None
+    except (APIError, IndexError):
         return None
 
 
@@ -353,11 +349,10 @@ def obtener_mensaje_por_id(mensaje_id):
             supabase.table("chat_mensajes")
             .select("*")
             .eq("id", mensaje_id)
-            .single()
             .execute()
         )
-        return r.data
-    except APIError:
+        return r.data[0] if r.data else None
+    except (APIError, IndexError):
         return None
 
 

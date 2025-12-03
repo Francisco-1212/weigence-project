@@ -432,19 +432,14 @@ def estantes_estado():
 @requiere_rol('operador', 'supervisor', 'administrador')
 def alertas_activas():
     try:
-        alertas = (
-            supabase.table("alertas")
-            .select("*")
-            .eq("estado", "pendiente")
-            .order("fecha_creacion", desc=True)
-            .limit(3)
-            .execute()
-            .data
-        )
+        response = supabase.table("alertas").select("*").eq("estado", "pendiente").order("fecha_creacion", desc=True).limit(3).execute()
+        alertas = response.data or []
         return jsonify(alertas)
     except Exception as e:
-        print("Error obteniendo alertas:", e)
-        return jsonify({"error": str(e)}), 500
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error en /api/alertas_activas: {e}")
+        return jsonify({"error": "Error al obtener alertas", "success": False}), 500
 
 
 # ------------------------------------------------------------
@@ -480,27 +475,26 @@ def proyeccion_consumo():
         dias = int(request.args.get("dias", 14))
         fecha_inicio = (datetime.now() - timedelta(days=dias)).date().isoformat()
 
-        # Une ventas y detalles, agrupando por día
+        # Obtener detalles de ventas con información de ventas
         query = (
-            supabase.rpc(
-                "custom_query",
-                {
-                    "query": f"""
-                        SELECT
-                            DATE(v.fecha_venta) AS fecha,
-                            SUM(d.cantidad) AS unidades
-                        FROM detalle_ventas d
-                        JOIN ventas v ON v.idventa = d.idventa
-                        WHERE v.fecha_venta >= '{fecha_inicio}'
-                        GROUP BY DATE(v.fecha_venta)
-                        ORDER BY fecha ASC;
-                    """
-                },
-            )
+            supabase.table("detalle_ventas")
+            .select("idventa,cantidad,fecha_detalle,ventas(fecha_venta)")
+            .gte("fecha_detalle", fecha_inicio)
+            .order("fecha_detalle", desc=False)
             .execute()
         )
 
-        data = query.data or []
+        # Agrupar por fecha manualmente
+        from collections import defaultdict
+        ventas_por_dia = defaultdict(int)
+        
+        for detalle in (query.data or []):
+            if detalle.get('ventas') and detalle['ventas'].get('fecha_venta'):
+                fecha = detalle['ventas']['fecha_venta'].split('T')[0]
+                ventas_por_dia[fecha] += detalle.get('cantidad', 0)
+        
+        data = [{'fecha': fecha, 'unidades': unidades} 
+                for fecha, unidades in sorted(ventas_por_dia.items())]
         return jsonify(data)
 
     except Exception as e:

@@ -95,6 +95,10 @@ def setup_logging(app=None, log_file='app.log', log_level='INFO'):
     # Reducir verbosidad de librerías externas
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
     logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('httpx').setLevel(logging.WARNING)
+    logging.getLogger('httpcore').setLevel(logging.WARNING)
+    logging.getLogger('engineio.server').setLevel(logging.ERROR)
+    logging.getLogger('socketio.server').setLevel(logging.WARNING)
     
     return root_logger
 

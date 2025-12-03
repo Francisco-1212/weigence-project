@@ -479,23 +479,24 @@ def api_usuario_heartbeat():
         ahora = datetime.now().strftime('%H:%M:%S')
         
         if not session.get('usuario_logueado'):
-            logger.warning(f"[API-HEARTBEAT] ⚠️ [{ahora}] Intento sin autenticación")
+            logger.debug(f"[HEARTBEAT] Intento sin autenticación")
             return jsonify({'success': False, 'error': 'No autenticado'}), 401
         
         rut = session.get('usuario_id')
         nombre = session.get('usuario_nombre')
         rol = session.get('usuario_rol')
         
-        print(f"\n[API-HEARTBEAT] 💓 [{ahora}] Recibido de: {nombre} ({rut})")
-        
         if rut:
             actualizar_heartbeat(rut, nombre, rol)
             total = obtener_total_conectados()
-            
-            logger.info(f"[API-HEARTBEAT] ✓ [{ahora}] {nombre} ({rut}) - Total conectados: {total}")
-            print(f"[API-HEARTBEAT] ✅ Heartbeat procesado exitosamente\n")
+            # Solo loguear cada 10 heartbeats para reducir ruido
+            if not hasattr(actualizar_heartbeat, 'counter'):
+                actualizar_heartbeat.counter = 0
+            actualizar_heartbeat.counter += 1
+            if actualizar_heartbeat.counter % 10 == 0:
+                logger.debug(f"[HEARTBEAT] {nombre} ({rut}) - Total: {total}")
         else:
-            logger.warning(f"[API-HEARTBEAT] ⚠️ No hay RUT en sesión")
+            logger.warning(f"[HEARTBEAT] No hay RUT en sesión")
         
         response_data = {
             'success': True,
@@ -507,8 +508,6 @@ def api_usuario_heartbeat():
         return jsonify(response_data), 200
     
     except Exception as e:
-        logger.error(f"[API-HEARTBEAT] ❌ Error: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
+        logger.error(f"[HEARTBEAT] Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 

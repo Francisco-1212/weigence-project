@@ -19,6 +19,11 @@ def init_socketio(app):
         logger=False,
         engineio_logger=False,
         async_mode="threading",  # simple y compatible
+        ping_timeout=60,
+        ping_interval=25,
+        max_http_buffer_size=1000000,
+        allow_upgrades=True,
+        transports=['websocket', 'polling']
     )
     registrar_eventos()
     return socketio

@@ -207,8 +207,12 @@ def create_app(config_name=None):
 
     @app.errorhandler(404)
     def handle_404(e):
-        """Log para 404 mostrando la URL solicitada"""
-        logger.warning(f"⚠️ 404 Not Found: {request.method} {request.path}")
+        """Log para 404 mostrando la URL solicitada solo para rutas no comunes"""
+        # Ignorar 404s comunes de archivos estáticos o favicon
+        ignore_paths = ['/favicon.ico', '/robots.txt', '/sitemap.xml', '.map']
+        if not any(path in request.path for path in ignore_paths):
+            logger.debug(f"404 Not Found: {request.method} {request.path}")
+        
         if request.path.startswith("/api/"):
             return jsonify({"success": False, "error": "Endpoint no encontrado"}), 404
         raise
@@ -216,7 +220,13 @@ def create_app(config_name=None):
     @app.errorhandler(Exception)
     def handle_error(e):
         """Maneja todos los errores y devuelve JSON para peticiones AJAX."""
-        logger.error(f"Excepcion no capturada: {str(e)}", exc_info=True)
+        # No loguear errores 404 como excepciones críticas
+        from werkzeug.exceptions import NotFound
+        if isinstance(e, NotFound):
+            return handle_404(e)
+        
+        # Solo loguear excepciones reales, no errores HTTP esperados
+        logger.error(f"Excepcion no capturada: {str(e)}", exc_info=False)
 
         if request.path.startswith("/api/"):
             error_msg = "Error del servidor" if not app.config.get("DEBUG") else f"Error: {str(e)}"

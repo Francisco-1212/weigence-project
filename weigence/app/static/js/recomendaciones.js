@@ -11,9 +11,9 @@
   const CONFIG = {
     AUTO_REFRESH_INTERVAL: 60000, // 60 segundos
     SEVERITY_LABELS: {
-      info: 'Nivel informativo',
-      warning: 'Atención requerida',
-      critical: 'Riesgo crítico',
+      info: 'Información',
+      warning: 'Requiere Atención',
+      critical: 'Acción Urgente',
     },
     SEVERITY_ICONS: {
       info: 'auto_awesome',
@@ -35,6 +35,14 @@
       ventas: 'Ventas',
       alertas: 'Alertas',
       auditoria: 'Auditoría'
+    },
+    MODULE_ROUTES: {
+      dashboard: '/dashboard',
+      inventario: '/inventario',
+      movimientos: '/movimientos',
+      ventas: '/ventas',
+      alertas: '/alertas',
+      auditoria: '/auditoria'
     },
     SEVERITY_CONFIG: {
       low: { label: 'Baja', color: '#10b981', width: '25%' },
@@ -87,9 +95,9 @@
     console.log('[IA-CARD] Datos RAW recibidos:', raw);
     
     const normalizado = {
-      titulo: origen.titulo?.trim() || 'Recomendación automática',
-      mensaje: origen.mensaje?.trim() || 'Sin detalles disponibles',
-      solucion: origen.solucion?.trim() || 'Sin acciones sugeridas',
+      titulo: origen.titulo?.trim() || 'Análisis Inteligente en Progreso',
+      mensaje: origen.mensaje?.trim() || 'El sistema está procesando datos del ecosistema...',
+      solucion: origen.solucion?.trim() || 'Los insights estarán disponibles en breve',
       severidad: ['info', 'warning', 'critical'].includes(origen.severidad?.toLowerCase()) 
         ? origen.severidad.toLowerCase() 
         : 'info',
@@ -155,13 +163,41 @@
     // Actualizar mensaje/descripción
     if (elements.message) elements.message.textContent = hallazgo.descripcion || 'Sin detalles disponibles';
 
-    // Mostrar módulo afectado
+    // Mostrar módulo afectado con navegación
     if (elements.moduleContainer && hallazgo.modulo) {
       elements.moduleContainer.style.display = 'flex';
+      elements.moduleContainer.style.cursor = 'pointer';
+      elements.moduleContainer.title = `Ir a ${CONFIG.MODULE_LABELS[hallazgo.modulo] || hallazgo.modulo}`;
+      
       if (elements.moduleIcon) elements.moduleIcon.textContent = CONFIG.MODULE_ICONS[hallazgo.modulo] || 'dashboard';
       if (elements.moduleName) elements.moduleName.textContent = CONFIG.MODULE_LABELS[hallazgo.modulo] || hallazgo.modulo;
+      
+      // Hacer clickeable el badge de módulo
+      elements.moduleContainer.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const route = CONFIG.MODULE_ROUTES[hallazgo.modulo];
+        if (route) {
+          console.log('[IA-CARD] Navegando a:', route);
+          window.location.href = route;
+        }
+      };
+      
+      // Efecto hover
+      elements.moduleContainer.onmouseenter = () => {
+        elements.moduleContainer.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
+        elements.moduleContainer.style.transform = 'scale(1.05)';
+        elements.moduleContainer.style.transition = 'all 0.2s ease';
+      };
+      elements.moduleContainer.onmouseleave = () => {
+        elements.moduleContainer.style.backgroundColor = '';
+        elements.moduleContainer.style.transform = 'scale(1)';
+      };
     } else if (elements.moduleContainer) {
       elements.moduleContainer.style.display = 'none';
+      elements.moduleContainer.onclick = null;
+      elements.moduleContainer.onmouseenter = null;
+      elements.moduleContainer.onmouseleave = null;
     }
 
     // Mostrar severidad con barra de progreso
@@ -169,7 +205,13 @@
       elements.severityDetail.style.display = 'block';
       const severityConfig = CONFIG.SEVERITY_CONFIG[hallazgo.ml_severity.toLowerCase()] || CONFIG.SEVERITY_CONFIG.medium;
       
-      if (elements.severityText) elements.severityText.textContent = severityConfig.label;
+      if (elements.severityText) {
+        elements.severityText.textContent = severityConfig.label;
+        // Aplicar color al texto según severidad
+        elements.severityText.style.backgroundColor = `${severityConfig.color}20`;
+        elements.severityText.style.color = severityConfig.color;
+        elements.severityText.style.borderColor = `${severityConfig.color}40`;
+      }
       if (elements.severityBar) {
         elements.severityBar.style.backgroundColor = severityConfig.color;
         elements.severityBar.style.width = severityConfig.width;
@@ -252,10 +294,10 @@
       console.error('[IA] Error al cargar recomendación:', err);
       setStatus('error');
       aplicarCard({
-        titulo: 'Error al cargar',
-        mensaje: 'No se pudo obtener la recomendación.',
-        solucion: 'Intente recargar la página.',
-        severidad: 'warning',
+        titulo: 'Reconectando con el análisis',
+        mensaje: 'El sistema está recalibrando los algoritmos de detección. Esto es temporal.',
+        solucion: 'El análisis inteligente se reanudará automáticamente en unos momentos.',
+        severidad: 'info',
         ml_anomaly_detected: false,
         ml_insights_cards: []
       });
