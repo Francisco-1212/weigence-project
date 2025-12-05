@@ -775,6 +775,9 @@ const NuevaVenta = {
       
       console.log('✅ Productos cargados:', productos.length);
     } catch (error) {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error al cargar productos', 'ventas', '', error);
+      }
       console.error('❌ Error al cargar productos:', error);
     }
   },
@@ -917,6 +920,9 @@ const NuevaVenta = {
         alert(`❌ Error: ${result.error}`);
       }
     } catch (error) {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error al guardar venta', 'ventas', '', error);
+      }
       console.error('❌ Error al guardar venta:', error);
       alert('Error al guardar la venta. Por favor, intente nuevamente.');
     } finally {
@@ -1023,6 +1029,9 @@ function exportarReporteVentas() {
     mostrarNotificacion(`Reporte exportado exitosamente: ${rows.length} ventas`, 'success');
     console.log('✅ Reporte exportado:', rows.length, 'ventas');
   } catch (error) {
+    if (window.errorLogger) {
+      window.errorLogger.error('Error al exportar reporte', 'ventas', '', error);
+    }
     console.error('❌ Error al exportar reporte:', error);
     mostrarNotificacion('Error al exportar el reporte', 'error');
   }

@@ -273,6 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.remove('hidden');
       })
       .catch(error => {
+        if (window.errorLogger) {
+          window.errorLogger.error('Error al cargar usuario', 'usuarios', error.message, error);
+        }
         console.error('[USUARIOS] Error:', error);
         alert('Error al cargar usuario: ' + error.message);
       });
@@ -410,6 +413,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
       .catch(error => {
+        if (window.errorLogger) {
+          window.errorLogger.critical('Error al guardar usuario', 'usuarios', '', error);
+        }
         console.error('[USUARIOS] Error:', error);
         alert('❌ Error al guardar usuario');
       })

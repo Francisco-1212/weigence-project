@@ -2,33 +2,43 @@
 
 ## 1. BPMN - Proceso de Gestión de Inventario
 
+El siguiente diagrama modela el proceso de negocio principal: la detección y registro de variaciones de inventario. A diferencia de un flujo manual tradicional, aquí se destaca la automatización del ingreso de datos mediante el sensor IoT y el filtrado inteligente de ruido.
+
 ```mermaid
-graph TB
-    A([Inicio]) --> B[Sensor detecta<br/>cambio peso]
-    B --> C[Pico W<br/>digitaliza señal]
-    
-    A --> D{Filtrar<br/>ruido?}
-    D -->|Ruido| A
-    D -->|Válido| E[Flask procesa<br/>y calcula diferencia]
-    
-    C --> E
-    E --> F[Actualizar<br/>Base Datos]
-    
-    F --> G[Registrar<br/>auditoría]
-    G --> H{Stock<br/>crítico?}
-    
-    H -->|Sí| I[Generar<br/>alerta]
-    H -->|No| J([Fin])
-    I --> J
-    
-    style A fill:#90EE90
-    style B fill:#87CEEB
-    style C fill:#87CEEB
-    style E fill:#DDA0DD
-    style F fill:#FFB6C1
-    style G fill:#FFD700
-    style I fill:#FF6347
-    style J fill:#90EE90
+---
+config:
+  layout: elk
+---
+flowchart TB
+    A(["Inicio"]) -- Lectura --> B(["Sensor IoT<br>detecta peso"])
+    B -- Digitaliza --> C{{"Filtrar<br>ruido?"}}
+    C -- Válido --> D(["Flask procesa<br>y actualiza BD"])
+    D -- Audita --> E{{"Stock<br>crítico?"}}
+    E -- No --> F(["Fin"])
+    E -- Sí --> G(["Generar<br>alerta"])
+    G -- Alerta --> F
+    C -. Ruido .-> A
+
+     A:::start
+     B:::sens
+     C:::decision
+     D:::proc
+     E:::decision
+     G:::alerta
+     F:::start
+    classDef start fill:#90EE90,stroke:#15803d,stroke-width:2px,color:#17420f,font-weight:bold
+    classDef sens fill:#87CEEB,stroke:#1e3a8a,stroke-width:2px,color:#152747
+    classDef decision fill:#FFE4B5,stroke:#b45309,stroke-width:3px,color:#7c470a,font-weight:bold
+    classDef proc fill:#DDA0DD,stroke:#7e22ce,stroke-width:2px,color:#3c0066
+    classDef alerta fill:#FF6347,stroke:#b91c1c,stroke-width:2px,color:#fff
+    linkStyle 0 stroke:#3b82f6,stroke-width:2.5px,fill:none
+    linkStyle 1 stroke:#3b82f6,stroke-width:2.5px,fill:none
+    linkStyle 2 stroke:#3b82f6,stroke-width:2.5px,fill:none
+    linkStyle 3 stroke:#3b82f6,stroke-width:2.5px,fill:none
+    linkStyle 4 stroke:#f97316,stroke-width:2.5px,fill:none
+    linkStyle 5 stroke:#dc2626,stroke-width:2.5px,fill:none
+    linkStyle 6 stroke:#dc2626,stroke-width:2.5px,fill:none
+    linkStyle 7 stroke:#ef4444,stroke-width:2px,stroke-dasharray:4,2,fill:none
 ```
 
 ---

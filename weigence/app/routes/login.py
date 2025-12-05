@@ -3,6 +3,7 @@ from . import bp
 from api.conexion_supabase import supabase
 from app.utils.email_utils import enviar_correo_recuperacion, verificar_token_valido, marcar_token_usado
 from app.utils.security import verify_password
+from app.utils.error_logger import registrar_error_critico, registrar_error_warning
 import logging
 
 logger = logging.getLogger(__name__)
@@ -180,6 +181,7 @@ def password_reset():
         logger.error(f"[PASSWORD-RESET] ❌❌❌ EXCEPCIÓN CAPTURADA: {e}")
         logger.error(f"[PASSWORD-RESET] Tipo de error: {type(e).__name__}")
         logger.error(f"[PASSWORD-RESET] Stack trace:", exc_info=True)
+        registrar_error_critico("Error en recuperación de contraseña", "auth", e)
         return jsonify({
             "success": False,
             "message": "Error procesando la solicitud"

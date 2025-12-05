@@ -15,63 +15,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeHistoryBtn = document.getElementById('close-history');
   const closeHistoryFooterBtn = document.getElementById('close-history-footer');
 
-  // Estados del sistema
-  const states = {
-    online: {
-      icon: 'check_circle', colorClass: 'text-green-500',
-      text: 'Sistema en línea', aria: 'El sistema está en línea y operativo.'
-    },
-    warning: {
-      icon: 'warning', colorClass: 'text-yellow-500',
-      // default warning text; when details are present we'll show a 'Ver más' link
-      text: 'Sistema con fallas', aria: 'El sistema presenta fallas parciales.'
+  // Estados del sistema
+  const states = {
+    online: {
+      icon: 'check_circle', colorClass: 'text-green-500',
+      text: 'Sistema en línea', aria: 'El sistema está en línea y operativo.'
     },
-    offline: {
-      icon: 'error', colorClass: 'text-red-500',
-      text: 'Sistema desconectado', aria: 'El sistema está desconectado.'
-    },
-    syncing: {
-      icon: 'sync', colorClass: 'text-primary-600 animate-spin',
-      text: 'Sincronizando...', aria: 'Sincronizando datos; espere por favor.'
-    },
-  };
+    offline: {
+      icon: 'error', colorClass: 'text-red-500',
+      text: 'Sistema desconectado', aria: 'El sistema está desconectado.'
+    },
+    syncing: {
+      icon: 'sync', colorClass: 'text-primary-600 animate-spin',
+      text: 'Sincronizando...', aria: 'Sincronizando datos; espere por favor.'
+    },
+  };  let lastUpdate = null;
 
-  let lastUpdate = null;
-
-  // Actualiza la barra de estado visual y accesible
-  function updateStatus(stateKey, details = []) {
+  // Actualiza la barra de estado visual y accesible
+  function updateStatus(stateKey) {
     const state = states[stateKey];
     if (!state) return;
+    
     statusIconEl.textContent = state.icon;
     statusIconEl.className = `material-symbols-outlined ${state.colorClass}`;
-
-    // If warning and details exist, render a 'Ver más' link that opens the modal
-    if (stateKey === 'warning' && Array.isArray(details) && details.length > 0) {
-      statusTextEl.innerHTML = `${state.text} <a href="#" id="status-ver-mas" class="underline ml-2">Ver más</a>`;
-      const verMas = document.getElementById('status-ver-mas');
-      if (verMas) {
-        verMas.addEventListener('click', (e) => {
-          e.preventDefault();
-          showStatusDetails(details);
-        });
-      }
-      statusTextEl.className = 'text-yellow-500';
-      statusTextEl.setAttribute('title', state.aria);
-    } else {
-      statusTextEl.textContent = state.text;
-      statusTextEl.className = state.colorClass;
-      statusTextEl.setAttribute('aria-live', 'polite');
-      statusTextEl.setAttribute('title', state.aria);
-    }
+    statusTextEl.textContent = state.text;
+    statusTextEl.className = state.colorClass;
+    statusTextEl.setAttribute('aria-live', 'polite');
+    statusTextEl.setAttribute('title', state.aria);
 
     // Actualiza ARIA del área de estado
     systemStatusEl.setAttribute('aria-label', state.aria);
-
     systemStatusEl.classList.remove('hidden');
     activityIndicatorEl.classList.toggle('hidden', stateKey !== 'syncing');
-  }
-
-  // Guarda timestamp y actualiza el texto de última actualización
+  }  // Guarda timestamp y actualiza el texto de última actualización
   function setLastUpdate(timestamp) {
     lastUpdate = new Date(timestamp);
     updateTimestampText();
@@ -101,24 +77,22 @@ function updateTimestampText() {
 
 
 
-  // Obtiene y actualiza el estado del sistema desde API
-  async function fetchSystemStatus() {
-    try {
-      const res = await fetch('/api/status');
-      if (!res.ok) throw new Error('Error obteniendo estado');
-      const data = await res.json();
-  // Prioriza 'online' si está operativo
-  const estado = (data.connection_state === 'online') ? 'online' : data.connection_state;
-  const details = data.status_details || [];
-  setLastUpdate(data.last_update);
-  updateStatus(estado, details);
-    } catch (error) {
-      updateStatus('offline');
-      console.error(error);
-    }
-  }
-
-  // Renderiza historial de eventos en el modal
+  // Obtiene y actualiza el estado del sistema desde API
+  async function fetchSystemStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (!res.ok) throw new Error('Error obteniendo estado');
+      const data = await res.json();
+      
+      // El estado viene directamente como 'online' u 'offline'
+      const estado = data.connection_state || 'offline';
+      setLastUpdate(data.last_update);
+      updateStatus(estado);
+    } catch (error) {
+      updateStatus('offline');
+      console.error(error);
+    }
+  }  // Renderiza historial de eventos en el modal
   async function fetchHistory() {
     if (!historyMovementsList) return;
     historyMovementsList.innerHTML = '<li class="text-gray-500 animate-pulse">Cargando...</li>';
@@ -185,7 +159,6 @@ function updateTimestampText() {
     }, 300);
   }
 
-  // Muestra detalles de estado en el modal de historial (reutiliza el modal existente)
   // Activa pestañas dentro del modal
   function activateTab(which) {
     if (which === 'errors') {
@@ -216,16 +189,6 @@ function updateTimestampText() {
       if (btnTabErrors) btnTabErrors.classList.remove('bg-neutral-100');
       if (btnTabMovements) btnTabMovements.classList.add('bg-neutral-100');
     }
-  }
-
-  function showStatusDetails(details) {
-    // populate errors list
-    if (!historyModal || !historyErrorsList) {
-      alert(details.join('\n'))
-      return
-    }
-    historyErrorsList.innerHTML = details.map(d => `<li>${typeof d === 'string' ? d : (d.message || JSON.stringify(d))}</li>`).join('');
-    openHistoryModal('errors');
   }
 
   // Asociación de eventos

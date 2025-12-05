@@ -181,6 +181,8 @@
   </script>
 
   <!-- JS global -->
+  <!-- Error Logger debe cargarse primero para estar disponible en todos los módulos -->
+  <script src="{{ url_for('static', filename='js/error-logger.js') }}"></script>
   <script src="{{ url_for('static', filename='js/recomendaciones.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>

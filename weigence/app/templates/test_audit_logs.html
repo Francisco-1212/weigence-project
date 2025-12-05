@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test API Auditoría</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        .error { color: #ff4444; }
+        .success { color: #44ff44; }
+        .info { color: #4444ff; }
+        pre { background: #000; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test API Auditoría</h1>
+    <button onclick="fetchLogs()">🔍 Obtener Logs</button>
+    <button onclick="clearResults()">🗑️ Limpiar</button>
+    <hr>
+    <div id="results"></div>
+
+    <script>
+        async function fetchLogs() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="info">Cargando...</p>';
+
+            try {
+                const params = new URLSearchParams({
+                    horas: 24,
+                    limit: 200
+                });
+
+                const response = await fetch(`/api/auditoria/logs?${params.toString()}`);
+                const data = await response.json();
+
+                if (!data.ok) {
+                    resultsDiv.innerHTML = `<p class="error">Error: ${data.error || 'Unknown'}</p>`;
+                    return;
+                }
+
+                const logs = data.logs || [];
+                resultsDiv.innerHTML = `<p class="success">✅ Total logs: ${logs.length}</p>`;
+
+                // Filtrar errores del sistema
+                const erroresSistema = logs.filter(log => log.tipo_evento === 'error_sistema');
+                resultsDiv.innerHTML += `<p class="success">🔍 Errores del sistema: ${erroresSistema.length}</p>`;
+
+                if (erroresSistema.length > 0) {
+                    resultsDiv.innerHTML += '<h2 class="success">📋 Errores del Sistema Encontrados:</h2>';
+                    erroresSistema.slice(0, 10).forEach((error, i) => {
+                        resultsDiv.innerHTML += `
+                            <div style="margin: 10px 0; border: 1px solid #00ff00; padding: 10px; border-radius: 5px;">
+                                <p><strong>${i + 1}. ID:</strong> ${error.id}</p>
+                                <p><strong>Timestamp:</strong> ${error.timestamp}</p>
+                                <p><strong>Severidad:</strong> ${error.severidad} (Nivel: ${error.nivel})</p>
+                                <p><strong>Usuario:</strong> ${error.usuario}</p>
+                                <p><strong>Mensaje:</strong> ${error.mensaje.substring(0, 150)}...</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    resultsDiv.innerHTML += '<p class="error">⚠️ No se encontraron errores del sistema</p>';
+                    
+                    // Mostrar tipos de eventos presentes
+                    const tipos = {};
+                    logs.forEach(log => {
+                        tipos[log.tipo_evento] = (tipos[log.tipo_evento] || 0) + 1;
+                    });
+
+                    resultsDiv.innerHTML += '<h3>📊 Tipos de Eventos Presentes:</h3><pre>';
+                    Object.entries(tipos)
+                        .sort((a, b) => b[1] - a[1])
+                        .forEach(([tipo, count]) => {
+                            resultsDiv.innerHTML += `${tipo}: ${count}\n`;
+                        });
+                    resultsDiv.innerHTML += '</pre>';
+                }
+
+                // Mostrar JSON completo de primeros 3 logs
+                resultsDiv.innerHTML += '<h3>📄 Primeros 3 Logs (JSON):</h3>';
+                resultsDiv.innerHTML += '<pre>' + JSON.stringify(logs.slice(0, 3), null, 2) + '</pre>';
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-cargar al abrir la página
+        window.addEventListener('load', () => {
+            setTimeout(fetchLogs, 500);
+        });
+    </script>
+</body>
+</html>

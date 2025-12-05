@@ -13,33 +13,13 @@ last_manual_update = datetime.now()
 
 
 def check_sistema_integral():
-    estados = []
+    """Verifica el estado del sistema basado únicamente en la conexión a la base de datos"""
     try:
         supabase.table("productos").select("idproducto").limit(1).execute()
-        estados.append("db_ok")
-    except Exception:
-        estados.append("db_fail")
+        return "online", []
+    except Exception as e:
+        return "offline", [f"No se pudo conectar a la base de datos: {str(e)}"]
 
-    data_dir = Path(__file__).parent / "data"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    errors_file = data_dir / "errors_log.json"
-    errores = []
-
-    if errors_file.exists():
-        with open(errors_file, "r", encoding="utf-8") as f:
-            errores = json.load(f)
-
-    estado_general = "offline" if "db_fail" in estados else ("warning" if errores else "online")
-
-    detalles = []
-    if "db_fail" in estados:
-        detalles.append("No se pudo conectar a la base de datos")
-    detalles.extend(
-        f"{e.get('timestamp', '')} - {e.get('message', '')}"
-        for e in errores[:10]
-    )
-
-    return estado_general, detalles
 
 
 @bp.route('/api/status')
@@ -57,23 +37,27 @@ def api_status():
 @bp.route('/api/log_error', methods=['POST'])
 @requiere_login
 def api_log_error():
+    """Registra errores en la tabla de auditoría en lugar de archivo JSON"""
     payload = request.get_json() or {}
     message = payload.get('message', 'Error sin mensaje')
-    timestamp = datetime.now().isoformat()
-    data_dir = Path(__file__).parent / 'data'
-    data_dir.mkdir(parents=True, exist_ok=True)
-    errors_file = data_dir / 'errors_log.json'
+    detail = payload.get('detail', '')
+    level = payload.get('level', 'error')
+    
     try:
-        existing = []
-        if errors_file.exists():
-            with open(errors_file, 'r', encoding='utf-8') as f:
-                existing = json.load(f)
-        existing.insert(0, {'timestamp': timestamp, 'message': message})
-        existing = existing[:200]
-        with open(errors_file, 'w', encoding='utf-8') as f:
-            json.dump(existing, f, ensure_ascii=False, indent=2)
+        from flask import session
+        usuario = session.get('usuario', {}).get('email', 'Sistema')
+        
+        # Registrar en auditoría usando los campos correctos
+        supabase.table('auditoria_eventos').insert({
+            'fecha': datetime.now().isoformat(),
+            'usuario': usuario,
+            'accion': f'error_sistema_{level}',
+            'detalle': f"{message}. {detail}" if detail else message
+        }).execute()
+        
         return jsonify({'success': True})
     except Exception as e:
+        print(f"Error registrando en auditoría: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -84,15 +68,15 @@ def api_history():
     try:
         # Obtener eventos de auditoría recientes
         eventos = supabase.table("auditoria_eventos").select(
-            "timestamp, tipo_evento, detalle, usuario"
-        ).order("timestamp", desc=True).limit(50).execute()
+            "fecha, accion, detalle, usuario"
+        ).order("fecha", desc=True).limit(50).execute()
         
         # Formatear eventos
         historial = []
         for evt in eventos.data:
             historial.append({
-                'timestamp': evt.get('timestamp'),
-                'message': f"[{evt.get('tipo_evento', 'evento')}] {evt.get('detalle', '')} - {evt.get('usuario', 'Sistema')}"
+                'timestamp': evt.get('fecha'),
+                'message': f"[{evt.get('accion', 'evento')}] {evt.get('detalle', '')} - {evt.get('usuario', 'Sistema')}"
             })
         
         return jsonify(historial)
@@ -104,19 +88,27 @@ def api_history():
 @bp.route('/api/history_errors')
 @requiere_login
 def api_history_errors():
-    """Retorna historial de errores del sistema"""
-    data_dir = Path(__file__).parent / 'data'
-    errors_file = data_dir / 'errors_log.json'
-    
+    """Retorna historial de errores del sistema desde auditoría"""
     try:
-        if errors_file.exists():
-            with open(errors_file, 'r', encoding='utf-8') as f:
-                errores = json.load(f)
-            return jsonify(errores[:50])  # Solo los últimos 50
-        else:
-            return jsonify([])
+        # Filtrar eventos que sean errores del sistema
+        errores = supabase.table("auditoria_eventos").select(
+            "fecha, detalle, usuario, accion"
+        ).like("accion", "error_sistema%").order(
+            "fecha", desc=True
+        ).limit(50).execute()
+        
+        resultado = []
+        for e in errores.data:
+            resultado.append({
+                'timestamp': e.get('fecha'),
+                'message': e.get('detalle', ''),
+                'usuario': e.get('usuario', 'Sistema'),
+                'nivel': e.get('accion', 'error_sistema_error').replace('error_sistema_', '')
+            })
+        
+        return jsonify(resultado)
     except Exception as e:
-        print(f"Error leyendo errores: {e}")
+        print(f"Error leyendo errores desde auditoría: {e}")
         return jsonify([])
 
 

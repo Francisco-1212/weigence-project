@@ -976,6 +976,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       })
       .catch(error => {
+        if (window.errorLogger) {
+          window.errorLogger.error('Error cargando productos', 'movimiento_inventario', '', error);
+        }
         console.error("❌ Error cargando productos:", error);
         mostrarError("Error al cargar los productos");
       });
@@ -1109,6 +1112,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }, 1000);
 
     } catch (error) {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error al guardar movimiento', 'movimiento_inventario', error.message, error);
+      }
       console.error("❌ Error:", error);
       mostrarError(error.message);
       

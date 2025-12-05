@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
+from app.utils.error_logger import registrar_error
 from .ia_snapshots import IASnapshot
 from .ia_ml_insights_advanced import get_advanced_insights
 
@@ -502,6 +503,7 @@ class AnomalyDetector:
                 })
         except Exception as e:
             logger.error(f"Error en análisis dashboard: {e}")
+            registrar_error("Error en análisis ML dashboard", "ia_ml", e)
             findings.append({
                 'emoji': '📊',
                 'modulo': 'dashboard',

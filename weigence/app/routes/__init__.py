@@ -15,5 +15,6 @@ from . import (
     perfil,
     recomendaciones_ai,
     usuarios,
-    chat_ui
+    chat_ui,
+    test_routes
 )

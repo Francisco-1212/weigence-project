@@ -58,6 +58,7 @@
     retiros_programados: { sigla: "RETIRO", color: "#f59e0b", nombre: "Retiros" },
     retiros_fuera_de_horario: { sigla: "RETIRO", color: "#ef4444", nombre: "Retiros" },
     errores_criticos: { sigla: "ERR", color: "#dc2626", nombre: "Errores" },
+    error_sistema: { sigla: "ERR", color: "#dc2626", nombre: "Errores Sistema" },
     alertas_sistema: { sigla: "ALRT", color: "#ef4444", nombre: "Alertas" },
     alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" },
     otros: { sigla: "INFO", color: "#6b7280", nombre: "Otros" }
@@ -525,7 +526,7 @@
     modal.style.animation = "fadeIn 0.2s ease-out";
     
     modal.innerHTML = `
-      <div class="border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl" style="background: #e8ecf0; animation: slideUp 0.3s ease-out;">
+      <div class="bg-white dark:bg-gray-900 border-2 border-neutral-300 dark:border-gray-700 rounded-xl max-w-3xl w-full p-8 space-y-5 shadow-2xl" style="animation: slideUp 0.3s ease-out;">
         <div class="flex items-center justify-between border-b border-neutral-300 dark:border-gray-700 pb-4">
           <div class="flex items-center gap-4">
             <div style="
@@ -539,7 +540,7 @@
               letter-spacing: 1px;
             ">${categoria.sigla}</div>
             <div>
-              <h3 class="text-neutral-900 dark:text-white font-bold text-xl">${categoria.nombre}</h3>
+              <h3 class="text-neutral-900 dark:text-gray-100 font-bold text-xl">${categoria.nombre}</h3>
               <p class="text-neutral-600 dark:text-gray-400 text-sm font-mono">${log.fecha} · ${log.hora}</p>
             </div>
           </div>

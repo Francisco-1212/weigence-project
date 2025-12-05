@@ -69,18 +69,16 @@ async function fetchDatosFiltrados(rango, boton, mes = null, year = null) {
     // Render Top/Low lists
     renderTopLowLists(data.productos_top || [], data.productos_low || []);
   } catch (error) {
-    try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      fetch('/api/log_error', {
-        method: 'POST', 
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ message: 'Error al obtener datos filtrados', detail: String(error), level: 'error' })
-      })
-    } catch (e) { console.error('No se pudo enviar el error al servidor', e) }
-    console.error(error);
+    // Solo registrar errores que NO sean de red transitoria
+    const isNetworkError = error.message === 'Failed to fetch' || 
+                          error.message.includes('NetworkError') ||
+                          error.message.includes('timeout');
+    
+    if (!isNetworkError && window.errorLogger) {
+      window.errorLogger.error('Error al obtener datos filtrados', 'dashboard', String(error), error);
+    }
+    
+    console.error('Error al cargar datos del dashboard:', error);
   }
 }
 

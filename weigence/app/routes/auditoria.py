@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List
 from flask import jsonify, render_template, request, send_file, session
 
 from api.conexion_supabase import supabase
+from app.utils.error_logger import registrar_error_critico, registrar_error
 from . import bp
 from .decorators import requiere_rol
 
@@ -47,6 +48,7 @@ SUPPORTED_EVENT_TYPES = {
     "login_logout_usuarios",
     "gestion_usuarios",
     "modificacion_perfil",
+    "error_sistema",  # Errores registrados por el sistema de error_logger
     "consulta_lectura",
     "exportacion",
     "modificacion_datos",
@@ -726,6 +728,16 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
                     elif accion in ["exportar", "export", "descarga"]:
                         tipo = "exportacion"
                         nivel = 'INFO'
+                    elif accion.startswith("error_sistema"):
+                        # Errores del sistema registrados por error_logger
+                        tipo = "error_sistema"
+                        # Determinar nivel según el tipo de error
+                        if "critical" in accion:
+                            nivel = 'CRITICAL'
+                        elif "warning" in accion:
+                            nivel = 'WARN'
+                        else:
+                            nivel = 'ERROR'
                     else:
                         tipo = "modificacion_datos"
                         nivel = 'INFO'
@@ -762,6 +774,8 @@ def _gather_audit_events(desde: datetime, horas: int = DEFAULT_HOURS) -> tuple[L
                     continue
 
         except Exception as e:
+            # NO registrar este error en DB para evitar loop infinito
+            # Solo loguear en archivo
             logger.error(f"[AUDITORIA] Error al recolectar eventos de auditoria_eventos: {e}", exc_info=True)
 
     def build_login_logout() -> None:

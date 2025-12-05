@@ -168,6 +168,10 @@ def create_app(config_name=None):
         return User(usuarios[0]) if usuarios else None
 
     app.register_blueprint(routes_bp)
+    
+    # Registrar blueprint de pruebas (solo desarrollo)
+    from app.routes.test_routes import bp as test_bp
+    app.register_blueprint(test_bp)
 
     # Exentar rutas especificas de CSRF
     @csrf.exempt

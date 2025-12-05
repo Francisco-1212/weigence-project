@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Prueba de Registro de Errores{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-neutral-800 dark:text-neutral-100">
+      🧪 Prueba de Registro de Errores
+    </h1>
+
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+      <p class="text-sm text-yellow-800 dark:text-yellow-200">
+        ⚠️ Esta página es solo para pruebas. Los errores generados se registrarán en la consola de auditoría.
+      </p>
+    </div>
+
+    <!-- Pruebas de Frontend -->
+    <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100">
+        🌐 Errores de Frontend (JavaScript)
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Error Normal -->
+        <button onclick="generarErrorNormal()" 
+          class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          🟠 Error Normal
+        </button>
+
+        <!-- Error Warning -->
+        <button onclick="generarWarning()" 
+          class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          🟡 Warning
+        </button>
+
+        <!-- Error Crítico -->
+        <button onclick="generarErrorCritico()" 
+          class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          🔴 Error Crítico
+        </button>
+
+        <!-- Error con Exception -->
+        <button onclick="generarErrorConException()" 
+          class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          💜 Error con Exception
+        </button>
+
+        <!-- Simular Error de Ventas -->
+        <button onclick="simularErrorVentas()" 
+          class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          🛒 Error de Ventas
+        </button>
+
+        <!-- Simular Error de Usuarios -->
+        <button onclick="simularErrorUsuarios()" 
+          class="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          👥 Error de Usuarios
+        </button>
+      </div>
+    </div>
+
+    <!-- Pruebas de Backend -->
+    <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100">
+        🐍 Errores de Backend (Python)
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Error de Backend -->
+        <button onclick="generarErrorBackend()" 
+          class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          🔧 Error de Backend
+        </button>
+
+        <!-- Error Crítico Backend -->
+        <button onclick="generarErrorCriticoBackend()" 
+          class="bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+          💥 Error Crítico Backend
+        </button>
+      </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+      <h3 class="text-lg font-semibold mb-3 text-blue-800 dark:text-blue-200">
+        📋 Cómo verificar que funciona:
+      </h3>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+        <li>Haz clic en cualquiera de los botones arriba para generar un error</li>
+        <li>Abre la consola del navegador (F12) para ver el error local</li>
+        <li>Ve al footer y haz clic en "Ver historial"</li>
+        <li>En el modal, selecciona la pestaña "Errores"</li>
+        <li>Deberías ver el error registrado con tu usuario y timestamp</li>
+        <li>También puedes ir a la página de <a href="{{ url_for('auditoria.auditoria') }}" class="underline font-semibold">Auditoría</a></li>
+      </ol>
+    </div>
+
+    <!-- Log de Resultados -->
+    <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mt-6">
+      <h3 class="text-lg font-semibold mb-3 text-neutral-800 dark:text-neutral-100">
+        📝 Log de Resultados:
+      </h3>
+      <div id="log-resultados" class="bg-neutral-100 dark:bg-neutral-900 rounded p-4 font-mono text-sm max-h-64 overflow-y-auto">
+        <p class="text-neutral-500 dark:text-neutral-400">Esperando pruebas...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const logDiv = document.getElementById('log-resultados');
+
+  function agregarLog(mensaje, tipo = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const color = {
+      'success': 'text-green-600 dark:text-green-400',
+      'error': 'text-red-600 dark:text-red-400',
+      'warning': 'text-yellow-600 dark:text-yellow-400',
+      'info': 'text-blue-600 dark:text-blue-400'
+    }[tipo] || 'text-neutral-600 dark:text-neutral-400';
+
+    const p = document.createElement('p');
+    p.className = color;
+    p.textContent = `[${timestamp}] ${mensaje}`;
+    
+    if (logDiv.querySelector('.text-neutral-500')) {
+      logDiv.innerHTML = '';
+    }
+    
+    logDiv.appendChild(p);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  // Errores de Frontend
+  function generarErrorNormal() {
+    try {
+      if (window.errorLogger) {
+        window.errorLogger.error('Error de prueba normal', 'test', 'Este es un error de prueba nivel normal');
+        agregarLog('✅ Error normal enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    } catch (e) {
+      agregarLog('❌ Excepción: ' + e.message, 'error');
+    }
+  }
+
+  function generarWarning() {
+    try {
+      if (window.errorLogger) {
+        window.errorLogger.warning('Advertencia de prueba', 'test', 'Esta es una advertencia de prueba');
+        agregarLog('✅ Warning enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    } catch (e) {
+      agregarLog('❌ Excepción: ' + e.message, 'error');
+    }
+  }
+
+  function generarErrorCritico() {
+    try {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error crítico de prueba', 'test', 'Este es un error CRÍTICO de prueba');
+        agregarLog('✅ Error crítico enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    } catch (e) {
+      agregarLog('❌ Excepción: ' + e.message, 'error');
+    }
+  }
+
+  function generarErrorConException() {
+    try {
+      // Generar un error real de JavaScript
+      const objeto = null;
+      objeto.propiedad.inexistente; // Esto lanzará un TypeError
+    } catch (error) {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error con exception real', 'test', 'Se capturó una exception de JavaScript', error);
+        agregarLog('✅ Error con exception enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    }
+  }
+
+  function simularErrorVentas() {
+    try {
+      if (window.errorLogger) {
+        window.errorLogger.critical('Error al guardar venta (SIMULADO)', 'ventas', 'Fallo en conexión a base de datos');
+        agregarLog('✅ Error de ventas enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    } catch (e) {
+      agregarLog('❌ Excepción: ' + e.message, 'error');
+    }
+  }
+
+  function simularErrorUsuarios() {
+    try {
+      if (window.errorLogger) {
+        window.errorLogger.error('Error al cargar usuarios (SIMULADO)', 'usuarios', 'Timeout en consulta SQL');
+        agregarLog('✅ Error de usuarios enviado a auditoría', 'success');
+      } else {
+        agregarLog('❌ errorLogger no está disponible', 'error');
+      }
+    } catch (e) {
+      agregarLog('❌ Excepción: ' + e.message, 'error');
+    }
+  }
+
+  // Errores de Backend
+  async function generarErrorBackend() {
+    try {
+      const response = await fetch('/test/error-backend');
+      const data = await response.json();
+      
+      if (data.success) {
+        agregarLog('✅ Error de backend generado y registrado', 'success');
+      } else {
+        agregarLog('⚠️ ' + data.message, 'warning');
+      }
+    } catch (error) {
+      agregarLog('❌ Error al llamar endpoint: ' + error.message, 'error');
+    }
+  }
+
+  async function generarErrorCriticoBackend() {
+    try {
+      const response = await fetch('/test/error-critico-backend');
+      const data = await response.json();
+      
+      if (data.success) {
+        agregarLog('✅ Error crítico de backend generado y registrado', 'success');
+      } else {
+        agregarLog('⚠️ ' + data.message, 'warning');
+      }
+    } catch (error) {
+      agregarLog('❌ Error al llamar endpoint: ' + error.message, 'error');
+    }
+  }
+
+  // Log inicial
+  agregarLog('Sistema de pruebas cargado. errorLogger disponible: ' + (window.errorLogger ? 'SÍ ✅' : 'NO ❌'), 'info');
+</script>
+{% endblock %}
