@@ -59,15 +59,20 @@ def setup_logging(app=None, log_file='app.log', log_level='INFO'):
         datefmt='%H:%M:%S'
     )
     
-    # Handler para archivo (con rotación)
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file,
-        maxBytes=10*1024*1024,  # 10 MB
-        backupCount=5,
-        encoding='utf-8'
-    )
-    file_handler.setLevel(numeric_level)
-    file_handler.setFormatter(file_formatter)
+    # Handler para archivo (sin rotación para evitar errores en Windows con múltiples procesos)
+    # Usar FileHandler simple en lugar de RotatingFileHandler
+    try:
+        file_handler = logging.FileHandler(
+            log_file,
+            mode='a',
+            encoding='utf-8'
+        )
+        file_handler.setLevel(numeric_level)
+        file_handler.setFormatter(file_formatter)
+    except Exception as e:
+        # Si falla crear el archivo, solo usar console handler
+        print(f"⚠️  No se pudo crear log file: {e}")
+        file_handler = None
     
     # Handler para consola
     console_handler = logging.StreamHandler()
@@ -82,13 +87,15 @@ def setup_logging(app=None, log_file='app.log', log_level='INFO'):
     root_logger.handlers.clear()
     
     # Agregar nuevos handlers
-    root_logger.addHandler(file_handler)
+    if file_handler:
+        root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
     # Si se proporciona app de Flask, configurar su logger también
     if app:
         app.logger.handlers.clear()
-        app.logger.addHandler(file_handler)
+        if file_handler:
+            app.logger.addHandler(file_handler)
         app.logger.addHandler(console_handler)
         app.logger.setLevel(numeric_level)
     
