@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 
-{% block content %}
 {% block title %}Alertas - Weigence{% endblock %}
 
 {% block sidebar %}
@@ -361,5 +360,4 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/alertas.js') }}?v={{ range(1, 10000)|random }}"></script>
-{% endblock %}
 {% endblock %}

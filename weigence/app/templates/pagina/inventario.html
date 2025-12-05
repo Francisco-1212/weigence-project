@@ -63,9 +63,15 @@
 
         <!-- Monitoreo de estantes -->
         <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4">
-          <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-3">
-            Monitoreo de Estantes en Tiempo Real
-          </h3>
+          <div class="flex justify-between items-center mb-2 sm:mb-3">
+            <h3 class="font-semibold text-base sm:text-lg text-neutral-900 dark:text-neutral-100">
+              Monitoreo de Estantes en Tiempo Real
+            </h3>
+            <button id="btnActualizarEstantes" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary-color)] text-white hover:bg-[var(--primary-600)] transition-colors">
+              <span class="material-symbols-outlined text-base">refresh</span>
+              Actualizar
+            </button>
+          </div>
           <div id="monitoreo-estantes" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3"></div>
         </div>
 

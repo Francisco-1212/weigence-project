@@ -693,19 +693,39 @@ const WeigenceMonitor = {
             ? "green"
             : "gray";
 
+        // Convertir gramos a kilogramos para mostrar
+        const pesoActualKg = ((e.peso_actual || 0) / 1000).toFixed(2);
+        const pesoMaximoKg = ((e.peso_maximo || 0) / 1000).toFixed(2);
+        
+        // Determinar color e icono del indicador de pesa
+        let pesaIndicador = '';
+        if (e.id_estante >= 6) {
+          const pesaActiva = e.estado_pesa === true;
+          const pesaColor = pesaActiva ? 'green' : 'red';
+          const pesaIcon = pesaActiva ? 'check_circle' : 'error';
+          const pesaTexto = pesaActiva ? 'Sensor Activo' : 'Sensor Inactivo';
+          pesaIndicador = `
+            <div class="flex items-center gap-1 mt-2 text-xs">
+              <span class="material-symbols-outlined text-${pesaColor}-500" style="font-size: 16px;">${pesaIcon}</span>
+              <span class="text-${pesaColor}-600 dark:text-${pesaColor}-400 font-medium">${pesaTexto}</span>
+            </div>
+          `;
+        }
+
         contenedor.insertAdjacentHTML(
           "beforeend",
           `
           <div class="border border-${color}-400/50 bg-${color}-400/10 rounded-md p-3 animate-fadeIn">
             <div class="flex justify-between items-center mb-2">
               <span class="font-bold">Estante ${e.id_estante}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado_calculado || e.estado || 'estable'}</span>
             </div>
-            <p class="text-sm mb-1">Ocupación: ${e.ocupacion_pct || 0}%</p>
+            <p class="text-sm mb-1">Ocupación: ${(e.ocupacion_pct || 0).toFixed(1)}%</p>
             <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
               <div class="bg-${color}-500 h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
             </div>
-            <p class="text-sm">Peso: ${e.peso_actual} kg / ${e.peso_maximo} kg</p>
+            <p class="text-sm">Peso: ${pesoActualKg} kg / ${pesoMaximoKg} kg</p>
+            ${pesaIndicador}
           </div>`
         );
       });
@@ -1475,6 +1495,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   await cargarAlertas();
   Inventario.init();
+  
+  // Botón de actualizar estantes
+  const btnActualizarEstantes = document.getElementById('btnActualizarEstantes');
+  if (btnActualizarEstantes) {
+    btnActualizarEstantes.addEventListener('click', async () => {
+      // Cambiar icono a loading
+      const icon = btnActualizarEstantes.querySelector('.material-symbols-outlined');
+      const originalText = icon.textContent;
+      icon.textContent = 'sync';
+      icon.classList.add('animate-spin');
+      btnActualizarEstantes.disabled = true;
+      
+      // Actualizar estantes
+      if (typeof WeigenceMonitor !== 'undefined') {
+        await WeigenceMonitor.actualizarEstantes();
+      }
+      
+      // Restaurar botón
+      setTimeout(() => {
+        icon.textContent = originalText;
+        icon.classList.remove('animate-spin');
+        btnActualizarEstantes.disabled = false;
+      }, 500);
+    });
+  }
+  
   console.info("Weigence Inventory System listo.");
 });
 

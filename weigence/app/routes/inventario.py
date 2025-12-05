@@ -418,8 +418,87 @@ def actualizar_stock(id):
 @requiere_rol('operador', 'supervisor', 'administrador')
 def estantes_estado():
     try:
-        data = supabase.table("v_estantes_estado").select("*").execute().data
-        return jsonify(data)
+        # Consultar directamente la tabla estantes
+        estantes = supabase.table("estantes").select("*").execute().data or []
+        
+        # Calcular el estado y ocupación para cada estante
+        resultado = []
+        for e in estantes:
+            id_estante = e.get('id_estante')
+            peso_actual = float(e.get('peso_actual', 0))
+            peso_maximo = float(e.get('peso_maximo', 1))
+            
+            # Para estantes 1-5: calcular peso basado en productos (sistema anterior)
+            # Para estante 6+: usar peso_actual de lecturas en tiempo real
+            if id_estante <= 5:
+                # Calcular peso de productos para demostración
+                productos = supabase.table("productos").select("peso, stock").eq("id_estante", id_estante).execute().data or []
+                peso_actual = sum(p.get('peso', 0) * p.get('stock', 0) for p in productos)
+            
+            # Calcular porcentaje de ocupación
+            ocupacion_pct = (peso_actual / peso_maximo * 100) if peso_maximo > 0 else 0
+            
+            # Determinar estado según ocupación
+            if ocupacion_pct >= 90:
+                estado_calculado = 'critico'
+            elif ocupacion_pct >= 70:
+                estado_calculado = 'advertencia'
+            else:
+                estado_calculado = 'estable'
+            
+            estado_pesa = e.get('estado_pesa', None)
+            
+            resultado.append({
+                'id_estante': id_estante,
+                'categoria': e.get('categoria'),
+                'coord_x': e.get('coord_x'),
+                'coord_y': e.get('coord_y'),
+                'peso_maximo': peso_maximo,
+                'peso_actual': peso_actual,
+                'nombre': e.get('nombre'),
+                'estado': e.get('estado', estado_calculado),
+                'estado_calculado': estado_calculado,
+                'ultima_actualizacion': e.get('ultima_actualizacion'),
+                'ocupacion_pct': round(ocupacion_pct, 2),
+                'estado_pesa': estado_pesa
+            })
+            
+            # Generar alerta si la pesa está inactiva (solo para estante 6+)
+            if id_estante >= 6 and estado_pesa == False:
+                try:
+                    # Verificar si ya existe una alerta pendiente para esta pesa
+                    titulo_alerta = f"Sistema de peso inactivo: Estante {id_estante}"
+                    existentes = supabase.table("alertas").select("id").eq("titulo", titulo_alerta).eq("estado", "pendiente").execute().data or []
+                    
+                    if not existentes:
+                        # Crear nueva alerta con todos los campos correctos
+                        supabase.table("alertas").insert({
+                            "titulo": titulo_alerta,
+                            "descripcion": f"El sistema de medición de peso del estante {id_estante} está inactivo. Verifique la conexión del sensor.",
+                            "icono": "sensors_off",
+                            "tipo_color": "rojo",
+                            "estado": "pendiente",
+                            "fecha_creacion": datetime.now().isoformat(),
+                            "idusuario": None,
+                            "id_estante": id_estante,
+                            "idproducto": None
+                        }).execute()
+                except Exception as alert_err:
+                    print(f"Error al crear alerta de pesa inactiva: {alert_err}")
+            
+            # Si la pesa está activa, resolver alertas previas de inactividad
+            elif id_estante >= 6 and estado_pesa == True:
+                try:
+                    titulo_alerta = f"Sistema de peso inactivo: Estante {id_estante}"
+                    # Resolver alertas pendientes de este estante
+                    supabase.table("alertas").update({
+                        "estado": "resuelto",
+                        "fecha_modificacion": datetime.now().isoformat()
+                    }).eq("titulo", titulo_alerta).eq("estado", "pendiente").execute()
+                except Exception as resolve_err:
+                    print(f"Error al resolver alerta de pesa: {resolve_err}")
+        
+        return jsonify(resultado)
     except Exception as e:
         print("Error en /api/estantes_estado:", e)
         return jsonify({"error": str(e)}), 500

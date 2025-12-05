@@ -270,5 +270,8 @@
     <script src="{{ url_for('static', filename='js/chat/chat-float.js') }}"></script>
 
   {% endif %}
+  
+  <!-- Bloque para scripts adicionales de páginas específicas -->
+  {% block scripts %}{% endblock %}
 </body>
 </html>
