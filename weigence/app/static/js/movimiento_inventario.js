@@ -880,7 +880,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Abrir modal
   btnNew?.addEventListener("click", () => {
     modal?.classList.remove("hidden");
+    form?.reset();
+    document.getElementById('peso-total-display').value = '0.00 kg';
+    
+    // Cargar productos y estantes
     cargarProductos();
+    cargarEstantes();
     
     // Re-configurar event listeners para inputs cada vez que se abre el modal
     setTimeout(() => {
@@ -935,8 +940,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target === modal) modal.classList.add("hidden");
   });
 
-  // Variable para almacenar productos globalmente
+  // Variable para almacenar productos y estantes globalmente
   let productosCache = [];
+  let estantesCache = [];
+  
+  // Función para cargar estantes
+  async function cargarEstantes() {
+    console.log("🏢 Cargando estantes...");
+    try {
+      const response = await fetch('/api/estantes');
+      if (!response.ok) throw new Error('Error al cargar estantes');
+      
+      estantesCache = await response.json();
+      const formActual = document.getElementById("form-new-mov");
+      const selectEstante = formActual?.querySelector('[name="id_estante"]');
+      
+      if (!selectEstante) {
+        console.error("❌ No se encontró el select de estantes");
+        return;
+      }
+
+      if (estantesCache && estantesCache.length > 0) {
+        selectEstante.innerHTML = '<option value="">Seleccione un estante</option>' + 
+          estantesCache.map(e => {
+            return `<option value="${e.id_estante}">${e.nombre || 'Estante ' + e.id_estante}</option>`;
+          }).join("");
+        console.log(`✅ ${estantesCache.length} estantes agregados al select`);
+      } else {
+        selectEstante.innerHTML = '<option value="">No hay estantes disponibles</option>';
+        console.warn("⚠️ No hay estantes en la base de datos");
+      }
+    } catch (error) {
+      console.error('❌ Error cargando estantes:', error);
+      mostrarToast('Error al cargar estantes', 'error');
+    }
+  }
   
   // Función para cargar productos
   function cargarProductos() {
@@ -1041,26 +1079,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       datos.peso_por_unidad = parseFloat(formData.get("peso_por_unidad"));
       datos.peso_total = datos.cantidad * datos.peso_por_unidad;
       datos.observacion = formData.get("observacion") || "";
-
-      // NO enviamos id_estante - se calcula automáticamente en el backend
+      datos.id_estante = parseInt(formData.get("id_estante"));
 
       // Debug: mostrar valores capturados
       console.log("📋 Valores del formulario:", {
         tipo_evento: formData.get("tipo_evento"),
         idproducto: formData.get("idproducto"),
         cantidad: formData.get("cantidad"),
-        peso_por_unidad: formData.get("peso_por_unidad")
+        peso_por_unidad: formData.get("peso_por_unidad"),
+        id_estante: formData.get("id_estante")
       });
       console.log("🔢 Valores convertidos:", datos);
 
       // Validar campos numéricos
-      if (isNaN(datos.idproducto) || isNaN(datos.cantidad) || isNaN(datos.peso_por_unidad)) {
+      if (isNaN(datos.idproducto) || isNaN(datos.cantidad) || isNaN(datos.peso_por_unidad) || isNaN(datos.id_estante)) {
         console.error("❌ Validación fallida:", {
           idproducto: datos.idproducto,
           cantidad: datos.cantidad,
-          peso_por_unidad: datos.peso_por_unidad
+          peso_por_unidad: datos.peso_por_unidad,
+          id_estante: datos.id_estante
         });
-        mostrarError("Los campos numéricos son inválidos");
+        mostrarError("Todos los campos son requeridos. Por favor, verifica que hayas seleccionado un estante.");
         isSubmitting = false;
         return;
       }
@@ -1073,6 +1112,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (datos.peso_por_unidad <= 0) {
         mostrarError("El peso por unidad debe ser mayor a 0");
+        isSubmitting = false;
+        return;
+      }
+
+      if (!datos.id_estante || datos.id_estante <= 0) {
+        mostrarError("Debe seleccionar un estante válido");
         isSubmitting = false;
         return;
       }

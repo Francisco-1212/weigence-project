@@ -218,7 +218,7 @@ def nuevo_movimiento():
         print("Datos recibidos:", datos)
         
         # Validar datos requeridos
-        required_fields = ['tipo_evento', 'idproducto', 'cantidad', 'peso_por_unidad']
+        required_fields = ['tipo_evento', 'idproducto', 'cantidad', 'peso_por_unidad', 'id_estante']
         for field in required_fields:
             if field not in datos:
                 return jsonify({
@@ -250,17 +250,20 @@ def nuevo_movimiento():
         
         producto = producto_info.data[0]
         
-        # CÁLCULO AUTOMÁTICO DE ESTANTE (usando lógica existente: A, B, C...)
-        if 'id_estante' not in datos or not datos['id_estante']:
-            # Si no se proporciona, usar el estante actual del producto
-            datos['id_estante'] = producto.get('id_estante')
-            if not datos['id_estante']:
-                # Si el producto no tiene estante, asignar el primer estante disponible
-                estantes = supabase.table("estantes").select("id_estante").order("id_estante").limit(1).execute()
-                if estantes.data:
-                    datos['id_estante'] = estantes.data[0]['id_estante']
-                else:
-                    return jsonify({"success": False, "error": "No hay estantes disponibles"}), 400
+        # Validar que el estante seleccionado existe
+        if not datos.get('id_estante'):
+            return jsonify({
+                "success": False,
+                "error": "Debe seleccionar un estante"
+            }), 400
+        
+        # Verificar que el estante existe en la base de datos
+        estante_info = supabase.table("estantes").select("id_estante, nombre").eq("id_estante", datos['id_estante']).execute()
+        if not estante_info.data:
+            return jsonify({
+                "success": False,
+                "error": "El estante seleccionado no existe"
+            }), 404
 
         # Obtener el usuario de la sesión
         datos["rut_usuario"] = session.get("usuario_id")

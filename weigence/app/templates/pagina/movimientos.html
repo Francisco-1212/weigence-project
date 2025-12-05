@@ -252,8 +252,14 @@
             placeholder="0.00 kg" value="0.00 kg">
         </div>
 
-        <!-- Campo oculto de estante (se calcula automáticamente en backend) -->
-        <input type="hidden" name="id_estante" value="">
+        <div class="col-span-2">
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Estante</label>
+          <select name="id_estante" required
+            class="w-full rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)] px-3 py-2 text-sm">
+            <option value="">Seleccione un estante</option>
+            <!-- Se llenará con JavaScript -->
+          </select>
+        </div>
       </div>
 
       <div>
