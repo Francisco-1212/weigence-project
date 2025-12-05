@@ -258,9 +258,16 @@ def agregar_producto():
         data = request.json
         if not data.get('nombre') or not data.get('categoria'):
             return jsonify({"success": False, "error": "Nombre y categoría son requeridos"}), 400
+        
+        # Validar que se proporcione un estante
+        if not data.get('id_estante'):
+            return jsonify({"success": False, "error": "Debe seleccionar un estante"}), 400
+        
+        id_estante = safe_int(data.get('id_estante'))
+        if id_estante <= 0:
+            return jsonify({"success": False, "error": "Estante inválido"}), 400
 
         categoria_nombre = (data.get("categoria") or "").strip()
-        id_estante_categoria = asignar_estante(categoria_nombre)
 
         nuevo_producto = {
             "nombre": data["nombre"],
@@ -269,7 +276,7 @@ def agregar_producto():
             "precio_unitario": safe_float(data.get("precio_unitario")),
             "peso": safe_float(data.get("peso"), default=1.0),
             "descripcion": data.get("descripcion", ""),
-            "id_estante": id_estante_categoria,
+            "id_estante": id_estante,
             "fecha_ingreso": datetime.now().isoformat(),
             "ingresado_por": session.get("usuario_id"),
             "fecha_modificacion": datetime.now().isoformat(),

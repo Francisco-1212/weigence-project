@@ -282,7 +282,6 @@ filterByStatus(status) {
     if (!this.modalContent) return;
     this.modalTitle.textContent = "Agregar Nuevo Producto";
     this.modalContent.innerHTML = this.templates.formAdd();
-        this.configurarAsignacionEstante(this.modalContent);
     this.modal.classList.remove('hidden');
   },
 
@@ -291,7 +290,13 @@ filterByStatus(status) {
     data.stock = parseInt(data.stock);
     data.peso = parseFloat(data.peso);
     data.precio_unitario = parseFloat(data.precio_unitario);
-    data.id_estante = this.obtenerEstantePorCategoria(data.categoria);
+    data.id_estante = parseInt(data.id_estante);
+    
+    // Validar que se haya seleccionado un estante
+    if (!data.id_estante || data.id_estante <= 0) {
+      alert('Debe seleccionar un estante válido');
+      return;
+    }
 
 
     const btn = form.querySelector('button[type="submit"]');
@@ -343,7 +348,6 @@ filterByStatus(status) {
     if (!p) return;
     this.modalTitle.textContent = `Editar Producto: ${p.nombre}`;
     this.modalContent.innerHTML = this.templates.formEdit(p);
-    this.configurarAsignacionEstante(this.modalContent);
   },
 
   saveEdit(form) {
@@ -385,50 +389,124 @@ filterByStatus(status) {
   templates: {
     formAdd() {
       return `
-      <form id="addProductForm" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Nombre *</label>
-            <input type="text" name="nombre" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Categoría *</label>
-            <select name="categoria" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-              <option value="">Seleccionar categoría</option>
-              <option>Antiinflamatorio</option><option>Antibiótico</option>
-              <option>Suplemento</option><option>Antihistamínico</option>
-              <option>Broncodilatador</option><option>Analgésico</option>
-              <option>Antidiabetico</option><option>Antihipertensivo</option>
-              <option>Dermocosmética</option><option>Desinfectante</option>
-              <option>Primeros Auxilios</option><option>Equipamiento</option>
-              <option>Higiene</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Estante asignado</label>
-            <input type="text" name="id_estante" readonly placeholder="Asignado automáticamente" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Peso Unitario (g) *</label>
-            <input type="number" name="peso" min="0" step="0.01" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Precio Unitario *</label>
-            <input type="number" name="precio_unitario" min="0" step="0.01" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Estante</label>
-            <input type="text" name="d_estante" placeholder="Ej: A1, B2" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+      <form id="addProductForm" class="space-y-5">
+        <!-- Información Básica -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
+          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">info</span>
+            Información Básica
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Nombre del Producto *</label>
+              <input type="text" name="nombre" required 
+                     placeholder="Ej: Ibuprofeno 400mg"
+                     class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Categoría *</label>
+              <select name="categoria" required 
+                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+                <option value="">Seleccionar categoría</option>
+                <option>Antiinflamatorio</option>
+                <option>Antibiótico</option>
+                <option>Suplemento</option>
+                <option>Antihistamínico</option>
+                <option>Broncodilatador</option>
+                <option>Analgésico</option>
+                <option>Antidiabetico</option>
+                <option>Antihipertensivo</option>
+                <option>Dermocosmética</option>
+                <option>Desinfectante</option>
+                <option>Primeros Auxilios</option>
+                <option>Equipamiento</option>
+                <option>Higiene</option>
+              </select>
+            </div>
           </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Descripción</label>
-          <textarea name="descripcion" rows="3" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100"></textarea>
+
+        <!-- Ubicación y Stock -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
+          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">warehouse</span>
+            Ubicación y Stock Inicial
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Estante *</label>
+              <select name="id_estante" required 
+                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+                <option value="">Seleccione un estante</option>
+                <option value="1">Estante 1</option>
+                <option value="2">Estante 2</option>
+                <option value="3">Estante 3</option>
+                <option value="4">Estante 4</option>
+                <option value="5">Estante 5</option>
+                <option value="6">Estante 6</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Stock Inicial</label>
+              <input type="number" name="stock" min="0" value="0" 
+                     placeholder="0"
+                     class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Cantidad inicial en unidades</p>
+            </div>
+          </div>
         </div>
-        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-700">
-          <button type="button" class="btn-cancelar-add px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white">Cancelar</button>
-          <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white">
-            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-base">add</span>Guardar</span>
+
+        <!-- Datos Técnicos -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
+          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">scale</span>
+            Datos Técnicos y Precio
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Peso Unitario (gramos) *</label>
+              <div class="relative">
+                <input type="number" name="peso" min="0" step="0.01" required 
+                       placeholder="0.00"
+                       class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 pr-12 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-500 dark:text-neutral-400">g</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Precio Unitario *</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-500 dark:text-neutral-400">$</span>
+                <input type="number" name="precio_unitario" min="0" step="0.01" required 
+                       placeholder="0.00"
+                       class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información Adicional -->
+        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
+          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">description</span>
+            Información Adicional
+          </h4>
+          <div>
+            <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Descripción</label>
+            <textarea name="descripcion" rows="3" 
+                      placeholder="Detalles adicionales del producto, indicaciones, contraindicaciones, etc."
+                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-300 dark:border-neutral-700">
+          <button type="button" class="btn-cancelar-add px-5 py-2.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 rounded-lg text-sm font-semibold transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">close</span>
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined text-base">add</span>
+            Agregar Producto
           </button>
         </div>
       </form>`;
