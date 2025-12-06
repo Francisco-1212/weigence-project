@@ -2,7 +2,7 @@
 
     <!-- BOTÓN FLOTANTE -->
     <button id="chat-float-btn"
-        class="relative flex items-center justify-center w-14 h-14 rounded-full bg-indigo-500 shadow-xl hover:bg-indigo-600 transition-all duration-200 text-white">
+        class="relative flex items-center justify-center w-14 h-14 rounded-full bg-[#5B9BD5] dark:bg-indigo-500 shadow-xl hover:bg-[#4A86C0] dark:hover:bg-indigo-600 transition-all duration-200 text-white">
         <span class="material-symbols-outlined" style="font-size: 28px;">chat_bubble</span>
         <!-- Badge contador -->
         <span id="chat-unread-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">0</span>
@@ -12,39 +12,42 @@
     <div id="chat-mini-panel" class="hidden flex flex-col">
 
         <!-- HEADER -->
-        <div class="px-4 py-2 border-b flex justify-between items-center bg-white dark:bg-neutral-900">
-            <span id="chat-title" class="font-semibold text-sm">Usuarios</span>
-            <button id="chat-close-btn" class="text-xl">×</button>
+        <div class="px-4 py-3 border-b border-neutral-300 dark:border-neutral-700 flex justify-between items-center bg-[#E6E9EC] dark:bg-neutral-900">
+            <span id="chat-title" class="font-semibold text-sm text-neutral-900 dark:text-neutral-100">Usuarios</span>
+            <button id="chat-close-btn" class="text-2xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">×</button>
         </div>
 
         <!-- LISTA DE USUARIOS -->
-        <div id="chat-user-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-white dark:bg-neutral-900 text-sm">
-            <div class="text-center text-neutral-500">
+        <div id="chat-user-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-[#E6E9EC] dark:bg-neutral-900 text-sm">
+            <div class="text-center text-neutral-500 dark:text-neutral-400">
                 Cargando usuarios...
             </div>
         </div>
 
         <!-- CHAT -->
-        <div id="chat-message-view" class="hidden flex flex-col flex-1 bg-white dark:bg-neutral-900">
+        <div id="chat-message-view" class="hidden flex flex-col flex-1 bg-[#E6E9EC] dark:bg-neutral-900">
 
             <!-- HEADER CHAT -->
-            <div class="px-4 py-2 border-b flex items-center gap-2">
-                <button id="chat-back-btn" class="text-indigo-500 text-xs">← Volver</button>
-                <span id="chat-target-name" class="font-semibold text-sm"></span>
+            <div class="px-4 py-3 border-b border-neutral-300 dark:border-neutral-700 flex items-center gap-2 bg-[#E6E9EC] dark:bg-neutral-900">
+                <button id="chat-back-btn" class="text-[#5B9BD5] dark:text-indigo-400 hover:text-[#4A86C0] dark:hover:text-indigo-300 text-sm font-medium transition-colors">← Volver</button>
+                <span id="chat-target-name" class="font-semibold text-sm text-neutral-900 dark:text-neutral-100"></span>
             </div>
+
+            <!-- MENSAJE FIJADO -->
+            <div id="chat-pinned-container" class="hidden border-b border-neutral-300 dark:border-neutral-700 bg-amber-50 dark:bg-amber-900/20"></div>
 
             <!-- MENSAJES -->
             <div id="chat-body" class="flex-1 overflow-y-auto overflow-x-hidden"></div>
 
             <!-- INPUT -->
-            <div class="p-3 border-t bg-white dark:bg-neutral-900">
+            <div class="p-3 border-t border-neutral-300 dark:border-neutral-700 bg-[#E6E9EC] dark:bg-neutral-900">
                 <div class="flex items-center gap-2">
                     <input
                         id="chat-input"
                         type="text"
-                        class="flex-1 rounded-lg px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm"
+                        class="flex-1 rounded-lg px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 outline-none focus:ring-2 focus:ring-[#5B9BD5] dark:focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
                         placeholder="Escribe un mensaje...">
-                    <button id="chat-send-btn" class="hidden p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors">
+                    <button id="chat-send-btn" class="hidden p-2 rounded-lg bg-[#5B9BD5] dark:bg-indigo-500 hover:bg-[#4A86C0] dark:hover:bg-indigo-600 text-white transition-colors">
                         <span class="material-symbols-outlined text-xl">send</span>
                     </button>
                 </div>

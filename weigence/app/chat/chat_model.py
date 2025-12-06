@@ -410,6 +410,19 @@ def fijar_mensaje_db(conversacion_id, mensaje_id):
         return False
 
 
+def desfijar_mensaje_db(conversacion_id):
+    """Elimina el mensaje fijado en una conversación."""
+    try:
+        # Actualizar la conversación con mensaje_fijado_id en null
+        supabase.table("chat_conversaciones").update(
+            {"mensaje_fijado_id": None}
+        ).eq("id", conversacion_id).execute()
+        return True
+    except Exception as e:
+        print(f"[CHAT_MODEL] Error desfijando mensaje: {e}")
+        return False
+
+
 def obtener_reacciones_mensaje(mensaje_id):
     """Obtiene todas las reacciones de un mensaje."""
     try:

@@ -933,26 +933,65 @@ const WeigenceMonitor = {
       contenedor.innerHTML = "";
 
       data.forEach(e => {
-        const color =
-          e.estado === "critico"
-            ? "red"
-            : e.estado === "advertencia"
-            ? "orange"
-            : e.estado === "estable"
-            ? "green"
-            : "gray";
+        // Determinar estado (usar estado_calculado que viene del backend)
+        const estado = e.estado_calculado || e.estado || 'estable';
+        
+        // Definir clases CSS completas y texto del badge según el estado
+        let borderClass, bgClass, badgeBgClass, badgeTextClass, barBgClass, badgeText;
+        
+        if (estado === 'critico') {
+          borderClass = 'border-red-400/50';
+          bgClass = 'bg-red-400/10';
+          badgeBgClass = 'bg-red-200';
+          badgeTextClass = 'text-red-800';
+          barBgClass = 'bg-red-500';
+          badgeText = 'crítico';
+        } else if (estado === 'advertencia') {
+          borderClass = 'border-yellow-400/50';
+          bgClass = 'bg-yellow-400/10';
+          badgeBgClass = 'bg-yellow-200';
+          badgeTextClass = 'text-yellow-800';
+          barBgClass = 'bg-yellow-500';
+          badgeText = 'alerta';
+        } else {
+          borderClass = 'border-green-400/50';
+          bgClass = 'bg-green-400/10';
+          badgeBgClass = 'bg-green-200';
+          badgeTextClass = 'text-green-800';
+          barBgClass = 'bg-green-500';
+          badgeText = 'estable';
+        }
+
+        // Convertir gramos a kilogramos para mostrar
+        const pesoActualKg = ((e.peso_actual || 0) / 1000).toFixed(2);
+        const pesoMaximoKg = ((e.peso_maximo || 0) / 1000).toFixed(2);
+        
+        // Determinar color e icono del indicador de pesa
+        let pesaIndicador = '';
+        if (e.id_estante >= 6) {
+          const pesaActiva = e.estado_pesa === true;
+          const pesaColor = pesaActiva ? 'green' : 'red';
+          const pesaIcon = pesaActiva ? 'check_circle' : 'error';
+          const pesaTexto = pesaActiva ? 'Sensor Activo' : 'Sensor Inactivo';
+          pesaIndicador = `
+            <div class="flex items-center gap-1 mt-2 text-xs">
+              <span class="material-symbols-outlined text-${pesaColor}-500" style="font-size: 16px;">${pesaIcon}</span>
+              <span class="text-${pesaColor}-600 dark:text-${pesaColor}-400 font-medium">${pesaTexto}</span>
+            </div>
+          `;
+        }
 
         contenedor.insertAdjacentHTML(
           "beforeend",
           `
-          <div class="border border-${color}-400/50 bg-${color}-400/10 rounded-md p-3 animate-fadeIn">
+          <div class="border ${borderClass} ${bgClass} rounded-md p-3 animate-fadeIn">
             <div class="flex justify-between items-center mb-2">
               <span class="font-bold">Estante ${e.id_estante}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado_calculado || e.estado || 'estable'}</span>
             </div>
             <p class="text-sm mb-1">Ocupación: ${e.ocupacion_pct || 0}%</p>
             <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-              <div class="bg-${color}-500 h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
+              <div class="${barBgClass} h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
             </div>
             <p class="text-sm">Peso: ${e.peso_actual} kg / ${e.peso_maximo} kg</p>
           </div>`
@@ -1406,8 +1445,9 @@ const WeigenceMonitor = {
 
 
     data.forEach((e, idx) => {
-        const baseColor = e.estado === 'critico' ? '#ef4444' : e.estado === 'advertencia' ? '#f59e0b' : '#22c55e';
-        const gradId = e.estado === 'critico' ? 'grad-critico' : e.estado === 'advertencia' ? 'grad-advertencia' : 'grad-estable';
+        const estado = e.estado_calculado || e.estado || 'estable';
+        const baseColor = estado === 'critico' ? '#ef4444' : estado === 'advertencia' ? '#f59e0b' : '#22c55e';
+        const gradId = estado === 'critico' ? 'grad-critico' : estado === 'advertencia' ? 'grad-advertencia' : 'grad-estable';
 
         const col = idx % cols;
         const row = Math.floor(idx / cols);
