@@ -31,8 +31,8 @@ def chat_conversaciones():
                 rut = item["usuario"].get("rut_usuario")
                 item["is_online"] = bool(rut in conectados_set)
         
-        # Ordenar por fecha (manejar None como string vacío)
-        lista.sort(key=lambda x: x.get("fecha") or "", reverse=True)
+        # Ordenar por fecha
+        lista.sort(key=lambda x: x.get("fecha", ""), reverse=True)
         
         return jsonify({
             "success": True,

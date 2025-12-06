@@ -2,8 +2,6 @@
 // Sistema Weigence - Alertas.js
 // ===========================================================
 
-console.log("🔵 [ALERTAS] Archivo alertas.js cargado correctamente");
-
 const Alertas = {
   state: {
     page: 1,
@@ -20,32 +18,15 @@ const Alertas = {
   },
 
   init() {
-    console.log("🔵 [ALERTAS] Iniciando sistema de alertas...");
-    try {
-      this.cacheDOM();
-      console.log("✅ [ALERTAS] DOM cacheado correctamente");
-      
-      this.refreshRows();
-      console.log("✅ [ALERTAS] Filas refrescadas:", this.state.rows.length);
-      
-      this.bindEvents();
-      console.log("✅ [ALERTAS] Eventos vinculados");
-      
-      this.bindFiltros();
-      console.log("✅ [ALERTAS] Filtros vinculados");
-      
-      this.applyPagination();
-      console.log("✅ [ALERTAS] Paginación aplicada");
-      
-      console.info("✅ [ALERTAS] Sistema inicializado correctamente");
-    } catch (error) {
-      console.error("❌ [ALERTAS] Error en init():", error);
-    }
+    this.cacheDOM();
+    this.refreshRows();
+    this.bindEvents();
+    this.bindFiltros();
+    this.applyPagination();
+    console.info("✅ Alertas: Sistema inicializado correctamente");
   },
 
   cacheDOM() {
-    console.log("🔵 [ALERTAS] Cacheando elementos del DOM...");
-    
     this.table = document.getElementById('alertasTable');
     this.modal = document.getElementById('modal-gestionar-alerta');
     this.alertasCounter = document.getElementById('alertas-counter');
@@ -76,47 +57,17 @@ const Alertas = {
     
     // Botón exportar
     this.btnExportar = document.getElementById('btn-exportar-alertas');
-    
-    // Log de elementos no encontrados
-    const elementos = {
-      'table': this.table,
-      'modal': this.modal,
-      'alertasCounter': this.alertasCounter,
-      'pageSel': this.pageSel,
-      'pagePrev': this.pagePrev,
-      'pageNext': this.pageNext,
-      'filtroEstado': this.filtroEstado,
-      'filtroTipo': this.filtroTipo,
-      'btnLimpiarFiltros': this.btnLimpiarFiltros,
-      'btnExportar': this.btnExportar
-    };
-    
-    Object.keys(elementos).forEach(key => {
-      if (!elementos[key]) {
-        console.warn(`⚠️ [ALERTAS] Elemento no encontrado: ${key}`);
-      }
-    });
   },
 
   bindEvents() {
-    console.log("🔵 [ALERTAS] Vinculando eventos...");
-    
     // Paginación
-    console.log("🔵 [ALERTAS] Vinculando paginación...", {
-      pageSel: !!this.pageSel,
-      pagePrev: !!this.pagePrev,
-      pageNext: !!this.pageNext
-    });
-    
     this.pageSel?.addEventListener('change', () => {
-      console.log("🔵 [ALERTAS] Cambio de tamaño de página");
       this.state.pageSize = parseInt(this.pageSel.value) || 10;
       this.state.page = 1;
       this.applyPagination();
     });
 
     this.pagePrev?.addEventListener('click', () => {
-      console.log("🔵 [ALERTAS] Página anterior");
       if (this.state.page > 1) {
         this.state.page--;
         this.applyPagination();
@@ -124,7 +75,6 @@ const Alertas = {
     });
 
     this.pageNext?.addEventListener('click', () => {
-      console.log("🔵 [ALERTAS] Página siguiente");
       const total = this.state.filteredRows.length;
       const pages = Math.max(1, Math.ceil(total / this.state.pageSize));
       if (this.state.page < pages) {
@@ -134,18 +84,13 @@ const Alertas = {
     });
 
     // Cerrar modal
-    console.log("🔵 [ALERTAS] Vinculando botones de cerrar modal...");
     document.querySelectorAll('.close-modal-alerta').forEach(btn => {
-      btn.addEventListener('click', () => {
-        console.log("🔵 [ALERTAS] Cerrando modal (botón X)");
-        this.cerrarModal();
-      });
+      btn.addEventListener('click', () => this.cerrarModal());
     });
 
     // Cerrar al hacer click fuera
     this.modal?.addEventListener('click', (e) => {
       if (e.target === this.modal) {
-        console.log("🔵 [ALERTAS] Cerrando modal (click fuera)");
         this.cerrarModal();
       }
     });
@@ -153,38 +98,16 @@ const Alertas = {
     // Cerrar con ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
-        console.log("🔵 [ALERTAS] Cerrando modal (ESC)");
         this.cerrarModal();
       }
     });
 
-    // Botones gestionar (delegación de eventos)
-    console.log("🔵 [ALERTAS] Vinculando delegación de eventos para botones gestionar...");
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-gestionar-alerta');
-      if (btn) {
-        const alertaId = btn.dataset.alertaId;
-        console.log(`✅ [ALERTAS] Click en gestionar, ID: ${alertaId}`);
-        this.abrirModal(alertaId);
-      }
-    });
-
-    // Botón exportar
-    console.log("🔵 [ALERTAS] Vinculando botón exportar...", !!this.btnExportar);
-    this.btnExportar?.addEventListener('click', () => {
-      console.log("🔵 [ALERTAS] Exportando alertas");
-      this.exportarAlertas();
-    });
-
     // Filtros de fecha (Hoy/Semana/Mes)
     const filtroFechaBtns = document.querySelectorAll('.filtro-fecha-btn');
-    console.log(`🔵 [ALERTAS] Botones de filtro de fecha encontrados: ${filtroFechaBtns.length}`);
-    
     if (filtroFechaBtns.length > 0) {
       filtroFechaBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           const rango = btn.dataset.rango;
-          console.log(`🔵 [ALERTAS] Aplicando filtro de fecha: ${rango}`);
           this.aplicarFiltroFecha(rango);
           
           // Actualizar estilo activo
@@ -197,12 +120,9 @@ const Alertas = {
       filtroFechaBtns[0]?.classList.add('filtro-activo');
       this.aplicarFiltroFecha('hoy');
     }
-    
-    console.log("✅ [ALERTAS] Eventos vinculados correctamente");
   },
 
   aplicarFiltroFecha(rango) {
-    console.log(`🔵 [ALERTAS] Aplicando filtro de fecha: ${rango}`);
     const ahora = new Date();
     let fechaInicio;
 
@@ -222,10 +142,9 @@ const Alertas = {
         fechaInicio = null;
     }
 
-    // Filtrar filas por fecha usando this.state.rows
-    if (fechaInicio && this.state.rows) {
-      console.log(`🔵 [ALERTAS] Filtrando ${this.state.rows.length} filas desde ${fechaInicio.toISOString()}`);
-      this.state.rows.forEach(row => {
+    // Filtrar filas por fecha
+    if (fechaInicio) {
+      this.rows.forEach(row => {
         const fechaTexto = row.dataset.fecha;
         if (fechaTexto) {
           const fechaAlerta = new Date(fechaTexto);
@@ -236,15 +155,34 @@ const Alertas = {
           }
         }
       });
-    } else if (this.state.rows) {
+    } else {
       // Mostrar todo
-      console.log(`🔵 [ALERTAS] Mostrando todas las ${this.state.rows.length} filas`);
-      this.state.rows.forEach(row => row.style.display = '');
+      this.rows.forEach(row => row.style.display = '');
     }
 
     this.refreshRows();
     this.applyPagination();
-    console.log(`✅ [ALERTAS] Filtro de fecha aplicado: ${rango}`);
+  },
+
+  bindFiltrosExistente() {
+    // Cerrar con ESC (continuación)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
+        this.cerrarModal();
+      }
+    });
+
+    // Botón exportar
+    this.btnExportar?.addEventListener('click', () => this.exportarAlertas());
+
+    // Botones gestionar (delegación de eventos)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-gestionar-alerta');
+      if (btn) {
+        const alertaId = btn.dataset.alertaId;
+        this.abrirModal(alertaId);
+      }
+    });
   },
 
   bindFiltros() {
