@@ -221,11 +221,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     html += lista.map((m, i) => {
   const indexReal = inicio + i; // Índice real en el array completo
-  const color = m.tipo_evento === "Añadir" ? "green"
+  const esAutomatico = m.tipo_evento === "Automático" || m.es_automatico === true;
+  const color = esAutomatico ? "gray"
+              : m.tipo_evento === "Añadir" ? "green"
               : m.tipo_evento === "Retirar" ? "red" : "blue";
 
   return `
-    <div class="timeline-item relative mb-3 cursor-pointer group"
+    <div class="timeline-item relative mb-3 cursor-pointer group ${esAutomatico ? 'opacity-75' : ''}"
          data-index="${indexReal}" 
          data-tipo="${m.tipo_evento}" 
          data-user="${(m.usuario_nombre || '').toLowerCase()}"
@@ -237,29 +239,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="absolute -left-[9px] top-6 bottom-0 w-0.5 bg-neutral-300 dark:bg-neutral-700"></div>
       
       <!-- Tarjeta -->
-      <div class="ml-4 p-2.5 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-sm hover:shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-200">
+      <div class="ml-4 p-2.5 rounded-lg border ${esAutomatico ? 'border-gray-400 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50' : 'border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]'} shadow-sm hover:shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-200">
+        ${esAutomatico ? `
+        <div class="flex items-center gap-1 mb-1">
+          <span class="material-symbols-outlined text-xs text-gray-500">sensors</span>
+          <span class="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Detección automática</span>
+        </div>
+        ` : ''}
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 flex-1 min-w-0">
             <span class="material-symbols-outlined text-base flex-shrink-0 ${
-              m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
+              esAutomatico ? "text-gray-600 dark:text-gray-400"
+              : m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
               : "text-blue-600 dark:text-blue-500"
             }">
-              ${m.tipo_evento === "Añadir" ? "arrow_upward" : m.tipo_evento === "Retirar" ? "arrow_downward" : "sync_alt"}
+              ${esAutomatico ? "sensors" : m.tipo_evento === "Añadir" ? "arrow_upward" : m.tipo_evento === "Retirar" ? "arrow_downward" : "sync_alt"}
             </span>
-            <p class="text-xs font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] truncate">
+            <p class="text-xs font-semibold ${esAutomatico ? 'text-gray-600 dark:text-gray-400' : 'text-[var(--text-light)] dark:text-[var(--text-dark)]'} truncate">
               ${m.producto}
             </p>
           </div>
           <div class="text-right flex-shrink-0">
             <p class="text-sm font-bold ${
-              m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
+              esAutomatico ? "text-gray-600 dark:text-gray-400"
+              : m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
               : "text-blue-600 dark:text-blue-500"
             }">
-              ${m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
+              ${esAutomatico ? "" : m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
             </p>
-            <p class="text-[10px] text-neutral-500 dark:text-neutral-400">
+            <p class="text-[10px] ${esAutomatico ? 'text-gray-500 dark:text-gray-500' : 'text-neutral-500 dark:text-neutral-400'}">
               ${(m.timestamp || "").split(" ")[1]?.slice(0,5) || ""}
             </p>
           </div>
@@ -903,8 +913,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         inputPesoUnidad.addEventListener('input', calcularPesoTotal);
       }
       if (selectProductos) {
-        selectProductos.removeEventListener('change', actualizarPesoProducto);
-        selectProductos.addEventListener('change', actualizarPesoProducto);
+        selectProductos.removeEventListener('change', actualizarPesoYEstante);
+        selectProductos.addEventListener('change', actualizarPesoYEstante);
       }
     }, 100);
   });
@@ -1002,12 +1012,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             const pesoEnGramos = p.peso || 0;
             const pesoEnKg = pesoEnGramos / 1000;
             
-            return `<option value="${p.idproducto}" data-peso="${pesoEnKg}">${p.nombre} (Stock: ${p.stock || 0} unidades, ${pesoEnKg.toFixed(3)} kg/u)</option>`;
+            return `<option value="${p.idproducto}" data-peso="${pesoEnKg}" data-estante="${p.id_estante || ''}">${p.nombre} (Stock: ${p.stock || 0} unidades, ${pesoEnKg.toFixed(3)} kg/u)</option>`;
           }).join("");
           console.log(`✅ ${productos.length} productos agregados al select`);
           
-          // Auto-llenar peso del primer producto inmediatamente
-          actualizarPesoProducto();
+          // Auto-llenar peso y estante del primer producto inmediatamente
+          actualizarPesoYEstante();
         } else {
           selectProductos.innerHTML = '<option value="">No hay productos disponibles</option>';
           console.warn("⚠️ No hay productos en la base de datos");
@@ -1022,19 +1032,45 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
   }
   
-  // Función para actualizar peso cuando cambia el producto
-  function actualizarPesoProducto() {
+  // Función para actualizar peso y estante cuando cambia el producto
+  function actualizarPesoYEstante() {
     const formActual = document.getElementById("form-new-mov");
     const selectProductos = formActual?.querySelector("[name=idproducto]");
     const inputPesoUnidad = formActual?.querySelector('#input-peso-unidad');
+    const inputEstante = formActual?.querySelector('[name="id_estante"]');
+    
     if (!selectProductos || !inputPesoUnidad) return;
     
     const selectedOption = selectProductos.options[selectProductos.selectedIndex];
     const pesoEnKg = parseFloat(selectedOption.dataset.peso) || 0;
+    const idEstante = selectedOption.dataset.estante || '';
     
+    // Actualizar peso
     inputPesoUnidad.value = pesoEnKg.toFixed(3);
     calcularPesoTotal();
-    console.log(`🏷️ Peso actualizado: ${pesoEnKg} kg (${(pesoEnKg * 1000).toFixed(0)}g) para ${selectedOption.text}`);
+    
+    // Actualizar estante (buscar el nombre del estante si existe)
+    if (inputEstante && idEstante) {
+      const estante = estantesCache.find(e => e.id_estante == idEstante);
+      const nombreEstante = estante ? estante.nombre : `Estante ${idEstante}`;
+      inputEstante.value = nombreEstante;
+      // Guardar el id_estante en un campo oculto
+      let hiddenEstante = formActual.querySelector('[name="id_estante_hidden"]');
+      if (!hiddenEstante) {
+        hiddenEstante = document.createElement('input');
+        hiddenEstante.type = 'hidden';
+        hiddenEstante.name = 'id_estante_hidden';
+        formActual.appendChild(hiddenEstante);
+      }
+      hiddenEstante.value = idEstante;
+    }
+    
+    console.log(`🏷️ Producto actualizado: ${pesoEnKg} kg, Estante: ${idEstante}`);
+  }
+  
+  // Mantener la función anterior para compatibilidad
+  function actualizarPesoProducto() {
+    actualizarPesoYEstante();
   }
   
   // Los listeners de producto y tipo de evento se configuran en cargarProductos()
@@ -1079,7 +1115,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       datos.peso_por_unidad = parseFloat(formData.get("peso_por_unidad"));
       datos.peso_total = datos.cantidad * datos.peso_por_unidad;
       datos.observacion = formData.get("observacion") || "";
-      datos.id_estante = parseInt(formData.get("id_estante"));
+      // Obtener el id_estante del campo oculto
+      const idEstanteHidden = formData.get("id_estante_hidden");
+      datos.id_estante = parseInt(idEstanteHidden || formData.get("id_estante"));
 
       // Debug: mostrar valores capturados
       console.log("📋 Valores del formulario:", {
@@ -1087,7 +1125,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         idproducto: formData.get("idproducto"),
         cantidad: formData.get("cantidad"),
         peso_por_unidad: formData.get("peso_por_unidad"),
-        id_estante: formData.get("id_estante")
+        id_estante: formData.get("id_estante"),
+        id_estante_hidden: formData.get("id_estante_hidden")
       });
       console.log("🔢 Valores convertidos:", datos);
 

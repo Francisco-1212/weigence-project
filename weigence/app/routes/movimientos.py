@@ -100,20 +100,24 @@ def movimientos():
                 estantes_data = m.get("estantes") or {}
                 usuarios_data = m.get("usuarios") or {}
                 
+                # Para movimientos automáticos (tipo "Automático")
+                es_automatico = m.get("tipo_evento") == "Automático"
+                
                 mov = {
                     "id_movimiento": m.get("id_movimiento"),
-                    "producto": productos_data.get("nombre", "Producto no encontrado"),
+                    "producto": productos_data.get("nombre", "Detección automática") if not es_automatico else "Detección automática",
                     "tipo_evento": m.get("tipo_evento"),
                     "cantidad": m.get("cantidad", 0),
                     "peso_por_unidad": m.get("peso_por_unidad", 0),
                     "peso_total": m.get("peso_total", 0),
                     "ubicacion": estantes_data.get("nombre") or f"E{m.get('id_estante')}",
-                    "usuario_nombre": usuarios_data.get("nombre", "Usuario no registrado"),
-                    "rut_usuario": m.get("rut_usuario", "No registrado"),
+                    "usuario_nombre": usuarios_data.get("nombre", "Sistema") if not es_automatico else "Sistema",
+                    "rut_usuario": m.get("rut_usuario", "Sistema"),
                     "observacion": m.get("observacion", ""),
                     "timestamp": m.get("timestamp", "").replace("T", " "),
                     "idproducto": m.get("idproducto"),
-                    "id_estante": m.get("id_estante")
+                    "id_estante": m.get("id_estante"),
+                    "es_automatico": es_automatico
                 }
                 movimientos.append(mov)
                 #print("Movimiento procesado:", mov)
@@ -139,9 +143,9 @@ def movimientos():
 @requiere_login
 def get_productos():
     try:
-        # Modificamos la consulta para usar los nombres correctos de las columnas
+        # Modificamos la consulta para incluir id_estante
         response = supabase.table("productos").select(
-            "idproducto, nombre, stock, peso"
+            "idproducto, nombre, stock, peso, id_estante"
         ).execute()
         
         return jsonify(response.data)

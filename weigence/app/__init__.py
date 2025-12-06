@@ -169,6 +169,10 @@ def create_app(config_name=None):
 
     app.register_blueprint(routes_bp)
     
+    # Registrar blueprint de lecturas de peso (sensores automáticos)
+    from app.routes.lecturas_peso import bp as lecturas_bp
+    app.register_blueprint(lecturas_bp)
+    
     # Registrar blueprint de pruebas (solo desarrollo)
     from app.routes.test_routes import bp as test_bp
     app.register_blueprint(test_bp)

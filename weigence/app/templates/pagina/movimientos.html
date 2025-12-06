@@ -253,12 +253,11 @@
         </div>
 
         <div class="col-span-2">
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Estante</label>
-          <select name="id_estante" required
-            class="w-full rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)] px-3 py-2 text-sm">
-            <option value="">Seleccione un estante</option>
-            <!-- Se llenará con JavaScript -->
-          </select>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Estante (asignado automáticamente)</label>
+          <input type="text" name="id_estante" readonly
+            placeholder="Se asignará según el producto seleccionado"
+            class="w-full rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-neutral-50 dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-not-allowed">
+          <!-- Campo oculto para el ID del estante -->
         </div>
       </div>
 
