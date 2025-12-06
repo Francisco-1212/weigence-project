@@ -49,13 +49,13 @@ def guardar_mensaje(conversacion_id, usuario_id, contenido, reply_to=None):
     return _msg_payload(msg)
 
 
-def enviar_mensaje_ws(usuario_id, conversacion_id, contenido):
+def enviar_mensaje_ws(usuario_id, conversacion_id, contenido, reply_to=None):
     if not contenido or not contenido.strip():
         raise ValueError("Mensaje vacio")
     if not model.validar_usuario_en_conversacion(conversacion_id, usuario_id):
         raise PermissionError("No pertenece a la conversacion")
 
-    msg = model.insertar_mensaje(conversacion_id, usuario_id, contenido)
+    msg = model.insertar_mensaje(conversacion_id, usuario_id, contenido, reply_to)
     return _msg_payload(msg)
 
 
@@ -137,6 +137,11 @@ def eliminar_mensaje(mensaje_id):
 def fijar_mensaje(conversacion_id, mensaje_id):
     """Fija un mensaje en una conversación."""
     return model.fijar_mensaje_db(conversacion_id, mensaje_id)
+
+
+def desfijar_mensaje(conversacion_id):
+    """Desfija el mensaje fijado en una conversación."""
+    return model.desfijar_mensaje_db(conversacion_id)
 
 
 def obtener_reacciones(mensaje_id):

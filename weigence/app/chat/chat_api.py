@@ -70,6 +70,8 @@ def chat_historial(rut_destino):
     # Últimos vistos por cada participante
     last_seen_me = None
     last_seen_other = None
+    mensaje_fijado = None
+    
     try:
         part_me = model.obtener_participacion(cid, user)
         if part_me:
@@ -80,12 +82,20 @@ def chat_historial(rut_destino):
     except Exception:
         pass
 
+    # Obtener mensaje fijado si existe
+    try:
+        if conv.get("mensaje_fijado_id"):
+            mensaje_fijado = model.obtener_mensaje_por_id(conv["mensaje_fijado_id"])
+    except Exception:
+        pass
+
     return jsonify({
         "success": True,
         "conversacion_id": cid,
         "mensajes": mensajes,
         "last_seen_me": last_seen_me,
-        "last_seen_other": last_seen_other
+        "last_seen_other": last_seen_other,
+        "mensaje_fijado": mensaje_fijado
     })
 
 @bp_chat.get("/users")
@@ -147,10 +157,26 @@ def chat_enviar_mensaje():
             conv_id = str(res["conversacion_id"])
             msg = res["mensaje"]
             
-            # Si tiene reply_to, actualizar el mensaje
+            # Si tiene reply_to, actualizar el mensaje y agregar contexto
             if reply_to and msg.get("id"):
                 model.supabase.table("chat_mensajes").update({"reply_to": reply_to}).eq("id", msg["id"]).execute()
                 msg["reply_to"] = reply_to
+                
+                # Obtener el mensaje original para agregar contexto
+                try:
+                    original = model.supabase.table("chat_mensajes")\
+                        .select("contenido, usuario_id, usuarios_conectados(nombre)")\
+                        .eq("id", reply_to)\
+                        .single()\
+                        .execute()
+                    
+                    if original.data:
+                        msg["reply_to_content"] = original.data.get("contenido")
+                        msg["reply_to_user_id"] = original.data.get("usuario_id")
+                        if original.data.get("usuarios_conectados"):
+                            msg["reply_to_user_name"] = original.data["usuarios_conectados"].get("nombre")
+                except Exception:
+                    pass
         elif conversacion_id is not None:
             try:
                 conv_int = int(conversacion_id)
@@ -192,7 +218,35 @@ def chat_enviar_mensaje():
 
 
 # =============================================
-# 4. Agregar reacción a un mensaje
+# 4. Obtener un mensaje específico por ID
+# =============================================
+
+@bp_chat.get("/mensajes/<int:mensaje_id>")
+def obtener_mensaje(mensaje_id):
+    user = session.get("usuario_id")
+    if not user:
+        return jsonify({"success": False, "msg": "No autenticado"}), 401
+
+    try:
+        # Obtener el mensaje con información del usuario
+        msg = model.obtener_mensaje_por_id(mensaje_id)
+        
+        if not msg:
+            return jsonify({"success": False, "msg": "Mensaje no encontrado"}), 404
+        
+        # Verificar que el usuario tenga acceso a este mensaje
+        conv_id = msg.get("conversacion_id")
+        if not svc.usuario_puede_ver(conv_id, user):
+            return jsonify({"success": False, "msg": "No tienes acceso a este mensaje"}), 403
+        
+        return jsonify({"success": True, "mensaje": msg})
+        
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+
+# =============================================
+# 5. Agregar reacción a un mensaje
 # =============================================
 
 @bp_chat.post("/mensajes/<int:mensaje_id>/reaccion")
@@ -305,11 +359,61 @@ def fijar_mensaje(mensaje_id):
         # Fijar mensaje
         svc.fijar_mensaje(conv_id, mensaje_id)
 
+        # Emitir por WebSocket con datos del mensaje
+        try:
+            from app import socketio_instance
+            if socketio_instance:
+                # Obtener nombre del usuario que envió el mensaje
+                usuario_msg = mensaje.get("usuario_id")
+                usuario_nombre = None
+                
+                if usuario_msg:
+                    from app.db.db_usuarios import obtener_usuario_por_rut
+                    usuario_data = obtener_usuario_por_rut(usuario_msg)
+                    if usuario_data:
+                        usuario_nombre = usuario_data.get("nombre")
+                
+                socketio_instance.emit("mensaje_fijado", {
+                    "mensaje_id": mensaje_id,
+                    "usuario_id": usuario_msg,
+                    "usuario_nombre": usuario_nombre,
+                    "contenido": mensaje.get("contenido")
+                }, to=str(conv_id))
+        except Exception:
+            pass
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"success": False, "msg": str(e)}), 500
+
+
+@bp_chat.post("/mensajes/<int:mensaje_id>/desfijar")
+def desfijar_mensaje(mensaje_id):
+    user = session.get("usuario_id")
+    if not user:
+        return jsonify({"success": False, "msg": "No autenticado"}), 401
+
+    try:
+        # Obtener el mensaje
+        mensaje = model.obtener_mensaje_por_id(mensaje_id)
+        if not mensaje:
+            return jsonify({"success": False, "msg": "Mensaje no encontrado"}), 404
+
+        conv_id = mensaje.get("conversacion_id")
+        
+        # Validar que el usuario tenga acceso
+        if not svc.usuario_puede_ver(conv_id, user):
+            return jsonify({"success": False, "msg": "Sin acceso"}), 403
+
+        # Desfijar mensaje
+        svc.desfijar_mensaje(conv_id)
+
         # Emitir por WebSocket
         try:
             from app import socketio_instance
             if socketio_instance:
-                socketio_instance.emit("mensaje_fijado", {
+                socketio_instance.emit("mensaje_desfijado", {
                     "mensaje_id": mensaje_id
                 }, to=str(conv_id))
         except Exception:

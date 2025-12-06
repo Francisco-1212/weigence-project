@@ -885,11 +885,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Modal de Nuevo Movimiento ---
   const modal = document.getElementById("modal-new-mov");
   const btnNew = document.getElementById("btn-new-mov");
+  const btnNewHeader = document.getElementById("btn-registrar-movimiento-header");
   const form = document.getElementById("form-new-mov");
 
-  // Abrir modal
-  btnNew?.addEventListener("click", () => {
+  // Función para abrir el modal
+  const abrirModal = () => {
     modal?.classList.remove("hidden");
+    document.body.classList.add("modal-open"); // Bloquear scroll del body
     form?.reset();
     document.getElementById('peso-total-display').value = '0.00 kg';
     
@@ -917,7 +919,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectProductos.addEventListener('change', actualizarPesoYEstante);
       }
     }, 100);
-  });
+  };
+
+  // Abrir modal desde el botón original (si existe)
+  btnNew?.addEventListener("click", abrirModal);
+  
+  // Abrir modal desde el botón del header (si existe)
+  btnNewHeader?.addEventListener("click", abrirModal);
 
   // Función para calcular peso total automáticamente
   function calcularPesoTotal() {
@@ -939,7 +947,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Cerrar modal
   modal?.querySelectorAll(".close-modal").forEach(btn => {
-    btn.addEventListener("click", () => modal.classList.add("hidden"));
+    btn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      document.body.classList.remove("modal-open"); // Restaurar scroll del body
+    });
   });
 
   // Evitar cierre al hacer click dentro del modal

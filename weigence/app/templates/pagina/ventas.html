@@ -16,7 +16,7 @@
 <!-- Tarjetas de resumen -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
   <div
-    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] p-6 rounded-xl shadow-sm flex items-center gap-4">
     <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-400">
       <span class="material-symbols-outlined">shopping_cart</span>
     </div>
@@ -28,7 +28,7 @@
     </div>
   </div>
   <div
-    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] p-6 rounded-xl shadow-sm flex items-center gap-4">
     <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
       <span class="material-symbols-outlined">attach_money</span>
     </div>
@@ -40,7 +40,7 @@
     </div>
   </div>
   <div
-    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] p-6 rounded-xl shadow-sm flex items-center gap-4">
     <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500 dark:text-yellow-400">
       <span class="material-symbols-outlined">receipt_long</span>
     </div>
@@ -50,7 +50,7 @@
     </div>
   </div>
   <div
-    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 p-6 rounded-xl shadow-sm flex items-center gap-4">
+    class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] p-6 rounded-xl shadow-sm flex items-center gap-4">
     <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500 dark:text-purple-400">
       <span class="material-symbols-outlined">star</span>
     </div>
@@ -65,7 +65,7 @@
 <!-- Tabla de ventas recientes -->
 
       <!-- Panel de Filtros -->
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-gray-300 dark:border-neutral-700 shadow-sm p-6 mb-6">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -76,7 +76,7 @@
               <p class="text-sm text-neutral-600 dark:text-neutral-400">Refina los resultados según tus criterios</p>
             </div>
           </div>
-          <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+          <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all shadow">
             <span class="material-symbols-outlined text-sm">restart_alt</span>
             <span class="text-sm font-medium">Limpiar filtros</span>
           </button>
@@ -91,7 +91,7 @@
                 Producto
               </span>
             </label>
-            <select id="filtro-producto" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <select id="filtro-producto" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
               <option value="">Todos los productos</option>
               {% for id, nombre in productos_dict.items() %}
               <option value="{{ id }}">{{ nombre }}</option>
@@ -107,7 +107,7 @@
                 Vendedor
               </span>
             </label>
-            <select id="filtro-vendedor" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <select id="filtro-vendedor" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
               <option value="">Todos los vendedores</option>
               {% for rut, nombre in usuarios_dict.items() %}
               <option value="{{ rut }}">{{ nombre }}</option>
@@ -123,7 +123,7 @@
                 Fecha desde
               </span>
             </label>
-            <input type="date" id="filtro-fecha-desde" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <input type="date" id="filtro-fecha-desde" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           </div>
 
           <div>
@@ -133,7 +133,7 @@
                 Fecha hasta
               </span>
             </label>
-            <input type="date" id="filtro-fecha-hasta" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <input type="date" id="filtro-fecha-hasta" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           </div>
 
           <!-- Filtro por Rango de Total -->
@@ -144,7 +144,7 @@
                 Total mínimo
               </span>
             </label>
-            <input type="number" id="filtro-total-min" placeholder="$0" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <input type="number" id="filtro-total-min" placeholder="$0" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           </div>
 
           <div>
@@ -154,12 +154,12 @@
                 Total máximo
               </span>
             </label>
-            <input type="number" id="filtro-total-max" placeholder="Sin límite" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+            <input type="number" id="filtro-total-max" placeholder="Sin límite" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           </div>
 
           <!-- Botón Aplicar Filtros -->
           <div class="lg:col-span-2 flex items-end">
-            <button id="btn-aplicar-filtros" class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white font-semibold transition-all shadow-sm hover:shadow-md">
+            <button id="btn-aplicar-filtros" class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all shadow">
               <span class="material-symbols-outlined">search</span>
               <span>Aplicar Filtros</span>
             </button>
@@ -176,9 +176,9 @@
       </div>
 
       <!-- Tabla de ventas (diseño mejorado) -->
-      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-gray-300 dark:border-neutral-700 shadow-sm overflow-hidden">
+      <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-[var(--border-dark)] shadow-sm overflow-hidden">
         <!-- Header de la tabla -->
-        <div class="px-6 py-4 border-b border-gray-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+        <div class="px-6 py-4 border-b border-neutral-300 dark:border-[var(--border-dark)] bg-neutral-100 dark:bg-neutral-800/50">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
@@ -194,6 +194,7 @@
                 <span class="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400 mr-2 animate-pulse"></span>
                 {{ ventas|length }} ventas
               </span>
+              <!-- El widget de filtro activo se insertará aquí dinámicamente por JavaScript -->
             </div>
           </div>
         </div>
@@ -201,7 +202,7 @@
         <!-- Tabla con scroll -->
         <div class="max-h-[60vh] overflow-auto">
           <table id="ventasTable" class="w-full text-sm">
-            <thead class="sticky top-0 z-10 bg-neutral-100 dark:bg-neutral-800 border-b-2 border-gray-300 dark:border-neutral-700">
+            <thead class="sticky top-0 z-10 bg-neutral-200 dark:bg-neutral-800 border-b-2 border-neutral-300 dark:border-[var(--border-dark)]">
               <tr>
                 <th class="px-6 py-4 text-left">
                   <div class="flex items-center gap-2 font-semibold text-neutral-700 dark:text-neutral-300 uppercase text-xs tracking-wider">
@@ -235,7 +236,7 @@
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
+            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
               {% for venta in ventas %}
               {% set detalles = detalle_ventas | selectattr('idventa', 'equalto', venta.idventa) | list %}
               {% set nombre_vendedor = usuarios_dict.get(venta.rut_usuario, 'Usuario Desconocido') %}
@@ -303,7 +304,7 @@
                 <!-- Acciones -->
                 <td class="px-6 py-4 text-center">
                   <button 
-                    class="btn-ver-detalle inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md group-hover:scale-105"
+                    class="btn-ver-detalle inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-sm font-medium transition-all duration-200 shadow"
                     data-idventa="{{ venta.idventa }}">
                     <span class="material-symbols-outlined text-base">visibility</span>
                     <span>Ver detalles</span>
@@ -330,11 +331,11 @@
 
   <!-- Controles de paginación mejorados -->
   <div id="ventasPager"
-      class="flex flex-wrap items-center justify-between gap-4 py-4 px-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-xl mt-4 shadow-sm">
+      class="flex flex-wrap items-center justify-between gap-4 py-4 px-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] rounded-xl mt-4 shadow-sm">
     <div class="flex items-center gap-3">
       <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">table_rows</span>
       <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filas por página:</span>
-      <select id="ventasPageSize" class="h-10 px-3 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-medium shadow-sm hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+      <select id="ventasPageSize" class="h-10 px-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-[var(--border-dark)] text-neutral-900 dark:text-neutral-100 font-medium shadow-sm hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
         <option>10</option><option>25</option><option>50</option><option>100</option>
       </select>
     </div>
@@ -343,13 +344,13 @@
       <span id="ventasPageStats">0–0 de 0</span>
     </div>
     <div class="flex items-center gap-2">
-      <button id="ventasPrevPage" class="h-10 px-4 border border-gray-300 dark:border-neutral-700 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Anterior">
+      <button id="ventasPrevPage" class="h-10 px-4 border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Anterior">
         <span class="flex items-center gap-1">
           <span class="material-symbols-outlined text-base">chevron_left</span>
           <span class="hidden sm:inline">Anterior</span>
         </span>
       </button>
-      <button id="ventasNextPage" class="h-10 px-4 border border-gray-300 dark:border-neutral-700 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Siguiente">
+      <button id="ventasNextPage" class="h-10 px-4 border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Siguiente">
         <span class="flex items-center gap-1">
           <span class="hidden sm:inline">Siguiente</span>
           <span class="material-symbols-outlined text-base">chevron_right</span>
@@ -363,22 +364,22 @@
     <button
       id="btn-crear-venta"
       type="button"
-      class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200 transform hover:scale-105">
+      class="flex items-center gap-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 px-5 py-3 text-sm font-semibold shadow hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-200">
       <span class="material-symbols-outlined">add_circle</span>
       <span>Crear nueva venta</span>
     </button>
     <button
       id="btn-exportar-reporte"
-      class="flex items-center gap-2 rounded-lg bg-white dark:bg-neutral-800 border-2 border-gray-300 dark:border-neutral-700 px-5 py-3 text-sm font-semibold text-neutral-700 dark:text-neutral-300 shadow-sm hover:shadow-md hover:border-green-500 dark:hover:border-green-500 hover:text-green-600 dark:hover:text-green-400 transition-all duration-200">
+      class="flex items-center gap-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 px-5 py-3 text-sm font-semibold shadow hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-200">
       <span class="material-symbols-outlined">download</span>
       <span>Exportar reporte</span>
     </button>
   </div>
 
   <!-- Modal de Detalle de Venta -->
-  <div id="detalleVentaModal" class="fixed inset-0 z-[100] hidden modal-overlay flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="Ventas.cerrarModal()"></div>
-    <div class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto
+  <div id="detalleVentaModal" class="hidden modal-overlay">
+    <div class="absolute inset-0" onclick="Ventas.cerrarModal()"></div>
+    <div class="modal-container w-full max-w-5xl
                 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
                 border border-gray-300 dark:border-neutral-700
                 rounded-2xl shadow-2xl">
@@ -389,8 +390,8 @@
   </div>
 
   <!-- Modal de Nueva Venta -->
-  <div id="modal-nueva-venta" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div class="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+  <div id="modal-nueva-venta" class="hidden modal-overlay">
+    <div class="modal-container w-full max-w-3xl bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
       <div class="p-6">
         <!-- Header del Modal -->
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-300 dark:border-neutral-700">

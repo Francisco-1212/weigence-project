@@ -15,12 +15,17 @@ const ChatCore = (() => {
     let conectado = false;
     let currentRoom = null;
     let loadingClient = false;
+    const pendingReplyTo = new Map(); // Guardar reply_to temporalmente: conversacion_id -> reply_to_id
 
     // UI callbacks
     let onMessageCallback = null;
     let onSeenCallback = null;
     let onJoinedCallback = null;
     let onErrorCallback = null;
+    let onReactionCallback = null;
+    let onDeleteCallback = null;
+    let onPinCallback = null;
+    let onUnpinCallback = null;
 
 
     // ============================================================
@@ -88,6 +93,17 @@ const ChatCore = (() => {
             // New messages
             socket.on("mensaje_nuevo", (msg) => {
                 console.log("[WS] nuevo mensaje", msg);
+                
+                // Si hay un reply_to pendiente para esta conversación y el mensaje no lo trae, agregarlo
+                if (msg.conversacion_id && pendingReplyTo.has(msg.conversacion_id)) {
+                    if (!msg.reply_to && msg.usuario_id === (window.CURRENT_USER?.id)) {
+                        msg.reply_to = pendingReplyTo.get(msg.conversacion_id);
+                        console.log('[WS] ✨ Reply_to inyectado al mensaje:', msg.reply_to);
+                    }
+                    // Limpiar después de usar
+                    pendingReplyTo.delete(msg.conversacion_id);
+                }
+                
                 if (onMessageCallback) onMessageCallback(msg);
             });
 
@@ -101,6 +117,30 @@ const ChatCore = (() => {
             socket.on("joined", (data) => {
                 console.log("[WS] joined", data);
                 if (onJoinedCallback) onJoinedCallback(data);
+            });
+
+            // Reacción agregada
+            socket.on("reaccion_agregada", (data) => {
+                console.log("[WS] reacción agregada", data);
+                if (onReactionCallback) onReactionCallback(data);
+            });
+
+            // Mensaje eliminado
+            socket.on("mensaje_eliminado", (data) => {
+                console.log("[WS] mensaje eliminado", data);
+                if (onDeleteCallback) onDeleteCallback(data);
+            });
+
+            // Mensaje fijado
+            socket.on("mensaje_fijado", (data) => {
+                console.log("[WS] mensaje fijado", data);
+                if (onPinCallback) onPinCallback(data);
+            });
+
+            // Mensaje desfijado
+            socket.on("mensaje_desfijado", (data) => {
+                console.log("[WS] mensaje desfijado", data);
+                if (onUnpinCallback) onUnpinCallback(data);
             });
 
             // Errors
@@ -166,7 +206,7 @@ const ChatCore = (() => {
     // SEND MESSAGE
     // ============================================================
 
-    function send(texto) {
+    function send(texto, replyTo = null) {
         const contenido = (texto || "").trim();
         if (!contenido) {
             console.warn("[WS] send > texto vacio");
@@ -178,10 +218,20 @@ const ChatCore = (() => {
             return;
         }
 
-        socket.emit("send", {
+        const payload = {
             conversacion_id: currentRoom,
             contenido,
-        });
+        };
+
+        // Agregar reply_to si existe
+        if (replyTo) {
+            payload.reply_to = replyTo;
+            // Guardar temporalmente para inyectar cuando llegue la respuesta
+            pendingReplyTo.set(currentRoom, replyTo);
+            console.log('[WS] 💾 Reply_to guardado temporalmente:', replyTo);
+        }
+
+        socket.emit("send", payload);
     }
 
 
@@ -208,6 +258,10 @@ const ChatCore = (() => {
     function onSeen(cb) { onSeenCallback = cb; }
     function onJoined(cb) { onJoinedCallback = cb; }
     function onError(cb) { onErrorCallback = cb; }
+    function onReaction(cb) { onReactionCallback = cb; }
+    function onDelete(cb) { onDeleteCallback = cb; }
+    function onPin(cb) { onPinCallback = cb; }
+    function onUnpin(cb) { onUnpinCallback = cb; }
 
 
     // ============================================================
@@ -228,6 +282,10 @@ const ChatCore = (() => {
         onSeen,
         onJoined,
         onError,
+        onReaction,
+        onDelete,
+        onPin,
+        onUnpin,
     };
 
 })();

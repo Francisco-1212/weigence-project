@@ -11,6 +11,7 @@ const ChatFloat = (() => {
     const chatInput = document.getElementById("chat-input");
     const targetName = document.getElementById("chat-target-name");
     const unreadBadge = document.getElementById("chat-unread-badge");
+    const pinnedContainer = document.getElementById("chat-pinned-container");
 
     if (!btn || !panel || !userView || !chatView || !chatBody || !chatInput) {
         console.warn("[CHAT] Elementos del chat no encontrados, se aborta inicializacion");
@@ -21,8 +22,64 @@ const ChatFloat = (() => {
     let selectedUser = null;
     let currentConversationId = null;
     const renderedMessageIds = new Set();
+    const messageCache = new Map(); // Cache global de mensajes
+    const conversationCaches = new Map(); // Cache por conversación
     let socketReady = false;
     let unreadInterval = null;
+
+    // Función para guardar mensaje en cache
+    function saveToCache(msg) {
+        if (!msg || !msg.id) return;
+        
+        const conversationId = String(msg.conversacion_id);
+        
+        // Crear cache para esta conversación si no existe
+        if (!conversationCaches.has(conversationId)) {
+            conversationCaches.set(conversationId, new Map());
+        }
+        
+        const cache = conversationCaches.get(conversationId);
+        const msgData = {
+            contenido: msg.contenido,
+            usuario_id: msg.usuario_id,
+            usuario_nombre: msg.usuario_nombre || selectedUser?.nombre,
+            fecha_envio: msg.fecha_envio
+        };
+        
+        cache.set(msg.id, msgData);
+        messageCache.set(msg.id, msgData); // También en cache global
+    }
+
+    // Función para obtener mensaje del cache
+    function getFromCache(messageId, conversationId = null) {
+        // Intentar desde cache de conversación específica primero
+        if (conversationId) {
+            const convCache = conversationCaches.get(String(conversationId));
+            if (convCache && convCache.has(messageId)) {
+                return convCache.get(messageId);
+            }
+        }
+        
+        // Fallback a cache global
+        return messageCache.get(messageId);
+    }
+
+    // Función para obtener mensaje original del backend
+    async function fetchOriginalMessage(messageId) {
+        try {
+            const res = await fetch(`/api/chat/mensajes/${messageId}`);
+            const data = await res.json();
+            
+            if (data.success && data.mensaje) {
+                // Guardar en cache
+                saveToCache(data.mensaje);
+                return data.mensaje;
+            }
+        } catch (err) {
+            console.warn('[CHAT] Error obteniendo mensaje original:', err);
+        }
+        return null;
+    }
 
     function ensureSocket() {
         if (socketReady) return;
@@ -35,6 +92,10 @@ const ChatFloat = (() => {
         ChatCore.onMessage(handleIncomingMessage);
         ChatCore.onError((err) => console.warn("[CHAT] WS error", err));
         ChatCore.onJoined((data) => console.log("[CHAT] Unido a sala", data));
+        ChatCore.onReaction(handleIncomingReaction);
+        ChatCore.onDelete(handleMessageDeleted);
+        ChatCore.onPin(handleMessagePinned);
+        ChatCore.onUnpin(handleMessageUnpinned);
         socketReady = true;
     }
 
@@ -53,7 +114,10 @@ const ChatFloat = (() => {
     function renderMessage(msg) {
         if (!msg || String(msg.conversacion_id) !== String(currentConversationId || "")) return;
         if (msg.id && renderedMessageIds.has(msg.id)) return;
-        if (msg.id) renderedMessageIds.add(msg.id);
+        if (msg.id) {
+            renderedMessageIds.add(msg.id);
+            saveToCache(msg); // Usar nueva función de cache
+        }
         clearPlaceholder();
 
         const isMine = msg.usuario_id === currentUser.id;
@@ -108,12 +172,51 @@ const ChatFloat = (() => {
         if (msg.reply_to) {
             const replyContext = document.createElement("div");
             replyContext.className = `reply-context ${isMine ? "reply-mine" : "reply-other"}`;
+            
+            let replyContent = '[Mensaje]';
+            let replyAuthor = "un mensaje";
+            
+            // 1. Intentar usar datos del backend
+            if (msg.reply_to_content) {
+                replyContent = msg.reply_to_content;
+                replyAuthor = msg.reply_to_user_id === currentUser.id 
+                    ? "tu mensaje" 
+                    : (msg.reply_to_user_name || "un mensaje");
+            } 
+            // 2. Intentar desde cache
+            else {
+                const cachedMsg = getFromCache(msg.reply_to, currentConversationId);
+                if (cachedMsg) {
+                    replyContent = cachedMsg.contenido;
+                    replyAuthor = cachedMsg.usuario_id === currentUser.id 
+                        ? "tu mensaje" 
+                        : (cachedMsg.usuario_nombre || "un mensaje");
+                }
+                // 3. Si no está en cache, obtener del backend
+                else {
+                    fetchOriginalMessage(msg.reply_to).then(originalMsg => {
+                        if (originalMsg) {
+                            const authorSpan = replyContext.querySelector('.reply-author');
+                            const contentSpan = replyContext.querySelector('.reply-content');
+                            
+                            if (authorSpan && contentSpan) {
+                                const author = originalMsg.usuario_id === currentUser.id 
+                                    ? 'tu mensaje' 
+                                    : (originalMsg.usuario_nombre || 'un mensaje');
+                                authorSpan.textContent = `Respondiendo a ${author}`;
+                                contentSpan.textContent = originalMsg.contenido.substring(0, 50) + (originalMsg.contenido.length > 50 ? '...' : '');
+                            }
+                        }
+                    });
+                }
+            }
+            
             replyContext.innerHTML = `
                 <div class="flex items-start gap-2 mb-2 pb-2 border-b ${isMine ? 'border-indigo-400/30' : 'border-neutral-300 dark:border-neutral-600'}">
                     <span class="material-symbols-outlined text-xs opacity-60">reply</span>
                     <div class="flex-1 text-xs opacity-80">
-                        <div class="font-semibold">Respondiste a tu propio mensaje</div>
-                        <div class="opacity-70 mt-0.5">${msg.reply_to_content || 'como estás'}</div>
+                        <div class="font-semibold reply-author">Respondiendo a ${replyAuthor}</div>
+                        <div class="opacity-70 mt-0.5 reply-content">${replyContent.substring(0, 50)}${replyContent.length > 50 ? '...' : ''}</div>
                     </div>
                 </div>
             `;
@@ -375,22 +478,82 @@ const ChatFloat = (() => {
             });
 
             if (res.ok) {
-                // Agregar indicador visual de fijado
-                const wrapper = document.querySelector(`[data-message-id="${msg.id}"]`);
-                if (wrapper) {
-                    const bubble = wrapper.querySelector('.message-bubble');
-                    const pinIcon = document.createElement('span');
-                    pinIcon.className = 'material-symbols-outlined absolute top-1 right-1 text-yellow-500';
-                    pinIcon.style.fontSize = '14px';
-                    pinIcon.textContent = 'push_pin';
-                    bubble.style.position = 'relative';
-                    bubble.appendChild(pinIcon);
-                }
+                showPinnedMessage(msg);
                 console.log(`[CHAT] Mensaje ${msg.id} fijado`);
             }
         } catch (err) {
             console.error('[CHAT] Error al fijar mensaje:', err);
         }
+    }
+
+    function showPinnedMessage(msg) {
+        if (!pinnedContainer) return;
+
+        const isMine = msg.usuario_id === currentUser.id;
+        const authorName = isMine ? 'Tú' : (msg.usuario_nombre || selectedUser?.nombre || 'Usuario');
+        
+        pinnedContainer.innerHTML = `
+            <div class="flex items-start gap-3 p-3">
+                <span class="material-symbols-outlined text-amber-600 dark:text-amber-400" style="font-size: 20px;">push_pin</span>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-0.5">Mensaje fijado</div>
+                    <div class="text-sm text-neutral-700 dark:text-neutral-300">
+                        <span class="font-medium">${authorName}:</span> ${msg.contenido}
+                    </div>
+                </div>
+                <button 
+                    class="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors" 
+                    onclick="ChatFloat.unpinMessage(${msg.id})"
+                    title="Despinear mensaje">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                </button>
+            </div>
+        `;
+        
+        pinnedContainer.classList.remove('hidden');
+        
+        // Agregar ícono al mensaje original en el chat
+        const wrapper = document.querySelector(`[data-message-id="${msg.id}"]`);
+        if (wrapper) {
+            const bubble = wrapper.querySelector('.message-bubble');
+            if (!bubble.querySelector('.pin-icon')) {
+                const pinIcon = document.createElement('span');
+                pinIcon.className = 'material-symbols-outlined absolute top-1 right-1 text-amber-500 pin-icon';
+                pinIcon.style.fontSize = '14px';
+                pinIcon.textContent = 'push_pin';
+                bubble.style.position = 'relative';
+                bubble.appendChild(pinIcon);
+            }
+        }
+    }
+
+    async function unpinMessage(messageId) {
+        try {
+            const res = await fetch(`/api/chat/mensajes/${messageId}/desfijar`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                hidePinnedMessage();
+                
+                // Remover ícono del mensaje original
+                const wrapper = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (wrapper) {
+                    const pinIcon = wrapper.querySelector('.pin-icon');
+                    if (pinIcon) pinIcon.remove();
+                }
+                
+                console.log(`[CHAT] Mensaje ${messageId} desfijado`);
+            }
+        } catch (err) {
+            console.error('[CHAT] Error al desfijar mensaje:', err);
+        }
+    }
+
+    function hidePinnedMessage() {
+        if (!pinnedContainer) return;
+        pinnedContainer.classList.add('hidden');
+        pinnedContainer.innerHTML = '';
     }
 
     function replyToMessage(msg) {
@@ -455,6 +618,8 @@ const ChatFloat = (() => {
         selectedUser = null;
         currentConversationId = null;
         renderedMessageIds.clear();
+        hidePinnedMessage();
+        // NO limpiar messageCache ni conversationCaches - mantener historial para referencias
         if (typeof ChatCore !== "undefined") {
             ChatCore.leave();
         }
@@ -562,6 +727,14 @@ const ChatFloat = (() => {
                     </div>
                 `);
             } else {
+                // Guardar TODOS los mensajes en cache antes de renderizar
+                data.mensajes.forEach(msg => {
+                    if (msg.id) {
+                        saveToCache(msg);
+                    }
+                });
+                
+                // Ahora renderizar
                 data.mensajes.forEach(renderMessage);
                 
                 // Marcar mensajes como leídos
@@ -578,6 +751,14 @@ const ChatFloat = (() => {
                     }
                 }
             }
+
+            // Cargar mensaje fijado si existe
+            if (data.mensaje_fijado) {
+                showPinnedMessage(data.mensaje_fijado);
+            }
+
+            // Verificar si hay un mensaje pendiente para reenviar
+            checkForwardMessage();
         } catch (err) {
             console.error("[CHAT] Error cargando historial:", err);
             setPlaceholder(`
@@ -585,6 +766,27 @@ const ChatFloat = (() => {
                     No se pudo cargar el chat. Intenta nuevamente.
                 </div>
             `);
+        }
+    }
+
+    function checkForwardMessage() {
+        const forwardData = sessionStorage.getItem('forwardMessage');
+        if (!forwardData) return;
+
+        try {
+            const { contenido, originalId } = JSON.parse(forwardData);
+            
+            // Prellenar el input con el mensaje a reenviar
+            chatInput.value = contenido;
+            chatInput.focus();
+            
+            // Limpiar sessionStorage
+            sessionStorage.removeItem('forwardMessage');
+            
+            console.log(`[CHAT] Mensaje ${originalId} listo para reenviar a ${selectedUser.nombre}`);
+        } catch (err) {
+            console.error('[CHAT] Error procesando mensaje para reenviar:', err);
+            sessionStorage.removeItem('forwardMessage');
         }
     }
 
@@ -602,8 +804,11 @@ const ChatFloat = (() => {
         };
 
         // Si está respondiendo a un mensaje, agregar el ID
+        let replyToId = null;
         if (window.replyingTo) {
             messageData.reply_to = window.replyingTo;
+            replyToId = window.replyingTo;
+            console.log('[CHAT] Enviando respuesta a mensaje ID:', replyToId);
         }
 
         // Limpiar indicador de respuesta
@@ -620,7 +825,8 @@ const ChatFloat = (() => {
                     ChatCore.join(currentConversationId);
                 }
                 if (ChatCore.isConnected()) {
-                    ChatCore.send(txt, messageData.reply_to);
+                    // Enviar con reply_to si existe
+                    ChatCore.send(txt, messageData.reply_to || null);
                     sentViaWs = true;
                 }
             } catch (err) {
@@ -641,6 +847,13 @@ const ChatFloat = (() => {
             if (!data.success) throw new Error(data.msg || "No se pudo enviar");
 
             currentConversationId = data.conversacion_id || currentConversationId;
+            
+            // Si había un reply_to, agregarlo manualmente al mensaje antes de renderizar
+            if (replyToId && data.mensaje) {
+                data.mensaje.reply_to = replyToId;
+                console.log('[CHAT] Mensaje recibido del backend:', data.mensaje);
+            }
+            
             renderMessage(data.mensaje);
         } catch (err) {
             console.error("[CHAT] Error enviando mensaje:", err);
@@ -681,6 +894,97 @@ const ChatFloat = (() => {
         
         // Actualizar el contador cuando llega un mensaje nuevo
         updateUnreadCount();
+    }
+
+    function handleIncomingReaction(data) {
+        if (!data || !data.mensaje_id) return;
+        
+        console.log('[CHAT] 🎭 Reacción recibida por WS:', data);
+        
+        // Buscar el mensaje en el DOM y actualizar la reacción
+        const wrapper = document.querySelector(`[data-message-id="${data.mensaje_id}"]`);
+        if (wrapper) {
+            const bubble = wrapper.querySelector('.message-bubble');
+            let reaction = bubble.querySelector('.message-reaction');
+            
+            if (!reaction) {
+                reaction = document.createElement('div');
+                reaction.className = 'message-reaction';
+                bubble.style.position = 'relative';
+                bubble.appendChild(reaction);
+            }
+            
+            reaction.innerHTML = `
+                <span>${data.emoji}</span>
+                <span class="message-reaction-count">1</span>
+            `;
+            
+            console.log('[CHAT] ✅ Reacción actualizada en UI');
+        }
+    }
+
+    function handleMessageDeleted(data) {
+        if (!data || !data.mensaje_id) return;
+        
+        console.log('[CHAT] 🗑️ Mensaje eliminado por WS:', data);
+        
+        const wrapper = document.querySelector(`[data-message-id="${data.mensaje_id}"]`);
+        if (wrapper) {
+            wrapper.remove();
+            renderedMessageIds.delete(data.mensaje_id);
+            messageCache.delete(data.mensaje_id);
+            console.log('[CHAT] ✅ Mensaje removido de UI');
+        }
+    }
+
+    function handleMessagePinned(data) {
+        if (!data || !data.mensaje_id) return;
+        
+        console.log('[CHAT] 📌 Mensaje fijado por WS:', data);
+        
+        // Obtener datos del mensaje desde cache o DOM
+        let msgData = getFromCache(data.mensaje_id, currentConversationId);
+        
+        if (!msgData) {
+            // Intentar obtener del DOM
+            const wrapper = document.querySelector(`[data-message-id="${data.mensaje_id}"]`);
+            if (wrapper) {
+                const bubble = wrapper.querySelector('.message-bubble');
+                const content = bubble.querySelector('div:not(.reply-context):not(.message-reaction)');
+                msgData = {
+                    id: data.mensaje_id,
+                    contenido: content?.textContent || '[Mensaje]',
+                    usuario_id: data.usuario_id,
+                    usuario_nombre: data.usuario_nombre,
+                    conversacion_id: currentConversationId
+                };
+            }
+        } else {
+            msgData.id = data.mensaje_id;
+            msgData.conversacion_id = currentConversationId;
+        }
+        
+        if (msgData) {
+            showPinnedMessage(msgData);
+            console.log('[CHAT] ✅ Mensaje fijado mostrado arriba');
+        }
+    }
+
+    function handleMessageUnpinned(data) {
+        if (!data || !data.mensaje_id) return;
+        
+        console.log('[CHAT] 📌 Mensaje desfijado por WS:', data);
+        
+        hidePinnedMessage();
+        
+        // Remover ícono del mensaje original
+        const wrapper = document.querySelector(`[data-message-id="${data.mensaje_id}"]`);
+        if (wrapper) {
+            const pinIcon = wrapper.querySelector('.pin-icon');
+            if (pinIcon) pinIcon.remove();
+        }
+        
+        console.log('[CHAT] ✅ Mensaje desfijado de UI');
     }
 
     // =============================================
@@ -759,9 +1063,8 @@ const ChatFloat = (() => {
             });
         }
 
-        // 2. Observar notificaciones inline (como en auditoría)
-        // Buscar específicamente las notificaciones tipo toast
-        let checkInterval = setInterval(() => {
+        // 2. Observar notificaciones inline (como en auditoría) - OPTIMIZADO CON MUTATIONOBSERVER
+        function checkToastNotifications() {
             let hasInlineNotif = false;
             
             // Buscar notificaciones en la parte inferior derecha (bottom-4 right-4)
@@ -805,9 +1108,26 @@ const ChatFloat = (() => {
                 chatContainer.classList.remove("notification-open");
                 console.log("[CHAT] ✅ Notificación cerrada - Volviendo chat a posición normal");
             }
-        }, 5); // Verificar cada 5ms para detección instantánea
+        }
 
-        console.log("[CHAT] Observador de notificaciones configurado");
+        // Usar MutationObserver en lugar de setInterval para mejor rendimiento
+        const bodyObserver = new MutationObserver(() => {
+            // Debounce: ejecutar después de 10ms de inactividad
+            if (bodyObserver.timeout) clearTimeout(bodyObserver.timeout);
+            bodyObserver.timeout = setTimeout(checkToastNotifications, 10);
+        });
+
+        bodyObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'style']
+        });
+
+        // Verificación inicial
+        checkToastNotifications();
+
+        console.log("[CHAT] Observador de notificaciones configurado (optimizado con MutationObserver)");
     }
 
     function init() {
@@ -817,7 +1137,7 @@ const ChatFloat = (() => {
         console.log("[CHAT] Chat flotante iniciado.");
     }
 
-    return { init, openPanel, closePanel, updateUnreadCount };
+    return { init, openPanel, closePanel, updateUnreadCount, unpinMessage };
 
 })();
 

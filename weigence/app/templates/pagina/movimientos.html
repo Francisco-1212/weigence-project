@@ -18,11 +18,6 @@
         <span class="material-symbols-outlined">filter_alt</span>
         <span>Filtros</span>
       </button>
-      <button id="btn-new-mov"
-        class="flex items-center gap-2 h-10 px-4 bg-primary-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-primary-500 transition-all">
-        <span class="material-symbols-outlined">add</span>
-        <span>Registrar</span>
-      </button>
     </div>
   </div>
 
@@ -201,13 +196,28 @@
   </div>
 </div>
 <!-- Modal de Nuevo Movimiento -->
-<div id="modal-new-mov" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-[var(--card-bg-dark)] rounded-xl shadow-lg w-full max-w-lg mx-4">
-    <div class="flex justify-between items-center p-4 border-b border-neutral-300 dark:border-[var(--border-dark)]">
-      <h3 class="text-lg font-bold text-[var(--text-light)] dark:text-[var(--text-dark)]">Registrar Movimiento</h3>
-      <button class="close-modal text-neutral-500 hover:text-red-500">
+<div id="modal-new-mov"
+     class="hidden modal-overlay">
+
+  <!-- CONTENEDOR DEL MODAL -->
+  <div class="modal-container
+              bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]
+              border-2 border-neutral-400 dark:border-[var(--border-dark)]
+              rounded-2xl shadow-2xl w-full max-w-lg mx-4">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center p-4 
+                border-b border-[var(--border-light)] dark:border-[var(--border-dark)]">
+
+      <h3 class="text-lg font-bold text-[var(--text-light)] dark:text-[var(--text-dark)]">
+        Registrar Movimiento
+      </h3>
+
+      <button class="close-modal text-[var(--text-light)] dark:text-[var(--text-dark)]
+                     hover:text-red-500 transition">
         <span class="material-symbols-outlined">close</span>
       </button>
+
     </div>
 
     <form id="form-new-mov" class="p-6 space-y-4">

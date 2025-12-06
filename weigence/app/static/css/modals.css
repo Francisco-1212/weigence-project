@@ -1,0 +1,70 @@
+/* ===================================
+   ESTILOS GLOBALES PARA MODALES
+   ===================================
+   Soluciona problemas de:
+   - Posicionamiento centrado (sin contar sidebar)
+   - Z-index sobre el header
+   - Backdrop blur
+   ================================= */
+
+/* Overlay del modal - debe cubrir toda la pantalla */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Contenedor del modal - centrado en el área visible */
+.modal-container {
+  position: relative;
+  z-index: 10000;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: auto;
+}
+
+/* Ajuste para desktop - compensar el sidebar (120px = mitad de 240px) */
+@media (min-width: 1024px) {
+  .modal-overlay {
+    padding-left: calc(1rem + 120px);
+  }
+}
+
+/* Dark mode support */
+.dark .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Scroll suave dentro del modal */
+.modal-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.modal-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+.modal-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* Prevenir scroll del body cuando modal está abierto */
+body.modal-open {
+  overflow: hidden;
+}

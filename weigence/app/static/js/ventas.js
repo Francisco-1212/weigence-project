@@ -18,7 +18,9 @@ const Ventas = {
       fechaHasta: '',
       totalMin: '',
       totalMax: ''
-    }
+    },
+    filtroTemporalActivo: false,
+    rangoTemporal: null // 'hoy', 'semana', 'mes'
   },
 
   init() {
@@ -26,6 +28,7 @@ const Ventas = {
     this.cargarDatosIniciales();
     this.refreshRows();
     this.bindEvents();
+    this.conectarBotonesHeaderFiltros(); // Conectar botones del header
     this.bindFiltros();
     // Aplicar paginación inicial
     this.applyPagination();
@@ -138,67 +141,356 @@ const Ventas = {
         this.cerrarModal();
       }
     });
+  },
 
-    // Filtros de fecha (Hoy/Semana/Mes)
-    const filtroFechaBtns = document.querySelectorAll('.filtro-fecha-btn');
-    if (filtroFechaBtns.length > 0) {
-      filtroFechaBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const rango = btn.dataset.rango;
-          this.aplicarFiltroFecha(rango);
-          
-          // Actualizar estilo activo
-          filtroFechaBtns.forEach(b => b.classList.remove('filtro-activo'));
-          btn.classList.add('filtro-activo');
-        });
-      });
+  // ============================================================
+  // FILTROS TEMPORALES DEL HEADER (Hoy/Semana/Mes)
+  // ============================================================
+  conectarBotonesHeaderFiltros() {
+    const botonesHeader = document.querySelectorAll('.filtro-fecha-btn');
+    
+    console.log('🔍 Buscando botones de filtro del header:', botonesHeader.length, 'encontrados');
+    
+    if (!botonesHeader.length) {
+      console.warn('⚠️ No se encontraron botones de filtro de fecha en el header');
+      return;
+    }
+    
+    botonesHeader.forEach(btn => {
+      console.log('✅ Conectando botón:', btn.dataset.rango);
       
-      // Inicializar con "Hoy" por defecto
-      filtroFechaBtns[0]?.classList.add('filtro-activo');
-      this.aplicarFiltroFecha('hoy');
+      // Evitar listeners duplicados
+      if (btn.dataset.listenerAdded === 'true') {
+        console.log('⚠️ Ya tiene listener:', btn.dataset.rango);
+        return;
+      }
+      btn.dataset.listenerAdded = 'true';
+      
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const rango = btn.getAttribute('data-rango');
+        console.log('🎯 Click en filtro del header:', rango);
+        
+        // Remover clase activa de todos los botones
+        botonesHeader.forEach(b => {
+          b.classList.remove('filtro-activo');
+        });
+        
+        // Activar el botón clickeado
+        btn.classList.add('filtro-activo');
+        
+        // Ejecutar filtro correspondiente
+        if (rango === 'hoy') {
+          console.log('📅 Ejecutando filtrarHoy()');
+          this.filtrarHoy();
+        } else if (rango === 'semana') {
+          console.log('📅 Ejecutando filtrarSemana()');
+          this.filtrarSemana();
+        } else if (rango === 'mes') {
+          console.log('📅 Ejecutando filtrarMes()');
+          this.filtrarMes();
+        }
+      });
+    });
+    
+    console.log('✅ Botones de filtro del header conectados correctamente');
+  },
+
+  filtrarHoy() {
+    this.state.filtroTemporalActivo = true;
+    this.state.rangoTemporal = 'hoy';
+    
+    const ahora = new Date();
+    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    
+    this.aplicarFiltroTemporalPorRango(inicioHoy, null, 'Hoy (últimas 24h)');
+    this.mostrarNotificacion('📅 Mostrando ventas de hoy', 'info');
+  },
+
+  filtrarSemana() {
+    this.state.filtroTemporalActivo = true;
+    this.state.rangoTemporal = 'semana';
+    
+    const ahora = new Date();
+    const inicioSemana = new Date(ahora);
+    inicioSemana.setDate(ahora.getDate() - 7);
+    
+    this.aplicarFiltroTemporalPorRango(inicioSemana, null, 'Últimos 7 días');
+    this.mostrarNotificacion('📅 Mostrando ventas de la última semana', 'info');
+  },
+
+  filtrarMes() {
+    this.state.filtroTemporalActivo = true;
+    this.state.rangoTemporal = 'mes';
+    
+    const ahora = new Date();
+    const inicioMes = new Date(ahora);
+    inicioMes.setMonth(ahora.getMonth() - 1);
+    
+    this.aplicarFiltroTemporalPorRango(inicioMes, null, 'Últimos 30 días');
+    this.mostrarNotificacion('📅 Mostrando ventas del último mes', 'info');
+  },
+
+  aplicarFiltroTemporalPorRango(fechaInicio, fechaFin, textoRango) {
+    console.log('📅 Aplicando filtro temporal:', textoRango, 'Desde:', fechaInicio);
+    
+    // Filtrar filas por rango de fecha
+    this.state.filteredRows = this.state.rows.filter(row => {
+      const fechaTexto = row.dataset.fecha;
+      if (!fechaTexto) return false;
+      
+      const fechaVenta = new Date(fechaTexto);
+      
+      // Verificar fecha de inicio
+      if (fechaInicio && fechaVenta < fechaInicio) {
+        return false;
+      }
+      
+      // Verificar fecha de fin (si aplica)
+      if (fechaFin && fechaVenta > fechaFin) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    console.log(`✅ Filtro temporal aplicado: ${this.state.filteredRows.length} de ${this.state.rows.length} ventas`);
+    
+    // Actualizar KPIs con datos filtrados
+    this.actualizarKPIsConFiltro();
+    
+    // Mostrar widget de filtro activo
+    this.mostrarWidgetFiltroActivo(textoRango);
+    
+    // Actualizar contador de ventas
+    this.actualizarContadorVentas();
+    
+    // Resetear a primera página
+    this.state.page = 1;
+    this.applyPagination();
+  },
+
+  mostrarWidgetFiltroActivo(textoRango) {
+    // Buscar o crear el contenedor del widget en el header de la tabla
+    const tableHeader = document.querySelector('#ventasTable').closest('.bg-\\[var\\(--card-bg-light\\)\\]').querySelector('.px-6.py-4.border-b');
+    
+    if (!tableHeader) {
+      console.warn('⚠️ No se encontró el header de la tabla para agregar el widget');
+      return;
+    }
+    
+    // Remover widget existente si hay uno
+    const widgetExistente = tableHeader.querySelector('.widget-filtro-activo');
+    if (widgetExistente) {
+      widgetExistente.remove();
+    }
+    
+    // Crear el widget
+    const widget = document.createElement('div');
+    widget.className = 'widget-filtro-activo inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500/20 border border-purple-500/40 text-purple-600 dark:text-purple-400 ml-2';
+    widget.innerHTML = `
+      <span class="material-symbols-outlined text-sm">schedule</span>
+      <span class="font-semibold">Filtro:</span>
+      <span>${textoRango}</span>
+      <button class="material-symbols-outlined text-sm hover:text-white transition-colors widget-clear-btn">close</button>
+    `;
+    
+    // Agregar evento para limpiar el filtro
+    widget.querySelector('.widget-clear-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.limpiarFiltroTemporal();
+    });
+    
+    // Agregar al final del header, al lado del contador de ventas
+    const counterContainer = tableHeader.querySelector('.flex.items-center.gap-2');
+    if (counterContainer) {
+      counterContainer.appendChild(widget);
+    }
+    
+    console.log('✅ Widget de filtro activo agregado');
+  },
+
+  limpiarFiltroTemporal() {
+    console.log('🧹 Limpiando filtro temporal del header');
+    
+    this.state.filtroTemporalActivo = false;
+    this.state.rangoTemporal = null;
+    
+    // Remover clase activa de botones del header
+    const botonesHeader = document.querySelectorAll('.filtro-fecha-btn');
+    botonesHeader.forEach(btn => btn.classList.remove('filtro-activo'));
+    
+    // Remover widget
+    const widget = document.querySelector('.widget-filtro-activo');
+    if (widget) {
+      widget.remove();
+    }
+    
+    // Restaurar todas las ventas
+    this.state.filteredRows = [...this.state.rows];
+    
+    // Actualizar KPIs originales
+    this.restaurarKPIsOriginales();
+    
+    // Actualizar contador
+    this.actualizarContadorVentas();
+    
+    // Resetear a primera página
+    this.state.page = 1;
+    this.applyPagination();
+    
+    this.mostrarNotificacion('Filtro temporal eliminado', 'info');
+  },
+
+  actualizarKPIsConFiltro() {
+    const ventasFiltradas = this.state.filteredRows;
+    
+    if (ventasFiltradas.length === 0) {
+      // Actualizar KPIs a 0
+      this.actualizarKPI('total-ventas', '$0');
+      this.actualizarKPI('promedio-ventas', '$0');
+      this.actualizarKPI('num-transacciones', '0');
+      this.actualizarKPI('top-producto', 'N/A');
+      return;
+    }
+    
+    // Calcular total de ventas
+    const totalVentas = ventasFiltradas.reduce((sum, row) => {
+      return sum + parseFloat(row.dataset.total || 0);
+    }, 0);
+    
+    // Calcular promedio
+    const promedioVentas = totalVentas / ventasFiltradas.length;
+    
+    // Contar productos vendidos
+    const productosCount = {};
+    ventasFiltradas.forEach(row => {
+      const idVenta = row.dataset.idventa;
+      const ventaData = this.state.detallesVentas[idVenta];
+      
+      if (ventaData && ventaData.items) {
+        ventaData.items.forEach(item => {
+          const idProducto = item.idproducto;
+          if (!productosCount[idProducto]) {
+            productosCount[idProducto] = 0;
+          }
+          productosCount[idProducto] += item.cantidad || 0;
+        });
+      }
+    });
+    
+    // Encontrar producto más vendido
+    let topProductoId = null;
+    let maxCantidad = 0;
+    
+    Object.entries(productosCount).forEach(([id, cantidad]) => {
+      if (cantidad > maxCantidad) {
+        maxCantidad = cantidad;
+        topProductoId = id;
+      }
+    });
+    
+    const topProductoNombre = topProductoId ? (this.state.productosDict[topProductoId] || 'Desconocido') : 'N/A';
+    
+    // Actualizar KPIs en el DOM
+    this.actualizarKPI('total-ventas', `$${this.formatearNumero(totalVentas)}`);
+    this.actualizarKPI('promedio-ventas', `$${this.formatearNumero(promedioVentas)}`);
+    this.actualizarKPI('num-transacciones', ventasFiltradas.length);
+    this.actualizarKPI('top-producto', topProductoNombre);
+    
+    console.log('📊 KPIs actualizados con filtro:', {
+      total: totalVentas,
+      promedio: promedioVentas,
+      transacciones: ventasFiltradas.length,
+      topProducto: topProductoNombre
+    });
+  },
+
+  restaurarKPIsOriginales() {
+    // Restaurar valores originales desde los elementos del DOM que tienen data attributes o texto original
+    // Los valores originales deben venir del servidor, así que simplemente recalculamos con todas las filas
+    const todasLasVentas = this.state.rows;
+    
+    if (todasLasVentas.length === 0) {
+      return;
+    }
+    
+    // Calcular total de ventas
+    const totalVentas = todasLasVentas.reduce((sum, row) => {
+      return sum + parseFloat(row.dataset.total || 0);
+    }, 0);
+    
+    // Calcular promedio
+    const promedioVentas = totalVentas / todasLasVentas.length;
+    
+    // Contar productos vendidos
+    const productosCount = {};
+    todasLasVentas.forEach(row => {
+      const idVenta = row.dataset.idventa;
+      const ventaData = this.state.detallesVentas[idVenta];
+      
+      if (ventaData && ventaData.items) {
+        ventaData.items.forEach(item => {
+          const idProducto = item.idproducto;
+          if (!productosCount[idProducto]) {
+            productosCount[idProducto] = 0;
+          }
+          productosCount[idProducto] += item.cantidad || 0;
+        });
+      }
+    });
+    
+    // Encontrar producto más vendido
+    let topProductoId = null;
+    let maxCantidad = 0;
+    
+    Object.entries(productosCount).forEach(([id, cantidad]) => {
+      if (cantidad > maxCantidad) {
+        maxCantidad = cantidad;
+        topProductoId = id;
+      }
+    });
+    
+    const topProductoNombre = topProductoId ? (this.state.productosDict[topProductoId] || 'Desconocido') : 'N/A';
+    
+    // Actualizar KPIs en el DOM
+    this.actualizarKPI('total-ventas', `$${this.formatearNumero(totalVentas)}`);
+    this.actualizarKPI('promedio-ventas', `$${this.formatearNumero(promedioVentas)}`);
+    this.actualizarKPI('num-transacciones', todasLasVentas.length);
+    this.actualizarKPI('top-producto', topProductoNombre);
+    
+    console.log('📊 KPIs restaurados a valores originales');
+  },
+
+  actualizarKPI(tipo, valor) {
+    // Mapeo de tipos a selectores
+    const selectores = {
+      'total-ventas': '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 > div:nth-child(1) p.text-2xl',
+      'promedio-ventas': '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 > div:nth-child(2) p.text-2xl',
+      'num-transacciones': '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 > div:nth-child(3) p.text-2xl',
+      'top-producto': '.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 > div:nth-child(4) p.text-2xl'
+    };
+    
+    const elemento = document.querySelector(selectores[tipo]);
+    if (elemento) {
+      elemento.textContent = valor;
     }
   },
 
-  aplicarFiltroFecha(rango) {
-    const ahora = new Date();
-    let fechaInicio;
+  formatearNumero(numero) {
+    // Formatear número con separadores de miles (punto) y sin decimales
+    return Math.round(numero).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  },
 
-    switch(rango) {
-      case 'hoy':
-        fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-        break;
-      case 'semana':
-        fechaInicio = new Date(ahora);
-        fechaInicio.setDate(ahora.getDate() - 7);
-        break;
-      case 'mes':
-        fechaInicio = new Date(ahora);
-        fechaInicio.setMonth(ahora.getMonth() - 1);
-        break;
-      default:
-        fechaInicio = null;
-    }
-
-    // Filtrar filas por fecha
-    if (fechaInicio) {
-      this.state.rows.forEach(row => {
-        const fechaTexto = row.dataset.fecha;
-        if (fechaTexto) {
-          const fechaVenta = new Date(fechaTexto);
-          if (fechaVenta >= fechaInicio) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        }
-      });
+  mostrarNotificacion(mensaje, tipo = 'info') {
+    // Reutilizar la función global si existe
+    if (typeof mostrarNotificacion === 'function') {
+      mostrarNotificacion(mensaje, tipo);
     } else {
-      // Mostrar todo
-      this.state.rows.forEach(row => row.style.display = '');
+      console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
     }
-
-    this.refreshRows();
-    this.applyPagination();
   },
 
   bindFiltros() {
