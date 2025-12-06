@@ -334,52 +334,101 @@ class AdvancedMLInsights:
     # ==================== AUDITORÍA ====================
     
     def analyze_audit_anomalies(self) -> Dict[str, any]:
-        """Detecta usuarios con actividad sospechosa en auditoría."""
+        """Detecta usuarios con actividad sospechosa en auditoría con análisis temporal detallado."""
         try:
             # Eventos últimas 24h
             response = self.supabase.table('auditoria_eventos') \
-                .select('usuario, accion, fecha') \
+                .select('usuario, accion, fecha, detalle') \
                 .gte('fecha', (datetime.now() - timedelta(hours=24)).isoformat()) \
+                .order('fecha', desc=True) \
                 .execute()
             
             if response.data:
-                # Contar eventos por usuario
+                # Contar eventos por usuario con análisis temporal
                 user_activity = {}
+                hourly_distribution = {}  # Distribución por hora
                 
                 for event in response.data:
                     user = event.get('usuario', 'Usuario desconocido')
+                    accion = event.get('accion', 'Sin especificar')
+                    fecha_str = event.get('fecha', '')
                     
                     if user not in user_activity:
-                        user_activity[user] = {'count': 0, 'actions': []}
+                        user_activity[user] = {
+                            'count': 0, 
+                            'actions': [], 
+                            'action_types': {},
+                            'first_event': fecha_str,
+                            'last_event': fecha_str,
+                            'hourly_events': {}
+                        }
                     
                     user_activity[user]['count'] += 1
-                    user_activity[user]['actions'].append(event.get('accion', ''))
+                    user_activity[user]['actions'].append(accion)
+                    user_activity[user]['last_event'] = fecha_str
+                    
+                    # Contar tipos de acción
+                    user_activity[user]['action_types'][accion] = \
+                        user_activity[user]['action_types'].get(accion, 0) + 1
+                    
+                    # Distribución horaria
+                    try:
+                        event_time = datetime.fromisoformat(fecha_str.replace('Z', '+00:00'))
+                        hour = event_time.hour
+                        user_activity[user]['hourly_events'][hour] = \
+                            user_activity[user]['hourly_events'].get(hour, 0) + 1
+                        hourly_distribution[hour] = hourly_distribution.get(hour, 0) + 1
+                    except:
+                        pass
                 
-                # Detectar usuarios con actividad alta (>20 eventos por hora)
+                # Calcular promedio de eventos por usuario
+                avg_events_per_user = sum(u['count'] for u in user_activity.values()) / len(user_activity) if user_activity else 0
+                
+                # Detectar usuarios con actividad alta (>20 eventos/hora O >215% del promedio)
                 suspicious_users = []
                 
                 for user, data in user_activity.items():
-                    events_per_hour = data['count'] / 24  # Promedio últimas 24h
+                    events_per_hour = data['count'] / 24
+                    deviation_percent = ((data['count'] - avg_events_per_user) / avg_events_per_user * 100) if avg_events_per_user > 0 else 0
                     
-                    if events_per_hour > 20:
+                    # Encontrar hora pico
+                    peak_hour = max(data['hourly_events'].items(), key=lambda x: x[1]) if data['hourly_events'] else (0, 0)
+                    
+                    if events_per_hour > 20 or deviation_percent > 215:
                         suspicious_users.append({
                             'usuario': user,
                             'total_events': data['count'],
                             'events_per_hour': round(events_per_hour, 1),
+                            'deviation_percent': round(deviation_percent, 0),
+                            'avg_baseline': round(avg_events_per_user, 0),
+                            'action_types': data['action_types'],
+                            'peak_hour': f"{peak_hour[0]:02d}:00",
+                            'peak_events': peak_hour[1],
+                            'first_event': data['first_event'],
+                            'last_event': data['last_event'],
                             'main_actions': list(set(data['actions']))[:3]
                         })
                 
                 return {
-                    'suspicious_users': suspicious_users,
+                    'suspicious_users': sorted(suspicious_users, key=lambda x: x['total_events'], reverse=True),
                     'total_suspicious': len(suspicious_users),
                     'total_events': len(response.data),
-                    'unique_users': len(user_activity)
+                    'unique_users': len(user_activity),
+                    'avg_events_per_user': round(avg_events_per_user, 0),
+                    'hourly_distribution': hourly_distribution
                 }
             
         except Exception as e:
             logger.error(f"Error analizando anomalías de auditoría: {e}")
         
-        return {'suspicious_users': [], 'total_suspicious': 0, 'total_events': 0, 'unique_users': 0}
+        return {
+            'suspicious_users': [], 
+            'total_suspicious': 0, 
+            'total_events': 0, 
+            'unique_users': 0,
+            'avg_events_per_user': 0,
+            'hourly_distribution': {}
+        }
 
 
 # Instancia global

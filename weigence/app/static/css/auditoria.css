@@ -189,3 +189,128 @@
   }
 }
 
+/* ============================================================
+   PANEL PRO - PESTAÑAS Y ESTILOS PROFESIONALES
+   ============================================================ */
+
+/* Tabs interactivas */
+.ia-pro-tab {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.ia-pro-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.ia-pro-tab-active::after {
+  transform: scaleX(1);
+}
+
+.ia-pro-tab:hover:not(.ia-pro-tab-active) {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* Paneles de contenido */
+.ia-pro-panel {
+  animation: ia-panel-fade-in 0.3s ease;
+}
+
+@keyframes ia-panel-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Botones de navegación profesionales */
+.ia-pro-nav-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ia-pro-nav-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ia-pro-nav-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges de severidad mejorados */
+.severity-badge {
+  border: 1px solid currentColor;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Card de recomendación Pro */
+.ia-recommendation-pro {
+  transition: all 0.3s ease;
+}
+
+.ia-recommendation-pro:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Animaciones de pulso mejoradas */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Scrollbar personalizado para paneles */
+.ia-pro-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ia-pro-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.ia-pro-panel::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+.ia-pro-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Responsive para el panel Pro */
+@media (max-width: 1024px) {
+  .ia-recommendation-pro {
+    max-height: 600px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ia-pro-tab {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .ia-recommendation-pro {
+    max-height: 500px;
+  }
+}

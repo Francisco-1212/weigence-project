@@ -122,6 +122,7 @@ class IAService:
                     "n_alerts": int(final_snapshot.critical_alerts + final_snapshot.warning_alerts),
                     "mensaje": resultado["mensaje"],
                     "ml_insights_cards": insights_cards,  # Pasar hallazgos ML para contexto
+                    "snapshot": final_snapshot.to_dict() if hasattr(final_snapshot, 'to_dict') else {},  # 🆕 Pasar snapshot completo
                 },
             )
             # Retornar array de mensajes para rotación

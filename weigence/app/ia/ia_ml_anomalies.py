@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import pickle
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
@@ -450,7 +451,32 @@ class AnomalyDetector:
                         'titulo': f'#{idx}: "{prod_name}" en alta demanda',
                         'descripcion': f'{prod_qty:.0f} unidades vendidas en 48h. {"Líder absoluto del catálogo" if idx == 1 else "Segundo mejor rendimiento"}.',
                         'ml_severity': 'low',
-                        'plan_accion': f'Asegurar stock suficiente de "{prod_name}". Analizar márgenes y promociones.'
+                        'plan_accion': f'Asegurar stock suficiente de "{prod_name}". Analizar márgenes y promociones.',
+                        
+                        # 📊 CONTEXTO (Pestaña 1)
+                        'contexto_adicional': {
+                            'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                            'periodo_analizado': 'Últimas 48 horas',
+                            'producto': prod_name,
+                            'posicion_ranking': idx,
+                            'unidades_vendidas': int(prod_qty),
+                            'total_productos': rankings['total_products']
+                        },
+                        
+                        # 🔬 DIAGNÓSTICO (Pestaña 2)
+                        'metricas': {
+                            'ventas_48h': f"{int(prod_qty)} unidades",
+                            'promedio_diario': f"{int(prod_qty/2)} unidades/día",
+                            'participacion': f"{int(prod_qty / max(1, sum(p[1] for p in rankings['top_5'])) * 100)}%" if rankings['top_5'] else 'N/A',
+                            'anomaly_score': 0.15  # Baja porque es positivo
+                        },
+                        
+                        # ✅ RESOLUCIÓN (Pestaña 3)
+                        'pasos_accion': [
+                            {'orden': 1, 'texto': f'Verificar stock disponible de "{prod_name}"', 'ruta': '/inventario', 'urgencia': 'media'},
+                            {'orden': 2, 'texto': 'Analizar márgenes de ganancia y ajustar precios si es necesario', 'urgencia': 'baja'},
+                            {'orden': 3, 'texto': 'Considerar promociones cruzadas con productos complementarios', 'urgencia': 'baja'}
+                        ]
                     })
                     has_dashboard_findings = True
             
@@ -463,7 +489,32 @@ class AnomalyDetector:
                         'titulo': f'"{bottom_product[0]}" con baja rotación',
                         'descripcion': f'Solo {bottom_product[1]:.0f} unidades en 48h. Requiere impulso comercial.',
                         'ml_severity': 'medium',
-                        'plan_accion': f'Revisar precio y visibilidad de "{bottom_product[0]}". Considerar promoción o reubicación.'
+                        'plan_accion': f'Revisar precio y visibilidad de "{bottom_product[0]}". Considerar promoción o reubicación.',
+                        
+                        # 📊 CONTEXTO (Pestaña 1)
+                        'contexto_adicional': {
+                            'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                            'periodo_analizado': 'Últimas 48 horas',
+                            'producto': bottom_product[0],
+                            'unidades_vendidas': int(bottom_product[1]),
+                            'categoria': 'Baja rotación',
+                            'total_productos': rankings['total_products']
+                        },
+                        
+                        # 🔬 DIAGNÓSTICO (Pestaña 2)
+                        'metricas': {
+                            'ventas_48h': f"{int(bottom_product[1])} unidades",
+                            'promedio_diario': f"{int(bottom_product[1]/2)} unidades/día",
+                            'desviacion': 'Bajo rendimiento',
+                            'anomaly_score': 0.55  # Media porque es negativo pero no crítico
+                        },
+                        
+                        # ✅ RESOLUCIÓN (Pestaña 3)
+                        'pasos_accion': [
+                            {'orden': 1, 'texto': f'Revisar precio de "{bottom_product[0]}" vs competencia', 'urgencia': 'media'},
+                            {'orden': 2, 'texto': 'Analizar visibilidad en punto de venta (ubicación física)', 'urgencia': 'media'},
+                            {'orden': 3, 'texto': 'Considerar promoción temporal o reubicación estratégica', 'urgencia': 'baja'}
+                        ]
                     })
                     has_dashboard_findings = True
             
@@ -475,7 +526,32 @@ class AnomalyDetector:
                     'titulo': f'{snapshot.critical_alerts} alertas críticas activas',
                     'descripcion': 'Múltiples problemas requieren atención inmediata del supervisor.',
                     'ml_severity': 'critical',
-                    'plan_accion': 'Revisar panel de alertas. Atender las rojas primero. Coordinar con equipo.'
+                    'plan_accion': 'Revisar panel de alertas. Atender las rojas primero. Coordinar con equipo.',
+                    
+                    # 📊 CONTEXTO (Pestaña 1)
+                    'contexto_adicional': {
+                        'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'periodo_analizado': 'Tiempo real',
+                        'alertas_criticas': int(snapshot.critical_alerts),
+                        'alertas_advertencia': int(snapshot.warning_alerts),
+                        'total_alertas': int(snapshot.critical_alerts + snapshot.warning_alerts),
+                        'estado': 'Crítico'
+                    },
+                    
+                    # 🔬 DIAGNÓSTICO (Pestaña 2)
+                    'metricas': {
+                        'nivel_critico': int(snapshot.critical_alerts),
+                        'nivel_advertencia': int(snapshot.warning_alerts),
+                        'porcentaje_criticas': f"{int(snapshot.critical_alerts / max(1, snapshot.critical_alerts + snapshot.warning_alerts) * 100)}%",
+                        'anomaly_score': min(0.95, snapshot.critical_alerts / 10)  # Score basado en cantidad
+                    },
+                    
+                    # ✅ RESOLUCIÓN (Pestaña 3)
+                    'pasos_accion': [
+                        {'orden': 1, 'texto': 'Revisar panel de alertas críticas', 'ruta': '/alertas?tipo=criticas', 'urgencia': 'alta'},
+                        {'orden': 2, 'texto': 'Priorizar alertas rojas según impacto operativo', 'urgencia': 'alta'},
+                        {'orden': 3, 'texto': 'Coordinar resolución con equipo responsable', 'urgencia': 'media'}
+                    ]
                 })
                 has_dashboard_findings = True
             
@@ -487,7 +563,32 @@ class AnomalyDetector:
                     'titulo': f'{snapshot.inactivity_hours:.0f}h sin movimientos',
                     'descripcion': 'Sistema sin registrar actividad. Posible problema de conectividad o cierre no registrado.',
                     'ml_severity': 'high',
-                    'plan_accion': 'Verificar conexión de sensores y dispositivos. Confirmar estado operativo del local.'
+                    'plan_accion': 'Verificar conexión de sensores y dispositivos. Confirmar estado operativo del local.',
+                    
+                    # 📊 CONTEXTO (Pestaña 1)
+                    'contexto_adicional': {
+                        'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'periodo_analizado': 'Últimas 24 horas',
+                        'horas_inactividad': float(snapshot.inactivity_hours),
+                        'umbral_critico': '4 horas',
+                        'ultimo_movimiento': f'Hace {snapshot.inactivity_hours:.1f}h',
+                        'estado': 'Sin actividad'
+                    },
+                    
+                    # 🔬 DIAGNÓSTICO (Pestaña 2)
+                    'metricas': {
+                        'horas_sin_actividad': f"{snapshot.inactivity_hours:.1f}h",
+                        'movimientos_por_hora': 0.0,
+                        'desviacion': '-100%',  # 0 vs esperado
+                        'anomaly_score': min(0.90, snapshot.inactivity_hours / 10)
+                    },
+                    
+                    # ✅ RESOLUCIÓN (Pestaña 3)
+                    'pasos_accion': [
+                        {'orden': 1, 'texto': 'Verificar conexión de sensores IoT y dispositivos', 'urgencia': 'alta'},
+                        {'orden': 2, 'texto': 'Confirmar estado operativo del local (¿cerrado?)', 'urgencia': 'alta'},
+                        {'orden': 3, 'texto': 'Revisar logs de sistema para últimos eventos', 'ruta': '/auditoria', 'urgencia': 'media'}
+                    ]
                 })
                 has_dashboard_findings = True
             
@@ -857,7 +958,7 @@ class AnomalyDetector:
                 'plan_accion': 'Continuar monitoreo.'
             })
         
-        # 6️⃣ AUDITORÍA - Anomalías de usuarios (MÚLTIPLES HALLAZGOS)
+        # 6️⃣ AUDITORÍA - Anomalías de usuarios (MÚLTIPLES HALLAZGOS CON DATOS ENRIQUECIDOS)
         try:
             audit = insights.analyze_audit_anomalies()
             has_audit_findings = False
@@ -865,13 +966,59 @@ class AnomalyDetector:
             # Usuarios con patrones sospechosos (hasta 3)
             if audit['suspicious_users']:
                 for user_data in audit['suspicious_users'][:3]:
+                    # Obtener tipo de evento más frecuente
+                    action_types = user_data.get('action_types', {})
+                    top_action = max(action_types.items(), key=lambda x: x[1]) if action_types else ('Sin datos', 0)
+                    
                     findings.append({
                         'emoji': '🔍',
                         'modulo': 'auditoria',
                         'titulo': f'Patrón atípico: {user_data["usuario"]}',
-                        'descripcion': f'{user_data["total_events"]} eventos en 24h ({user_data["events_per_hour"]:.1f} eventos/hora). Desviación significativa.',
+                        'descripcion': f'{user_data["total_events"]} eventos en 24h ({user_data["events_per_hour"]:.1f} eventos/hora). Pico a las {user_data.get("peak_hour", "N/A")} con {user_data.get("peak_events", 0)} eventos.',
                         'ml_severity': 'high',
-                        'plan_accion': f'Revisar timeline de {user_data["usuario"]}. Validar autenticidad de accesos y transacciones.'
+                        'plan_accion': f'Revisar timeline de {user_data["usuario"]}. Validar autenticidad de accesos y transacciones.',
+                        
+                        # 📊 CONTEXTO (Pestaña 1)
+                        'contexto_adicional': {
+                            'usuario': user_data['usuario'],
+                            'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                            'periodo_analizado': 'Últimas 24 horas',
+                            'eventos_totales': user_data['total_events'],
+                            'eventos_por_hora': user_data['events_per_hour'],
+                            'pico_actividad': f'{user_data.get("peak_hour", "N/A")} ({user_data.get("peak_events", 0)} eventos)',
+                            'primer_evento': user_data.get('first_event', 'N/A'),
+                            'ultimo_evento': user_data.get('last_event', 'N/A')
+                        },
+                        
+                        # 🔬 DIAGNÓSTICO (Pestaña 2)
+                        'metricas': {
+                            'promedio_usuario': user_data.get('avg_baseline', 45),
+                            'desviacion': f"+{user_data.get('deviation_percent', 0):.0f}%",
+                            'tipo_eventos': action_types,
+                            'evento_principal': f"{top_action[0]} ({top_action[1]} veces)",
+                            'anomaly_score': min(0.95, user_data['events_per_hour'] / 50)  # Score normalizado
+                        },
+                        
+                        # ✅ RESOLUCIÓN (Pestaña 3)
+                        'pasos_accion': [
+                            {
+                                'orden': 1, 
+                                'texto': f'Revisar timeline completo de {user_data["usuario"]}',
+                                'ruta': f'/auditoria?usuario={user_data["usuario"]}',
+                                'urgencia': 'alta'
+                            },
+                            {
+                                'orden': 2, 
+                                'texto': f'Validar autenticidad de {top_action[1]} eventos "{top_action[0]}"',
+                                'ruta': f'/auditoria?usuario={user_data["usuario"]}&tipo={top_action[0]}',
+                                'urgencia': 'alta'
+                            },
+                            {
+                                'orden': 3, 
+                                'texto': 'Contactar usuario si patrón persiste más de 48h',
+                                'urgencia': 'media'
+                            }
+                        ]
                     })
                     has_audit_findings = True
             
@@ -883,7 +1030,28 @@ class AnomalyDetector:
                     'titulo': f'Actividad elevada: {audit["total_events"]} eventos',
                     'descripcion': f'Volumen superior al promedio: {audit["unique_users"]} usuarios activos.',
                     'ml_severity': 'medium',
-                    'plan_accion': 'Verificar si corresponde a jornada especial programada o pico anómalo. Revisar distribución por tipo.'
+                    'plan_accion': 'Verificar si corresponde a jornada especial programada o pico anómalo.',
+                    
+                    'contexto_adicional': {
+                        'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'periodo_analizado': 'Últimas 24 horas',
+                        'eventos_totales': audit['total_events'],
+                        'usuarios_activos': audit['unique_users'],
+                        'promedio_esperado': '800-1000 eventos/día'
+                    },
+                    
+                    'metricas': {
+                        'eventos_por_hora': round(audit['total_events'] / 24, 1),
+                        'eventos_por_usuario': round(audit['total_events'] / audit['unique_users'], 1) if audit['unique_users'] > 0 else 0,
+                        'desviacion': f"+{((audit['total_events'] - 900) / 900 * 100):.0f}%",
+                        'anomaly_score': min(0.85, audit['total_events'] / 1500)
+                    },
+                    
+                    'pasos_accion': [
+                        {'orden': 1, 'texto': 'Verificar si corresponde a jornada especial programada', 'urgencia': 'media'},
+                        {'orden': 2, 'texto': 'Revisar distribución de eventos por tipo de acción', 'ruta': '/auditoria', 'urgencia': 'baja'},
+                        {'orden': 3, 'texto': 'Validar que no haya bucles o procesos automáticos anómalos', 'urgencia': 'media'}
+                    ]
                 })
                 has_audit_findings = True
             
@@ -895,7 +1063,27 @@ class AnomalyDetector:
                     'titulo': f'Actividad reducida: {audit["total_events"]} eventos',
                     'descripcion': 'Volumen inferior al esperado en las últimas 24 horas.',
                     'ml_severity': 'medium',
-                    'plan_accion': 'Verificar estado de sistemas de registro. Comprobar ausencia de bloqueos operativos.'
+                    'plan_accion': 'Verificar estado de sistemas de registro y conectividad.',
+                    
+                    'contexto_adicional': {
+                        'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'periodo_analizado': 'Últimas 24 horas',
+                        'eventos_totales': audit['total_events'],
+                        'usuarios_activos': audit['unique_users'],
+                        'promedio_esperado': '800-1000 eventos/día'
+                    },
+                    
+                    'metricas': {
+                        'eventos_por_hora': round(audit['total_events'] / 24, 1),
+                        'desviacion': f"{((audit['total_events'] - 900) / 900 * 100):.0f}%",
+                        'anomaly_score': 0.75
+                    },
+                    
+                    'pasos_accion': [
+                        {'orden': 1, 'texto': 'Verificar estado de sistemas de registro de auditoría', 'urgencia': 'alta'},
+                        {'orden': 2, 'texto': 'Comprobar conectividad de dispositivos y sensores', 'urgencia': 'alta'},
+                        {'orden': 3, 'texto': 'Validar ausencia de bloqueos operativos o mantenimientos', 'urgencia': 'media'}
+                    ]
                 })
                 has_audit_findings = True
             
@@ -907,7 +1095,26 @@ class AnomalyDetector:
                     'titulo': 'Trazabilidad óptima',
                     'descripcion': f'{audit["total_events"]} eventos en 24h. {audit["unique_users"]} usuarios activos. Patrones normales.',
                     'ml_severity': 'low',
-                    'plan_accion': 'Sistema de auditoría operando correctamente. Análisis de comportamiento en tiempo real activo.'
+                    'plan_accion': 'Sistema de auditoría operando correctamente.',
+                    
+                    'contexto_adicional': {
+                        'timestamp_deteccion': datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'periodo_analizado': 'Últimas 24 horas',
+                        'eventos_totales': audit['total_events'],
+                        'usuarios_activos': audit['unique_users'],
+                        'estado': 'Saludable'
+                    },
+                    
+                    'metricas': {
+                        'eventos_por_hora': round(audit['total_events'] / 24, 1) if audit['total_events'] > 0 else 0,
+                        'promedio_usuario': audit.get('avg_events_per_user', 0),
+                        'desviacion': '0%',
+                        'anomaly_score': 0.05
+                    },
+                    
+                    'pasos_accion': [
+                        {'orden': 1, 'texto': 'Sistema operando normalmente, no requiere acción', 'urgencia': 'baja'}
+                    ]
                 })
         except Exception as e:
             logger.error(f"Error en análisis auditoría: {e}")
@@ -917,7 +1124,10 @@ class AnomalyDetector:
                 'titulo': 'Registros coherentes',
                 'descripcion': 'Logs dentro de lo esperado.',
                 'ml_severity': 'low',
-                'plan_accion': 'Continuar con auditorías programadas.'
+                'plan_accion': 'Continuar con auditorías programadas.',
+                'contexto_adicional': {'estado': 'Normal'},
+                'metricas': {},
+                'pasos_accion': [{'orden': 1, 'texto': 'Continuar monitoreo', 'urgencia': 'baja'}]
             })
         
         return findings

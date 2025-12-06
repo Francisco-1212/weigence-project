@@ -61,6 +61,7 @@
     error_sistema: { sigla: "ERR", color: "#dc2626", nombre: "Errores Sistema" },
     alertas_sistema: { sigla: "ALRT", color: "#ef4444", nombre: "Alertas" },
     alertas_stock: { sigla: "STOCK", color: "#f59e0b", nombre: "Stock" },
+    anomalias_detectadas: { sigla: "IA", color: "#ef4444", nombre: "Anomalías IA" },
     otros: { sigla: "INFO", color: "#6b7280", nombre: "Otros" }
   };
 
@@ -218,6 +219,11 @@
       case 'errores_criticos':
         resultado = `❌ ${detalles.substring(0, 50)}`;
         break;
+      
+      case 'anomalias_detectadas':
+        // Insights críticos detectados por IA
+        resultado = detalles ? ` ${detalles}` : ` ${usuarioMarcado} - Anomalía detectada`;
+        break;
         
       default:
         resultado = detalles ? detalles.replace(usuario, usuarioMarcado) : usuarioMarcado;
@@ -287,11 +293,174 @@
       }, 100);
     }
 
-    // Reconstruir todo el contenedor para mantener orden correcto
-    cont.innerHTML = "";
+    // 🆕 Función para renderizar un log individual (reutilizable)
+  function renderizarLog(log) {
+    const categoria = getCategoriaInfo(log.tipo_evento);
+    
+    // Ajustar color del badge según tipo específico de evento
+    let badgeColor = categoria.color;
+    let borderColor = categoria.color;
+    let badgeText = categoria.sigla;
+    
+    // LOGIN/LOGOUT: Colores distintivos
+    if (log.tipo_evento === 'login_logout_usuarios') {
+      const detalles = log.detalle || log.mensaje || '';
+      const esLogout = detalles.toLowerCase().includes('cerr') || 
+                       detalles.toLowerCase().includes('salió') || 
+                       detalles.toLowerCase().includes('logout');
+      const esLogin = detalles.toLowerCase().includes('inic') || 
+                      detalles.toLowerCase().includes('login') ||
+                      detalles.toLowerCase().includes('ingres');
+      
+      if (esLogout) {
+        badgeColor = '#ef4444';
+        borderColor = '#ef4444';
+        badgeText = 'OUT';
+      } else if (esLogin) {
+        badgeColor = '#10b981';
+        borderColor = '#10b981';
+        badgeText = 'IN';
+      }
+    }
+    // GESTIÓN DE USUARIOS: Colores según acción
+    else if (log.tipo_evento === 'gestion_usuarios' || log.tipo_evento === 'modificacion_datos') {
+      const detalles = log.detalle || log.mensaje || '';
+      if (detalles.toLowerCase().includes('cre')) {
+        badgeColor = '#10b981';
+        borderColor = '#10b981';
+      } else if (detalles.toLowerCase().includes('elimin')) {
+        badgeColor = '#ef4444';
+        borderColor = '#ef4444';
+      } else if (detalles.toLowerCase().includes('edit')) {
+        badgeColor = '#3b82f6';
+        borderColor = '#3b82f6';
+      }
+    }
+    // ALERTAS DE STOCK: Color según severidad
+    else if (log.tipo_evento === 'alertas_stock') {
+      if (log.nivel === 'CRIT') {
+        badgeColor = '#ef4444';
+        borderColor = '#ef4444';
+      } else if (log.nivel === 'WARN') {
+        badgeColor = '#f59e0b';
+        borderColor = '#f59e0b';
+      }
+    }
+    // ANOMALÍAS DETECTADAS (IA): Color rojo para críticos
+    else if (log.tipo_evento === 'anomalias_detectadas') {
+      if (log.nivel === 'CRIT') {
+        badgeColor = '#ef4444';
+        borderColor = '#ef4444';
+      }
+    }
+    // RETIROS FUERA DE HORARIO: Color rojo
+    else if (log.tipo_evento === 'retiros_fuera_de_horario') {
+      badgeColor = '#ef4444';
+      borderColor = '#ef4444';
+    }
+    
+    const msg = formatearMensajeRico(log);
+    
+    const line = document.createElement("div");
+    line.className = "audit-log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150";
+    
+    line.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      margin-bottom: 2px;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      cursor: pointer;
+      border-left: 3px solid ${borderColor};
+      border-radius: 4px;
+    `;
+    
+    line.innerHTML = `
+      <span class="text-slate-800 dark:text-gray-200" style="min-width: 70px; flex-shrink: 0; font-size: 13px; font-weight: 700; font-family: 'Roboto Mono', 'Consolas', monospace; letter-spacing: -0.3px;">${log.hora}</span>
+      <span style="
+        background: ${badgeColor}15; 
+        color: ${badgeColor}; 
+        border: 1.5px solid ${badgeColor};
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 10.5px;
+        font-weight: 800;
+        min-width: 52px;
+        text-align: center;
+        flex-shrink: 0;
+        letter-spacing: 0.8px;
+        font-family: 'Roboto Mono', 'Consolas', monospace;
+        text-transform: uppercase;
+      ">${badgeText}</span>
+      <span class="text-slate-900 dark:text-gray-50" style="flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.1px;">${msg}</span>
+    `;
+    
+    line.onmouseenter = () => {
+      line.style.borderLeftWidth = '4px';
+      line.style.transform = 'translateX(4px) scale(1.01)';
+      line.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+      line.style.background = 'rgba(59, 130, 246, 0.08)';
+    };
+    
+    line.onmouseleave = () => {
+      line.style.borderLeftWidth = '3px';
+      line.style.transform = 'translateX(0) scale(1)';
+      line.style.boxShadow = 'none';
+      line.style.background = '';
+    };
+    
+    line.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Efecto ripple al hacer clic
+      const ripple = document.createElement("span");
+      ripple.style.cssText = `
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.4);
+        width: 20px;
+        height: 20px;
+        margin-left: -10px;
+        margin-top: -10px;
+        animation: ripple 0.6s;
+        pointer-events: none;
+      `;
+      const rect = line.getBoundingClientRect();
+      ripple.style.left = e.clientX - rect.left + 'px';
+      ripple.style.top = e.clientY - rect.top + 'px';
+      line.style.position = 'relative';
+      line.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+      
+      // Mostrar el modal con los detalles
+      try {
+        mostrarDetalleLog(log);
+      } catch (error) {
+        console.error('❌ Error mostrando detalle del log:', error);
+      }
+    };
+    
+    return line;
+  }
 
-    // Variable para rastrear la última fecha mostrada
-    let lastDate = null;
+  // Reconstruir todo el contenedor para mantener orden correcto
+  // Preservar logs de IA antes de limpiar (tanto del DOM como de localStorage)
+  const logsIA = Array.from(cont.querySelectorAll('[data-ia-log="true"]'));
+  
+  // Agregar logs restaurados si existen
+  if (window.logsIARestaurados && window.logsIARestaurados.length > 0) {
+    logsIA.push(...window.logsIARestaurados);
+    window.logsIARestaurados = []; // Limpiar para no duplicar
+  }
+  
+  cont.innerHTML = "";
+
+  // Variable para rastrear la última fecha mostrada
+  let lastDate = null;
     const hoy = new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
 
     // Renderizar todos los logs
@@ -333,160 +502,17 @@
         lastDate = logDate;
       }
       
-      const categoria = getCategoriaInfo(log.tipo_evento);
-      const severidadColor = logColor(log.nivel);
+      // Renderizar el log usando la función compartida
+      const line = renderizarLog(log);
       
-      // Ajustar color del badge según tipo específico de evento
-      let badgeColor = categoria.color;
-      let borderColor = categoria.color;
-      let badgeText = categoria.sigla;
-      
-      // LOGIN/LOGOUT: Colores distintivos
-      if (log.tipo_evento === 'login_logout_usuarios') {
-        const detalles = log.detalle || log.mensaje || '';
-        const esLogout = detalles.toLowerCase().includes('cerr') || 
-                         detalles.toLowerCase().includes('salió') || 
-                         detalles.toLowerCase().includes('logout');
-        const esLogin = detalles.toLowerCase().includes('inic') || 
-                        detalles.toLowerCase().includes('login') ||
-                        detalles.toLowerCase().includes('ingres');
-        
-        if (esLogout) {
-          badgeColor = '#ef4444'; // rojo para logout
-          borderColor = '#ef4444';
-          badgeText = 'OUT';
-        } else if (esLogin) {
-          badgeColor = '#10b981'; // verde para login
-          borderColor = '#10b981';
-          badgeText = 'IN';
-        }
+      // Aplicar animación solo para mensajes nuevos
+      if (esNuevo) {
+        line.style.opacity = '0';
+        line.style.transform = 'translateY(10px)';
+        line.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
       }
-      // GESTIÓN DE USUARIOS: Colores según acción
-      else if (log.tipo_evento === 'gestion_usuarios' || log.tipo_evento === 'modificacion_datos') {
-        const detalles = log.detalle || log.mensaje || '';
-        if (detalles.toLowerCase().includes('cre')) {
-          badgeColor = '#10b981'; // verde para crear
-          borderColor = '#10b981';
-        } else if (detalles.toLowerCase().includes('elimin')) {
-          badgeColor = '#ef4444'; // rojo para eliminar
-          borderColor = '#ef4444';
-        } else if (detalles.toLowerCase().includes('edit')) {
-          badgeColor = '#3b82f6'; // azul para editar
-          borderColor = '#3b82f6';
-        }
-      }
-      // ALERTAS DE STOCK: Color según severidad
-      else if (log.tipo_evento === 'alertas_stock') {
-        if (log.nivel === 'CRIT') {
-          badgeColor = '#ef4444'; // rojo
-          borderColor = '#ef4444';
-        } else if (log.nivel === 'WARN') {
-          badgeColor = '#f59e0b'; // amarillo
-          borderColor = '#f59e0b';
-        }
-      }
-      // RETIROS FUERA DE HORARIO: Color rojo
-      else if (log.tipo_evento === 'retiros_fuera_de_horario') {
-        badgeColor = '#ef4444';
-        borderColor = '#ef4444';
-      }
-      
-      // Mensaje con formato HTML enriquecido
-      const msg = formatearMensajeRico(log);
 
-      const line = document.createElement("div");
-      line.className = "audit-log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150";
-      
-      line.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
-        margin-bottom: 2px;
-        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 13.5px;
-        line-height: 1.5;
-        cursor: pointer;
-        border-left: 3px solid ${borderColor};
-        border-radius: 4px;
-        ${esNuevo ? 'opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease-out, transform 0.5s ease-out;' : ''}
-      `;
-      
-      line.innerHTML = `
-        <span class="text-slate-800 dark:text-gray-200" style="min-width: 70px; flex-shrink: 0; font-size: 13px; font-weight: 700; font-family: 'Roboto Mono', 'Consolas', monospace; letter-spacing: -0.3px;">${log.hora}</span>
-        <span style="
-          background: ${badgeColor}15; 
-          color: ${badgeColor}; 
-          border: 1.5px solid ${badgeColor};
-          padding: 5px 10px;
-          border-radius: 4px;
-          font-size: 10.5px;
-          font-weight: 800;
-          min-width: 52px;
-          text-align: center;
-          flex-shrink: 0;
-          letter-spacing: 0.8px;
-          font-family: 'Roboto Mono', 'Consolas', monospace;
-          text-transform: uppercase;
-        ">${badgeText}</span>
-        <span class="text-slate-900 dark:text-gray-50" style="flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.1px;">${msg}</span>
-      `;
-
-      line.onmouseenter = () => {
-        line.style.borderLeftWidth = '4px';
-        line.style.transform = 'translateX(4px) scale(1.01)';
-        line.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
-        line.style.background = 'rgba(59, 130, 246, 0.08)';
-      };
-      
-      line.onmouseleave = () => {
-        line.style.borderLeftWidth = '3px';
-        line.style.transform = 'translateX(0) scale(1)';
-        line.style.boxShadow = 'none';
-        line.style.background = '';
-      };
-
-      line.onclick = (e) => {
-        // Prevenir propagación
-        e.stopPropagation();
-        
-        console.log('🖱️ Click en log:', {
-          tipo: log.tipo_evento,
-          usuario: log.usuario,
-          hora: log.hora,
-          detalle: log.detalle
-        });
-        
-        // Efecto ripple al hacer clic
-        const ripple = document.createElement("span");
-        ripple.style.cssText = `
-          position: absolute;
-          border-radius: 50%;
-          background: rgba(59, 130, 246, 0.4);
-          width: 20px;
-          height: 20px;
-          margin-left: -10px;
-          margin-top: -10px;
-          animation: ripple 0.6s;
-          pointer-events: none;
-        `;
-        const rect = line.getBoundingClientRect();
-        ripple.style.left = e.clientX - rect.left + 'px';
-        ripple.style.top = e.clientY - rect.top + 'px';
-        line.style.position = 'relative';
-        line.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 600);
-        
-        // Mostrar el modal con los detalles
-        try {
-          mostrarDetalleLog(log);
-        } catch (error) {
-          console.error('❌ Error mostrando detalle del log:', error);
-          showNotification('Error al mostrar detalles', 'error');
-        }
-      };
-
-      cont.appendChild(line); // Insertar al final para que los más recientes queden abajo
+      cont.appendChild(line);
       
       // Activar animación fade-in solo para mensajes nuevos
       if (esNuevo) {
@@ -502,6 +528,37 @@
     // Auto-scroll: Siempre mantener el scroll al fondo para mostrar los más recientes
     requestAnimationFrame(() => {
       cont.scrollTop = cont.scrollHeight;
+    });
+    
+    // Restaurar logs de IA en su posición cronológica correcta
+    logsIA.forEach(logIA => {
+      const timestampIA = new Date(logIA.getAttribute('data-timestamp')).getTime();
+      const allEntries = Array.from(cont.querySelectorAll('.audit-log-entry'));
+      
+      // Encontrar la posición correcta basándose en timestamp
+      let inserted = false;
+      for (let i = 0; i < allEntries.length; i++) {
+        const entry = allEntries[i];
+        // Los logs normales tienen log.timestamp en el objeto state.logs
+        const logIndex = ordered.findIndex(l => {
+          const entryText = entry.textContent;
+          return entryText.includes(l.hora) && entryText.includes(l.detalle.substring(0, 20));
+        });
+        
+        if (logIndex >= 0) {
+          const timestampEntry = new Date(ordered[logIndex].timestamp).getTime();
+          if (timestampIA < timestampEntry) {
+            cont.insertBefore(logIA, entry);
+            inserted = true;
+            break;
+          }
+        }
+      }
+      
+      // Si no se insertó (es el más reciente), agregar al final
+      if (!inserted) {
+        cont.appendChild(logIA);
+      }
     });
   }
 
@@ -1447,6 +1504,94 @@
     }
   }, 200);
   
+  // 🆕 Restaurar logs de IA guardados en localStorage al cargar la página
+  function restaurarLogsIA() {
+    const logsIA = JSON.parse(localStorage.getItem('ia_logs_audit') || '[]');
+    const auditLogStream = document.getElementById('audit-log-stream');
+    
+    if (!auditLogStream || logsIA.length === 0) return;
+    
+    logsIA.forEach(logData => {
+      const logEntry = document.createElement('div');
+      logEntry.className = 'audit-log-entry bg-black/[0.04] dark:bg-white/[0.05] text-slate-950 dark:text-gray-100 hover:bg-blue-500/10 dark:hover:bg-blue-500/12 transition-all duration-150';
+      logEntry.setAttribute('data-ia-log', 'true');
+      logEntry.setAttribute('data-timestamp', logData.timestamp);
+      
+      logEntry.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        margin-bottom: 2px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13.5px;
+        line-height: 1.5;
+        cursor: pointer;
+        border-left: 3px solid #ef4444;
+        border-radius: 4px;
+      `;
+      
+      logEntry.innerHTML = `
+        <span class="text-slate-800 dark:text-gray-200" style="min-width: 70px; flex-shrink: 0; font-size: 13px; font-weight: 700; font-family: 'Roboto Mono', 'Consolas', monospace; letter-spacing: -0.3px;">${logData.hora}</span>
+        <span style="
+          background: #ef444415; 
+          color: #ef4444; 
+          border: 1.5px solid #ef4444;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 10.5px;
+          font-weight: 800;
+          min-width: 52px;
+          text-align: center;
+          flex-shrink: 0;
+          letter-spacing: 0.8px;
+          font-family: 'Roboto Mono', 'Consolas', monospace;
+          text-transform: uppercase;
+        ">IA</span>
+        <span class="text-slate-900 dark:text-gray-50" style="flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.1px;"> ${logData.mensaje || logData.titulo}</span>
+      `;
+      
+      logEntry.onmouseenter = () => {
+        logEntry.style.borderLeftWidth = '4px';
+        logEntry.style.transform = 'translateX(4px) scale(1.01)';
+        logEntry.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+        logEntry.style.background = 'rgba(59, 130, 246, 0.08)';
+      };
+      
+      logEntry.onmouseleave = () => {
+        logEntry.style.borderLeftWidth = '3px';
+        logEntry.style.transform = 'translateX(0) scale(1)';
+        logEntry.style.boxShadow = 'none';
+        logEntry.style.background = '';
+      };
+      
+      logEntry.onclick = () => {
+        // Mostrar modal con detalles del log de IA
+        const logDataDetalle = {
+          fecha: new Date(logData.timestamp).toLocaleDateString('es-CL'),
+          hora: logData.hora,
+          tipo_evento: 'anomalias_detectadas',
+          nivel: 'CRIT',
+          mensaje: logData.mensaje,
+          detalle: logData.descripcion || logData.titulo || logData.mensaje,
+          usuario: 'Sistema IA',
+          modulo: logData.modulo || 'dashboard',
+          titulo: logData.titulo || 'Anomalía crítica',
+          pasos_accion: logData.pasos_accion || []
+        };
+        mostrarDetalleLog(logDataDetalle);
+      };
+      
+      // NO agregar inmediatamente - se agregará en renderLogs() con ordenamiento correcto
+      // Solo crear el elemento y guardarlo temporalmente
+      if (!window.logsIARestaurados) window.logsIARestaurados = [];
+      window.logsIARestaurados.push(logEntry);
+    });
+  }
+  
+  // Restaurar logs de IA al inicio (solo crear elementos, no insertarlos todavía)
+  restaurarLogsIA();
+  
   setInterval(loadLogs, REFRESH_INTERVAL);
   setInterval(updateActiveUserCount, REFRESH_INTERVAL); // Actualizar cada 10 segundos
   
@@ -1477,6 +1622,13 @@
   };
   
   document.addEventListener('keydown', handleKeydown);
+  
+  // 🆕 Listener para abrir modal de logs de IA desde recomendaciones.js
+  window.addEventListener('mostrar-detalle-log-ia', function(event) {
+    const logData = event.detail;
+    mostrarDetalleLog(logData);
+  });
+  
   
   console.log('🚀 Sistema de auditoría inicializado correctamente');
   console.log('💡 Atajos de teclado:');

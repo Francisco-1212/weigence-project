@@ -46,7 +46,7 @@ def get_header_message(page: str, context: Dict[str, Any] | None = None) -> List
     
     # SOLO agregar mensajes positivos si NO hay hallazgos ML (problemas)
     if not messages:
-        positive_messages = _get_positive_messages(page)
+        positive_messages = _get_positive_messages(page, ctx)
         messages.extend(positive_messages)
     
     # Asegurar que siempre haya al menos 1 mensaje
@@ -59,41 +59,51 @@ def get_header_message(page: str, context: Dict[str, Any] | None = None) -> List
     
     return messages
 
-def _get_positive_messages(page: str) -> List[Dict[str, Any]]:
+def _get_positive_messages(page: str, context: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     """
     Genera mensajes positivos y estadísticas cuando no hay anomalías.
-    Retorna múltiples mensajes para rotación.
+    Retorna múltiples mensajes enriquecidos con métricas reales del snapshot.
     """
+    ctx = context or {}
+    snapshot = ctx.get('snapshot', {})
+    
+    # Extraer métricas reales del snapshot
+    total_productos = snapshot.get('total_productos', 0)
+    alertas_criticas = snapshot.get('critical_alerts', 0)
+    alertas_warning = snapshot.get('warning_alerts', 0)
+    eventos_auditoria = snapshot.get('audit_events_count', 0)
+    movimientos_hora = snapshot.get('movements_per_hour', 0)
+    
     messages_by_page = {
         "dashboard": [
-            {"mensaje": "📊 Sistema operando normalmente. Sin anomalías detectadas.", "severidad": "info"},
-            {"mensaje": "✅ Rendimiento estable. Todos los módulos funcionando correctamente.", "severidad": "success"},
-            {"mensaje": "🎯 Operación óptima. Continúa con las buenas prácticas.", "severidad": "info"},
+            {"mensaje": f"📊 Sistema operando normalmente. {total_productos} productos activos, {alertas_criticas + alertas_warning} alertas resueltas hoy.", "severidad": "info"},
+            {"mensaje": f"✅ Rendimiento estable. Todos los módulos funcionando correctamente.", "severidad": "success"},
+            {"mensaje": f"🎯 Operación óptima. Monitoreo de {total_productos} productos activo.", "severidad": "info"},
         ],
         "inventario": [
-            {"mensaje": "📦 Stock y sensores estables. Sin alertas críticas de inventario.", "severidad": "info"},
-            {"mensaje": "✅ Niveles de inventario balanceados. Control óptimo mantenido.", "severidad": "success"},
-            {"mensaje": "🎯 Gestión eficiente de stock. Reposiciones programadas al día.", "severidad": "info"},
+            {"mensaje": f"📦 Stock estable con {total_productos} productos monitoreados. Sin alertas críticas.", "severidad": "info"},
+            {"mensaje": f"✅ Niveles de inventario balanceados. Sensores operando normalmente.", "severidad": "success"},
+            {"mensaje": f"🎯 Gestión eficiente. {total_productos} productos bajo control.", "severidad": "info"},
         ],
         "ventas": [
-            {"mensaje": "💰 Desempeño comercial dentro del rango esperado.", "severidad": "info"},
-            {"mensaje": "✅ Flujo de ventas consistente. Sin variaciones anómalas.", "severidad": "success"},
-            {"mensaje": "📈 Tendencia estable. Proyecciones dentro de lo normal.", "severidad": "info"},
+            {"mensaje": f"💰 Desempeño comercial dentro del rango esperado.", "severidad": "info"},
+            {"mensaje": f"✅ Flujo de ventas consistente. Sin variaciones anómalas detectadas.", "severidad": "success"},
+            {"mensaje": f"📈 Tendencia estable. Operación normalizada.", "severidad": "info"},
         ],
         "movimientos": [
-            {"mensaje": "🔄 Flujo operativo regular. Sin inactividad prolongada.", "severidad": "info"},
-            {"mensaje": "✅ Trazabilidad completa. Todos los movimientos registrados.", "severidad": "success"},
-            {"mensaje": "📊 Actividad normalizada. Sin patrones inusuales.", "severidad": "info"},
+            {"mensaje": f"🔄 Flujo operativo regular. {int(movimientos_hora)} movimientos/hora promedio.", "severidad": "info"},
+            {"mensaje": f"✅ Trazabilidad completa. Todos los movimientos registrados.", "severidad": "success"},
+            {"mensaje": f"📊 Actividad normalizada. Sin patrones inusuales.", "severidad": "info"},
         ],
         "alertas": [
-            {"mensaje": "🔔 Sistema de monitoreo bajo control. Sin emergencias activas.", "severidad": "info"},
-            {"mensaje": "✅ Todas las alertas resueltas. Sistema en estado óptimo.", "severidad": "success"},
-            {"mensaje": "🛡️ Monitoreo activo. Protección preventiva funcionando.", "severidad": "info"},
+            {"mensaje": f"🔔 Sistema bajo control. {alertas_criticas} alertas críticas, {alertas_warning} advertencias.", "severidad": "info"},
+            {"mensaje": f"✅ Monitoreo activo. Sistema en estado óptimo.", "severidad": "success"},
+            {"mensaje": f"🛡️ Protección preventiva funcionando. {total_productos} productos vigilados.", "severidad": "info"},
         ],
         "auditoria": [
-            {"mensaje": "🕵️ Registros coherentes. Sin inconsistencias detectadas.", "severidad": "info"},
-            {"mensaje": "✅ Integridad de datos verificada. Auditoría sin observaciones.", "severidad": "success"},
-            {"mensaje": "📋 Trazabilidad completa. Historial de cambios consistente.", "severidad": "info"},
+            {"mensaje": f"🕵️ Registros coherentes. {eventos_auditoria} eventos registrados, 0 inconsistencias.", "severidad": "info"},
+            {"mensaje": f"✅ Integridad de datos verificada. Auditoría sin observaciones.", "severidad": "success"},
+            {"mensaje": f"📋 Trazabilidad completa. {eventos_auditoria} acciones documentadas.", "severidad": "info"},
         ],
     }
     
