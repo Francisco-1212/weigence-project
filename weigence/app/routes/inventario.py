@@ -4,6 +4,7 @@ from api.conexion_supabase import supabase
 from datetime import datetime, timedelta
 from .utils import requiere_login, safe_int, safe_float, asignar_estante, formatear_estante_codigo
 from .decorators import requiere_rol, requiere_autenticacion
+from app.utils.vencimiento_helper import VencimientoHelper
 
 
 def obtener_catalogo_estantes():
@@ -129,7 +130,7 @@ def inventario():
                 producto["status"] = "bajo"
                 producto["status_class"] = "text-yellow-500 bg-yellow-100 dark:bg-yellow-900"
             else:
-                producto["status"] = "ormal"
+                producto["status"] = "normal"
                 producto["status_class"] = "text-green-500 bg-green-100 dark:bg-green-900"
 
             producto["precio_formato"] = f"${precio:,.0f}".replace(",", ".")
@@ -143,8 +144,24 @@ def inventario():
                     producto["fecha_formato"] = "-"
             else:
                 producto["fecha_formato"] = "-"
+            
+            # Procesar fechas de vencimiento
+            fecha_venc = producto.get("fecha_vencimiento")
+            if fecha_venc:
+                estado_venc = VencimientoHelper.obtener_estado_vencimiento(fecha_venc)
+                producto["estado_vencimiento"] = estado_venc
+                producto["fecha_vencimiento_formato"] = VencimientoHelper.formatear_fecha(fecha_venc)
+            else:
+                producto["estado_vencimiento"] = None
+                producto["fecha_vencimiento_formato"] = "-"
+            
+            fecha_elab = producto.get("fecha_elaboracion")
+            if fecha_elab:
+                producto["fecha_elaboracion_formato"] = VencimientoHelper.formatear_fecha(fecha_elab)
+            else:
+                producto["fecha_elaboracion_formato"] = "-"
 
-        # === 4. Crear alertas automáticas en BD (solo stock) ===
+        # === 4. Crear alertas automáticas en BD (stock y vencimiento) ===
         alertas_nuevas = []
         existentes = supabase.table("alertas").select("titulo").eq("estado", "pendiente").execute().data or []
         titulos_existentes = {a["titulo"].lower() for a in existentes}
@@ -153,6 +170,7 @@ def inventario():
             nombre = p.get("nombre", "Producto sin nombre")
             stock = p.get("stock", 0)
 
+            # Alertas de stock
             if stock == 0:
                 titulo = f"Stock agotado: {nombre}"
                 if titulo.lower() not in titulos_existentes:
@@ -171,6 +189,36 @@ def inventario():
                         "icono": "inventory_2",
                         "tipo_color": "amarilla"
                     })
+            
+            # Alertas de vencimiento
+            fecha_venc = p.get("fecha_vencimiento")
+            if fecha_venc and VencimientoHelper.debe_alertar_vencimiento(fecha_venc):
+                estado_venc = VencimientoHelper.obtener_estado_vencimiento(fecha_venc)
+                dias = estado_venc['dias_restantes']
+                
+                if dias < 0:
+                    titulo = f"Producto vencido: {nombre}"
+                    descripcion = f"Venció hace {abs(dias)} día(s)."
+                    icono = "warning"
+                    color = "rojo"
+                elif dias == 0:
+                    titulo = f"Producto vence hoy: {nombre}"
+                    descripcion = "El producto vence hoy. Acción inmediata requerida."
+                    icono = "event"
+                    color = "rojo"
+                else:
+                    titulo = f"Próximo a vencer: {nombre}"
+                    descripcion = f"Vence en {dias} día(s). Revisar inventario."
+                    icono = "schedule"
+                    color = "amarilla"
+                
+                if titulo.lower() not in titulos_existentes:
+                    alertas_nuevas.append({
+                        "titulo": titulo,
+                        "descripcion": descripcion,
+                        "icono": icono,
+                        "tipo_color": color
+                    })
 
         if alertas_nuevas:
             supabase.table("alertas").insert(alertas_nuevas).execute()
@@ -178,7 +226,48 @@ def inventario():
         # === 5. Crear alertas personalizadas para el panel de Inventario ===
         alertas_sugeridas = []
         try:
-            # --- Alerta 1: Stock ---
+            # --- Alerta 1: Vencimiento (prioridad más alta) ---
+            productos_vencidos = [p for p in productos if p.get("fecha_vencimiento") and 
+                                VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) is not None and
+                                VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) < 0]
+            
+            productos_criticos = [p for p in productos if p.get("fecha_vencimiento") and 
+                                VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) is not None and
+                                0 <= VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) <= 7]
+            
+            if productos_vencidos:
+                producto = productos_vencidos[0]
+                dias = VencimientoHelper.calcular_dias_hasta_vencimiento(producto["fecha_vencimiento"])
+                alertas_sugeridas.append({
+                    "titulo": "⚠️ Productos Vencidos",
+                    "descripcion": f"{len(productos_vencidos)} producto(s) vencido(s). {producto['nombre']} venció hace {abs(dias)} día(s).",
+                    "icono": "warning",
+                    "color": "rojo"
+                })
+            elif productos_criticos:
+                producto = productos_criticos[0]
+                dias = VencimientoHelper.calcular_dias_hasta_vencimiento(producto["fecha_vencimiento"])
+                alertas_sugeridas.append({
+                    "titulo": "🔔 Vencimiento Próximo",
+                    "descripcion": f"{len(productos_criticos)} producto(s) vence(n) pronto. {producto['nombre']} vence en {dias} día(s).",
+                    "icono": "schedule",
+                    "color": "amarilla"
+                })
+            else:
+                # Verificar productos próximos (30 días)
+                productos_proximos = [p for p in productos if p.get("fecha_vencimiento") and 
+                                    VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) is not None and
+                                    8 <= VencimientoHelper.calcular_dias_hasta_vencimiento(p["fecha_vencimiento"]) <= 30]
+                
+                if productos_proximos:
+                    alertas_sugeridas.append({
+                        "titulo": "📅 Control de Vencimientos",
+                        "descripcion": f"{len(productos_proximos)} producto(s) vence(n) en los próximos 30 días.",
+                        "icono": "event",
+                        "color": "azul"
+                    })
+            
+            # --- Alerta 2: Stock ---
             bajos = [p for p in productos if p["stock"] <= 5]
             if bajos:
                 producto = bajos[0]
@@ -197,7 +286,7 @@ def inventario():
                     "color": "verde"
                 })
 
-            # --- Alerta 2: Estantes ---
+            # --- Alerta 3: Estantes ---
             estantes = supabase.table("v_estantes_estado").select("*").execute().data or []
             estado_riesgo = next((e for e in estantes if e["estado"] in ("advertencia", "critico")), None)
             if estado_riesgo:
@@ -282,6 +371,12 @@ def agregar_producto():
             "fecha_modificacion": datetime.now().isoformat(),
             "modificado_por": session.get("usuario_id")
         }
+        
+        # Agregar fechas de elaboración y vencimiento si se proporcionan
+        if data.get("fecha_elaboracion"):
+            nuevo_producto["fecha_elaboracion"] = data["fecha_elaboracion"]
+        if data.get("fecha_vencimiento"):
+            nuevo_producto["fecha_vencimiento"] = data["fecha_vencimiento"]
 
         result = supabase.table("productos").insert(nuevo_producto).execute()
 
@@ -308,6 +403,51 @@ def eliminar_producto(id):
         result = supabase.table("productos").delete().eq("idproducto", id).execute()
         return jsonify({"success": True, "result": result.data})
     except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route("/api/productos/editar/<int:id>", methods=["PUT"])
+@requiere_rol('operador', 'supervisor', 'administrador')
+def editar_producto(id):
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "error": "No se recibieron datos"}), 400
+        
+        # Construir objeto de actualización
+        producto_actualizado = {}
+        
+        if data.get('nombre'):
+            producto_actualizado['nombre'] = data['nombre']
+        if data.get('categoria'):
+            producto_actualizado['categoria'] = data['categoria']
+        if 'stock' in data:
+            producto_actualizado['stock'] = safe_int(data['stock'])
+        if 'peso' in data:
+            producto_actualizado['peso'] = safe_float(data['peso'])
+        if 'descripcion' in data:
+            producto_actualizado['descripcion'] = data['descripcion']
+        
+        # Manejar fechas de elaboración y vencimiento
+        if 'fecha_elaboracion' in data:
+            producto_actualizado['fecha_elaboracion'] = data['fecha_elaboracion'] if data['fecha_elaboracion'] else None
+        if 'fecha_vencimiento' in data:
+            producto_actualizado['fecha_vencimiento'] = data['fecha_vencimiento'] if data['fecha_vencimiento'] else None
+        
+        # Agregar metadatos de auditoría
+        producto_actualizado['fecha_modificacion'] = datetime.now().isoformat()
+        producto_actualizado['modificado_por'] = session.get("usuario_id")
+        
+        # Actualizar en Supabase
+        result = supabase.table("productos").update(producto_actualizado).eq("idproducto", id).execute()
+        
+        if not result.data:
+            return jsonify({"success": False, "error": "Producto no encontrado"}), 404
+        
+        return jsonify({"success": True, "mensaje": "Producto actualizado correctamente", "data": result.data[0]})
+    
+    except Exception as e:
+        print(f"Error al editar producto {id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -613,3 +753,91 @@ def recalcular_estantes():
                 "ultima_actualizacion": datetime.now(),
             }
         ).eq("id_estante", e["id_estante"]).execute()
+
+
+# =============================================
+# Exportación de Inventario a Excel
+# =============================================
+
+# Endpoint registrado en __init__.py con exención CSRF
+@requiere_rol('operador', 'supervisor', 'administrador')
+def exportar_inventario_excel():
+    """Exporta inventario a Excel con formato profesional"""
+    from flask import send_file
+    from app.utils.excel_exporter import ExcelExporter
+    import logging
+    import traceback
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        print("🔵 [BACKEND] Iniciando exportación de inventario...")
+        
+        # Obtener filtros del request
+        data = request.get_json() or {}
+        filtros = data.get('filtros', {})
+        print(f"🔵 [BACKEND] Filtros recibidos: {filtros}")
+        
+        # Obtener productos desde la base de datos
+        print("🔵 [BACKEND] Consultando productos...")
+        # Usar select * para obtener todas las columnas disponibles
+        query = supabase.table("productos").select("*")
+        
+        # Aplicar filtros si existen
+        if filtros.get('categoria'):
+            query = query.eq('categoria', filtros['categoria'])
+        if filtros.get('estante'):
+            query = query.eq('id_estante', filtros['estante'])
+        if filtros.get('estado'):
+            # Filtrar por estado en Python después de la consulta
+            pass
+        
+        # Ejecutar query
+        response = query.execute()
+        productos = response.data or []
+        print(f"🔵 [BACKEND] Productos obtenidos: {len(productos)}")
+        
+        # Aplicar filtro de estado si existe
+        if filtros.get('estado'):
+            estado = filtros['estado']
+            if estado == 'sin_stock':
+                productos = [p for p in productos if p.get('stock', 0) == 0]
+            elif estado == 'bajo':
+                productos = [p for p in productos 
+                           if 0 < p.get('stock', 0) <= (p.get('stock_minimo') or p.get('stock_min') or p.get('minimo') or 0)]
+            elif estado == 'normal':
+                stock_min_val = lambda p: p.get('stock_minimo') or p.get('stock_min') or p.get('minimo') or 0
+                productos = [p for p in productos if p.get('stock', 0) > stock_min_val(p)]
+            print(f"🔵 [BACKEND] Productos después de filtrar por estado: {len(productos)}")
+        
+        # Generar Excel
+        print("🔵 [BACKEND] Generando archivo Excel...")
+        exporter = ExcelExporter()
+        excel_file = exporter.exportar_inventario(productos, filtros)
+        print(f"✅ [BACKEND] Excel generado exitosamente")
+        
+        # Generar nombre de archivo
+        fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'Weigence_Inventario_{fecha_actual}.xlsx'
+        
+        logger.info(f"Exportación Excel generada: {filename} ({len(productos)} productos)")
+        
+        print(f"🔵 [BACKEND] Enviando archivo: {filename}")
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"❌ [BACKEND] Error al exportar inventario:")
+        print(f"❌ [BACKEND] {type(e).__name__}: {str(e)}")
+        print(f"❌ [BACKEND] Traceback:")
+        traceback.print_exc()
+        
+        logger.error(f"Error al exportar inventario a Excel: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Error al generar el archivo Excel: {str(e)}'
+        }), 500
