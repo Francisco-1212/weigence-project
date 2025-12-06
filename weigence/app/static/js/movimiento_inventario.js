@@ -221,13 +221,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     html += lista.map((m, i) => {
   const indexReal = inicio + i; // Índice real en el array completo
-  const esAutomatico = m.tipo_evento === "Automático" || m.es_automatico === true;
-  const color = esAutomatico ? "gray"
-              : m.tipo_evento === "Añadir" ? "green"
+  const color = m.tipo_evento === "Añadir" ? "green"
               : m.tipo_evento === "Retirar" ? "red" : "blue";
 
   return `
-    <div class="timeline-item relative mb-3 cursor-pointer group ${esAutomatico ? 'opacity-75' : ''}"
+    <div class="timeline-item relative mb-3 cursor-pointer group"
          data-index="${indexReal}" 
          data-tipo="${m.tipo_evento}" 
          data-user="${(m.usuario_nombre || '').toLowerCase()}"
@@ -239,37 +237,29 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="absolute -left-[9px] top-6 bottom-0 w-0.5 bg-neutral-300 dark:bg-neutral-700"></div>
       
       <!-- Tarjeta -->
-      <div class="ml-4 p-2.5 rounded-lg border ${esAutomatico ? 'border-gray-400 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50' : 'border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]'} shadow-sm hover:shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-200">
-        ${esAutomatico ? `
-        <div class="flex items-center gap-1 mb-1">
-          <span class="material-symbols-outlined text-xs text-gray-500">sensors</span>
-          <span class="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Detección automática</span>
-        </div>
-        ` : ''}
+      <div class="ml-4 p-2.5 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-sm hover:shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-200">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 flex-1 min-w-0">
             <span class="material-symbols-outlined text-base flex-shrink-0 ${
-              esAutomatico ? "text-gray-600 dark:text-gray-400"
-              : m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
+              m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
               : "text-blue-600 dark:text-blue-500"
             }">
-              ${esAutomatico ? "sensors" : m.tipo_evento === "Añadir" ? "arrow_upward" : m.tipo_evento === "Retirar" ? "arrow_downward" : "sync_alt"}
+              ${m.tipo_evento === "Añadir" ? "arrow_upward" : m.tipo_evento === "Retirar" ? "arrow_downward" : "sync_alt"}
             </span>
-            <p class="text-xs font-semibold ${esAutomatico ? 'text-gray-600 dark:text-gray-400' : 'text-[var(--text-light)] dark:text-[var(--text-dark)]'} truncate">
+            <p class="text-xs font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] truncate">
               ${m.producto}
             </p>
           </div>
           <div class="text-right flex-shrink-0">
             <p class="text-sm font-bold ${
-              esAutomatico ? "text-gray-600 dark:text-gray-400"
-              : m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
+              m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
               : "text-blue-600 dark:text-blue-500"
             }">
-              ${esAutomatico ? "" : m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
+              ${m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
             </p>
-            <p class="text-[10px] ${esAutomatico ? 'text-gray-500 dark:text-gray-500' : 'text-neutral-500 dark:text-neutral-400'}">
+            <p class="text-[10px] text-neutral-500 dark:text-neutral-400">
               ${(m.timestamp || "").split(" ")[1]?.slice(0,5) || ""}
             </p>
           </div>

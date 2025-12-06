@@ -100,24 +100,29 @@ def movimientos():
                 estantes_data = m.get("estantes") or {}
                 usuarios_data = m.get("usuarios") or {}
                 
-                # Para movimientos automáticos (tipo "Automático")
-                es_automatico = m.get("tipo_evento") == "Automático"
+                # Si rut_usuario es NULL, es un movimiento automático del sistema
+                rut_usuario = m.get("rut_usuario")
+                if rut_usuario is None:
+                    usuario_nombre = "Sistema"
+                    rut_display = "Automático"
+                else:
+                    usuario_nombre = usuarios_data.get("nombre", "Usuario no registrado")
+                    rut_display = rut_usuario or "No registrado"
                 
                 mov = {
                     "id_movimiento": m.get("id_movimiento"),
-                    "producto": productos_data.get("nombre", "Detección automática") if not es_automatico else "Detección automática",
+                    "producto": productos_data.get("nombre", "Producto no encontrado"),
                     "tipo_evento": m.get("tipo_evento"),
                     "cantidad": m.get("cantidad", 0),
                     "peso_por_unidad": m.get("peso_por_unidad", 0),
                     "peso_total": m.get("peso_total", 0),
                     "ubicacion": estantes_data.get("nombre") or f"E{m.get('id_estante')}",
-                    "usuario_nombre": usuarios_data.get("nombre", "Sistema") if not es_automatico else "Sistema",
-                    "rut_usuario": m.get("rut_usuario", "Sistema"),
+                    "usuario_nombre": usuario_nombre,
+                    "rut_usuario": rut_display,
                     "observacion": m.get("observacion", ""),
                     "timestamp": m.get("timestamp", "").replace("T", " "),
                     "idproducto": m.get("idproducto"),
-                    "id_estante": m.get("id_estante"),
-                    "es_automatico": es_automatico
+                    "id_estante": m.get("id_estante")
                 }
                 movimientos.append(mov)
                 #print("Movimiento procesado:", mov)
@@ -213,6 +218,186 @@ def estadisticas_producto(idproducto):
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.route("/api/lecturas_peso_recientes", methods=["POST"])
+@requiere_login
+def lecturas_peso_recientes():
+    """Obtiene lecturas de peso recientes para un estante con retry automático"""
+    import time
+    from httpx import ReadError
+    from httpcore import ReadError as HttpcoreReadError
+    
+    datos = request.json
+    id_estante = datos.get('id_estante')
+    
+    if not id_estante:
+        return jsonify({
+            "success": False,
+            "error": "id_estante requerido"
+        }), 400
+    
+    # Configuración de reintentos
+    max_intentos = 3
+    retraso_base = 0.5  # segundos
+    
+    for intento in range(max_intentos):
+        try:
+            if intento > 0:
+                retraso = retraso_base * (2 ** intento)  # Exponential backoff
+                print(f"🔄 [RETRY] Intento {intento + 1}/{max_intentos} tras {retraso}s...")
+                time.sleep(retraso)
+            
+            # Obtener lecturas del estante
+            response = supabase.table("lecturas_peso").select("*").eq("id_estante", id_estante).execute()
+            
+            # Ordenar por id_lectura descendente en Python
+            if response.data:
+                response.data.sort(key=lambda x: x.get('id_lectura', 0), reverse=True)
+                response.data = response.data[:10]  # Solo las últimas 10
+            
+            # Éxito - retornar inmediatamente
+            return jsonify({
+                "success": True,
+                "data": response.data
+            })
+        
+        except (ReadError, HttpcoreReadError) as e:
+            # Error de socket - reintentar
+            if intento < max_intentos - 1:
+                print(f"⚠️ [SOCKET] Error WinError 10035 en intento {intento + 1}, reintentando...")
+                continue
+            else:
+                # Último intento fallido - retornar lista vacía en lugar de error
+                print(f"❌ [SOCKET] Todos los intentos fallaron para estante {id_estante}")
+                return jsonify({
+                    "success": True,
+                    "data": [],
+                    "warning": "Timeout de conexión, reintentando en próxima consulta"
+                })
+        
+        except Exception as e:
+            print(f"❌ [LECTURAS] Error inesperado: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
+    
+    # Fallback (no debería llegar aquí)
+    return jsonify({
+        "success": True,
+        "data": []
+    })
+
+@bp.route("/api/movimientos/ultimo/<int:id_estante>")
+@requiere_login
+def ultimo_movimiento_estante(id_estante):
+    """Obtiene el último movimiento registrado para un estante"""
+    try:
+        response = supabase.table("movimientos_inventario").select(
+            "id_movimiento, tipo_evento, peso_total, timestamp"
+        ).eq("id_estante", id_estante).order("timestamp", desc=True).limit(1).execute()
+        
+        if response.data and len(response.data) > 0:
+            return jsonify({
+                "success": True,
+                "data": response.data[0]
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "data": None
+            })
+        
+    except Exception as e:
+        print(f"Error obteniendo último movimiento: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@bp.route("/api/movimientos/gris", methods=["POST"])
+@requiere_login
+def crear_movimiento_gris():
+    """Crea un movimiento 'gris' automático del sistema"""
+    try:
+        datos = request.json
+        print("📝 [Movimiento Gris] Datos recibidos:", datos)
+        
+        # Validar campos requeridos
+        if not datos.get('id_estante'):
+            return jsonify({"success": False, "error": "id_estante requerido"}), 400
+        
+        id_estante = datos['id_estante']
+        peso_nuevo = datos.get('peso_total', 0)
+        
+        # Verificar el último movimiento gris en este estante
+        ultimo_mov = supabase.table("movimientos_inventario").select(
+            "peso_total, timestamp"
+        ).eq("id_estante", id_estante).eq("tipo_evento", "gris").order(
+            "timestamp", desc=True
+        ).limit(1).execute()
+        
+        # Si existe un movimiento reciente con peso similar, no crear duplicado
+        if ultimo_mov.data:
+            ultimo_peso = ultimo_mov.data[0].get('peso_total', 0)
+            diferencia_peso = abs(peso_nuevo - ultimo_peso)
+            
+            # Si la diferencia es menor a 0.02 kg (20g), es considerado duplicado
+            UMBRAL_DUPLICADO = 0.02  # kg
+            if diferencia_peso < UMBRAL_DUPLICADO:
+                print(f"⚠️ [Movimiento Gris] Duplicado detectado - Estante {id_estante}: {peso_nuevo}kg vs {ultimo_peso}kg (Δ={diferencia_peso*1000:.1f}g)")
+                return jsonify({
+                    "success": True,
+                    "data": None,
+                    "mensaje": "Movimiento similar ya registrado, omitiendo duplicado"
+                })
+        
+        # Preparar datos del movimiento gris (rut_usuario NULL = Sistema automático)
+        movimiento_gris = {
+            "id_estante": id_estante,
+            "idproducto": None,  # No identificado
+            "rut_usuario": None,  # NULL = Sistema automático
+            "cantidad": datos.get('cantidad', 0),
+            "tipo_evento": 'gris',
+            "peso_total": peso_nuevo,
+            "peso_por_unidad": datos.get('peso_por_unidad', peso_nuevo),
+            "timestamp": datetime.now().isoformat(),
+            "observacion": datos.get('observacion', 'Detección automática: Peso estable sin identificación')
+        }
+        
+        print(f"💾 [Movimiento Gris] Insertando:", movimiento_gris)
+        
+        # Insertar en la base de datos
+        response = supabase.table("movimientos_inventario").insert(movimiento_gris).execute()
+        
+        if response.data:
+            print(f"✅ [Movimiento Gris] Registrado: {response.data[0].get('id_movimiento')}")
+            
+            # Registrar evento en auditoría
+            from app.utils.eventohumano import registrar_evento_humano
+            registrar_evento_humano(
+                "movimiento_gris",
+                f"Sistema detectó peso estable no identificado en estante {datos['id_estante']}: {datos.get('peso_total', 0):.2f}kg"
+            )
+            
+            return jsonify({
+                "success": True,
+                "data": response.data[0],
+                "mensaje": "Movimiento gris registrado correctamente"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "No se pudo registrar el movimiento"
+            }), 500
+        
+    except Exception as e:
+        print(f"❌ [Movimiento Gris] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @bp.route("/api/movimientos/nuevo", methods=["POST"])
 @requiere_login

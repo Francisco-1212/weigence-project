@@ -58,7 +58,16 @@ def create_app(config_name=None):
     def is_api_route():
         """Verifica si es una ruta API que debe estar exenta de CSRF"""
         path = request.path
-        exempt_prefixes = ["/api/chat/", "/api/usuarios", "/api/auditoria", "/password-reset", "/api/validate-reset-token", "/api/reset-password"]
+        exempt_prefixes = [
+            "/api/chat/", 
+            "/api/usuarios", 
+            "/api/auditoria", 
+            "/password-reset", 
+            "/api/validate-reset-token", 
+            "/api/reset-password",
+            "/api/lecturas_peso_recientes",  # Sistema automático de detección de peso
+            "/api/movimientos/gris"  # Movimientos grises automáticos
+        ]
         
         for prefix in exempt_prefixes:
             if prefix.endswith("/"):
@@ -168,10 +177,6 @@ def create_app(config_name=None):
         return User(usuarios[0]) if usuarios else None
 
     app.register_blueprint(routes_bp)
-    
-    # Registrar blueprint de lecturas de peso (sensores automáticos)
-    from app.routes.lecturas_peso import bp as lecturas_bp
-    app.register_blueprint(lecturas_bp)
     
     # Registrar blueprint de pruebas (solo desarrollo)
     from app.routes.test_routes import bp as test_bp
