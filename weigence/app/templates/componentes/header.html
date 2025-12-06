@@ -6,20 +6,44 @@
       <span class="material-symbols-outlined text-neutral-700 dark:text-neutral-300">menu</span> 
     </button>
 
-    <!-- Selector de rango de fechas -->
+    <!-- Selector de rango de fechas o acciones rápidas -->
     {% if mostrar_filtro != False %}
     <div class="flex items-center gap-2 sm:gap-3">
-      <h1 class="text-base sm:text-xl font-bold hidden sm:block">Filtrar</h1>
-      <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5 sm:p-1">
-        <button data-rango="hoy" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Hoy</button>
-        <button data-rango="semana" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Semana</button>
-        <button data-rango="mes" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Mes</button>
-      </div>
-      <div id="mes-navegador" class="ml-2 sm:ml-4 flex items-center gap-1 sm:gap-2 hidden">
-        <button id="btn-mes-back" class="rounded px-1.5 sm:px-2 py-0.5 sm:py-1 bg-neutral-300 dark:bg-neutral-700 text-sm">&lt;</button>
-        <span id="mes-label" class="text-sm sm:text-lg font-semibold"></span>
-        <button id="btn-mes-next" class="rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-sm">&gt;</button>
-      </div>
+      {% if request.path == '/inventario' %}
+        <!-- Botón para Inventario: Ver Tabla de Productos -->
+        <button id="btn-ver-tabla-productos" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all text-xs sm:text-sm font-medium shadow">
+          <span class="material-symbols-outlined text-base">table_view</span>
+          <span class="hidden sm:inline">Ver Tabla de Productos</span>
+          <span class="sm:hidden">Ver Tabla</span>
+        </button>
+      {% elif request.path == '/alertas' %}
+        <!-- Botón para Alertas: Exportar -->
+        <button id="btn-exportar-alertas-header" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all text-xs sm:text-sm font-medium shadow">
+          <span class="material-symbols-outlined text-base">download</span>
+          <span class="hidden sm:inline">Exportar Alertas</span>
+          <span class="sm:hidden">Exportar</span>
+        </button>
+      {% elif request.path == '/movimientos' %}
+        <!-- Botón para Movimientos: Registrar -->
+        <button id="btn-registrar-movimiento-header" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all text-xs sm:text-sm font-medium shadow">
+          <span class="material-symbols-outlined text-base">add</span>
+          <span class="hidden sm:inline">Registrar un movimiento</span>
+          <span class="sm:hidden">Registrar</span>
+        </button>
+      {% else %}
+        <!-- Filtros de fecha para otras páginas -->
+        <h1 class="text-base sm:text-xl font-bold hidden sm:block">Filtrar</h1>
+        <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5 sm:p-1">
+          <button data-rango="hoy" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Hoy</button>
+          <button data-rango="semana" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Semana</button>
+          <button data-rango="mes" class="filtro-fecha-btn px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors">Mes</button>
+        </div>
+        <div id="mes-navegador" class="ml-2 sm:ml-4 flex items-center gap-1 sm:gap-2 hidden">
+          <button id="btn-mes-back" class="rounded px-1.5 sm:px-2 py-0.5 sm:py-1 bg-neutral-300 dark:bg-neutral-700 text-sm">&lt;</button>
+          <span id="mes-label" class="text-sm sm:text-lg font-semibold"></span>
+          <button id="btn-mes-next" class="rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-sm">&gt;</button>
+        </div>
+      {% endif %}
     </div>
     {% endif %}
   </div> 

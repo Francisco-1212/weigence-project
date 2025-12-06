@@ -89,13 +89,38 @@ def on_send(data):
     user = _get_user()
     conv = data.get("conversacion_id")
     txt = data.get("contenido")
+    reply_to = data.get("reply_to")  # Capturar reply_to del mensaje
+    
     if not user or not conv or not txt:
         _emit_error("Faltan datos")
         return
 
     try:
         conv_str = str(conv)
-        msg = svc.enviar_mensaje_ws(usuario_id=user, conversacion_id=conv_str, contenido=str(txt))
+        msg = svc.enviar_mensaje_ws(usuario_id=user, conversacion_id=conv_str, contenido=str(txt), reply_to=reply_to)
+        
+        # Si tiene reply_to, agregar contexto del mensaje original
+        if reply_to and msg.get("id"):
+            try:
+                from app.chat import chat_model as model
+                original = model.supabase.table("chat_mensajes")\
+                    .select("contenido, usuario_id, usuarios_conectados(nombre)")\
+                    .eq("id", reply_to)\
+                    .single()\
+                    .execute()
+                
+                if original.data:
+                    msg["reply_to"] = reply_to
+                    msg["reply_to_content"] = original.data.get("contenido")
+                    msg["reply_to_user_id"] = original.data.get("usuario_id")
+                    if original.data.get("usuarios_conectados"):
+                        msg["reply_to_user_name"] = original.data["usuarios_conectados"].get("nombre")
+            except Exception as e:
+                print(f"[WS] Error obteniendo contexto de reply: {e}")
+                # Enviar al menos el reply_to aunque falle obtener el contexto
+                if reply_to:
+                    msg["reply_to"] = reply_to
+                    
     except Exception as e:
         print("[WS] ERROR SEND:", e)
         _emit_error("No se pudo enviar el mensaje")

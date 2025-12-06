@@ -12,38 +12,29 @@
 
 {% block contenido %}
 <div class="p-8">
-  <div class="flex justify-between items-center mb-6">
-    <div>
-      <h1 class="text-3xl font-bold">Alertas del Sistema</h1>
-      <p class="text-slate-500 dark:text-slate-400 text-sm">Administra y monitorea todas las alertas del sistema en tiempo real.</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <button id="btn-exportar-alertas"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border-2 border-gray-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 shadow-sm hover:shadow-md hover:border-green-500 dark:hover:border-green-500 hover:text-green-600 dark:hover:text-green-400 transition-all duration-200">
-        <span class="material-symbols-outlined text-base">download</span>
-        <span>Exportar</span>
-      </button>
-    </div>
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold">Alertas del Sistema</h1>
+    <p class="text-slate-500 dark:text-slate-400 text-sm">Administra y monitorea todas las alertas del sistema en tiempo real.</p>
   </div>
 
   <!-- Tarjetas de resumen -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Alertas</p>
       <p id="total-alertas" class="text-3xl font-bold">{{ total_alertas }}</p>
     </div>
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Pendientes</p>
       <p id="alertas-pendientes" class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{ alertas_pendientes }}</p>
     </div>
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Resueltas</p>
       <p id="alertas-resueltas" class="text-3xl font-bold text-green-600 dark:text-green-400">{{ alertas_resueltas }}</p>
     </div>
   </div>
 
   <!-- Panel de Filtros -->
-  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-gray-300 dark:border-neutral-700 shadow-sm p-6 mb-6">
+  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -54,7 +45,7 @@
           <p class="text-sm text-neutral-600 dark:text-neutral-400">Filtra las alertas según tus criterios</p>
         </div>
       </div>
-      <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+      <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
         <span class="material-symbols-outlined text-sm">restart_alt</span>
         <span class="text-sm font-medium">Limpiar filtros</span>
       </button>
@@ -69,7 +60,7 @@
             Estado
           </span>
         </label>
-        <select id="filtro-estado" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+        <select id="filtro-estado" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
           <option value="resuelto">Resuelto</option>
@@ -84,7 +75,7 @@
             Tipo de Alerta
           </span>
         </label>
-        <select id="filtro-tipo" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+        <select id="filtro-tipo" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
           <option value="">Todos los tipos</option>
           <option value="rojo">🔴 Rojo (Crítico)</option>
           <option value="naranja">🟠 Naranja (Vencimiento próximo)</option>
@@ -101,7 +92,7 @@
             Fecha desde
           </span>
         </label>
-        <input type="date" id="filtro-fecha-desde" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+        <input type="date" id="filtro-fecha-desde" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
       </div>
 
       <div>
@@ -111,7 +102,7 @@
             Fecha hasta
           </span>
         </label>
-        <input type="date" id="filtro-fecha-hasta" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+        <input type="date" id="filtro-fecha-hasta" class="w-full px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
       </div>
     </div>
 
@@ -125,8 +116,8 @@
   </div>
 
   <!-- Tabla de alertas -->
-  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
@@ -148,7 +139,7 @@
 
     <div class="overflow-x-auto">
       <table id="alertasTable" class="w-full text-sm">
-        <thead class="bg-neutral-100 dark:bg-neutral-800 border-b-2 border-gray-300 dark:border-neutral-700">
+        <thead class="bg-neutral-200 dark:bg-neutral-800 border-b-2 border-neutral-300 dark:border-neutral-700">
           <tr>
             <th class="px-4 py-4 text-left text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Alerta</th>
             <th class="px-4 py-4 text-left text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Usuario</th>
@@ -158,7 +149,7 @@
             <th class="px-4 py-4 text-center text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
+        <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
           {% for alerta in alertas %}
           <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-all duration-200 alerta-row"
               data-id="{{ alerta.id }}"
@@ -228,7 +219,7 @@
               </span>
             </td>
             <td class="px-4 py-4 text-center">
-              <button class="btn-gestionar-alerta inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold transition-colors" data-alerta-id="{{ alerta.id }}">
+              <button class="btn-gestionar-alerta inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-xs font-semibold transition-colors" data-alerta-id="{{ alerta.id }}">
                 <span class="material-symbols-outlined text-sm">settings</span>
                 Gestionar
               </button>
@@ -251,11 +242,11 @@
 
   <!-- Controles de paginación -->
   <div id="alertasPager"
-      class="flex flex-wrap items-center justify-between gap-4 py-4 px-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-xl mt-4 shadow-sm">
+      class="flex flex-wrap items-center justify-between gap-4 py-4 px-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-xl mt-4 shadow-sm">
     <div class="flex items-center gap-3">
       <span class="material-symbols-outlined text-neutral-600 dark:text-neutral-400">table_rows</span>
       <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filas por página:</span>
-      <select id="alertasPageSize" class="h-10 px-3 rounded-lg bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-medium shadow-sm hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+      <select id="alertasPageSize" class="h-10 px-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-medium shadow-sm hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
         <option>10</option><option>25</option><option>50</option><option>100</option>
       </select>
     </div>
@@ -264,13 +255,13 @@
       <span id="alertasPageStats">0–0 de 0</span>
     </div>
     <div class="flex items-center gap-2">
-      <button id="alertasPrevPage" class="h-10 px-4 border border-gray-300 dark:border-neutral-700 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Anterior">
+      <button id="alertasPrevPage" class="h-10 px-4 bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Anterior">
         <span class="flex items-center gap-1">
           <span class="material-symbols-outlined text-base">chevron_left</span>
           <span class="hidden sm:inline">Anterior</span>
         </span>
       </button>
-      <button id="alertasNextPage" class="h-10 px-4 border border-gray-300 dark:border-neutral-700 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Siguiente">
+      <button id="alertasNextPage" class="h-10 px-4 bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Siguiente">
         <span class="flex items-center gap-1">
           <span class="hidden sm:inline">Siguiente</span>
           <span class="material-symbols-outlined text-base">chevron_right</span>
@@ -281,11 +272,11 @@
 </div>
 
 <!-- Modal de Gestión de Alerta -->
-<div id="modal-gestionar-alerta" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-  <div class="relative w-full max-w-2xl bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+<div id="modal-gestionar-alerta" class="hidden modal-overlay">
+  <div class="modal-container w-full max-w-2xl bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
     <div class="p-6">
       <!-- Header del Modal -->
-      <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-300 dark:border-neutral-700">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-neutral-300 dark:border-neutral-700">
         <div class="flex items-center gap-3">
           <div class="p-3 rounded-xl bg-gradient-to-br from-red-500 to-orange-600">
             <span class="material-symbols-outlined text-white text-2xl">notification_important</span>
@@ -302,7 +293,7 @@
 
       <!-- Contenido del Modal -->
       <div class="space-y-4">
-        <div class="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-4 border border-gray-300 dark:border-neutral-700">
+        <div class="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
           <h3 id="modal-titulo" class="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2"></h3>
           <p id="modal-descripcion" class="text-sm text-neutral-600 dark:text-neutral-400 mb-3"></p>
           <div class="grid grid-cols-2 gap-3 text-xs">
@@ -333,15 +324,15 @@
               Cambiar Estado
             </span>
           </label>
-          <select id="modal-estado" class="w-full px-4 py-3 rounded-lg bg-white dark:bg-neutral-800 border-2 border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-medium focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
+          <select id="modal-estado" class="w-full px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-medium focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors">
             <option value="pendiente">⏳ Pendiente</option>
             <option value="resuelto">✅ Resuelto</option>
           </select>
         </div>
 
         <!-- Botones de Acción -->
-        <div class="flex gap-3 pt-4 border-t border-gray-300 dark:border-neutral-700">
-          <button type="button" class="close-modal-alerta flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+        <div class="flex gap-3 pt-4 border-t border-neutral-300 dark:border-neutral-700">
+          <button type="button" class="close-modal-alerta flex-1 px-4 py-3 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
             Cancelar
           </button>
           <button type="button" onclick="Alertas.guardarCambios()" class="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold hover:from-primary-600 hover:to-primary-700 transition-all shadow-md hover:shadow-lg">

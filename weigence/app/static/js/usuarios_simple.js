@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </span>
             </td>
             <td class="px-3 sm:px-6 py-3 sm:py-4 text-right">
-              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-xs font-medium rounded-lg transition-colors">
                 <span class="material-symbols-outlined text-sm">edit</span>
                 <span class="hidden sm:inline">Editar</span>
               </button>

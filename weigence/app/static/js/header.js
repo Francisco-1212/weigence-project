@@ -188,5 +188,39 @@ class AIRecommendationManager {
 
 document.addEventListener("DOMContentLoaded", () => {
   new AIRecommendationManager();
+
+  // Funcionalidad del botón "Ver Tabla de Productos" en Inventario
+  const btnVerTablaProductos = document.getElementById('btn-ver-tabla-productos');
+  if (btnVerTablaProductos) {
+    btnVerTablaProductos.addEventListener('click', () => {
+      const tablaProductos = document.getElementById('tabla-productos');
+      if (tablaProductos) {
+        tablaProductos.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    });
+  }
+
+  // Funcionalidad del botón "Exportar" en Alertas (header)
+  const btnExportarAlertasHeader = document.getElementById('btn-exportar-alertas-header');
+  if (btnExportarAlertasHeader) {
+    btnExportarAlertasHeader.addEventListener('click', () => {
+      // Buscar el botón original de exportar en la página de alertas si existe
+      const btnExportarAlertas = document.getElementById('btn-exportar-alertas');
+      if (btnExportarAlertas) {
+        btnExportarAlertas.click();
+      } else {
+        // Si no existe el botón original, ejecutar la función directamente
+        if (typeof exportarAlertas === 'function') {
+          exportarAlertas();
+        }
+      }
+    });
+  }
+
+  // Nota: El botón "Registrar un movimiento" del header es manejado directamente
+  // por movimiento_inventario.js, no necesita lógica adicional aquí
 });
 
