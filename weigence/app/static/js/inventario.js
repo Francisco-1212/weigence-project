@@ -113,6 +113,7 @@ const Inventario = {
       });
     });
   }
+
     // Búsqueda con debounce
     if (this.searchInput) {
       let timer;
@@ -258,6 +259,87 @@ filterByStatus(status) {
   this.applyPagination();
 },
 
+filterByVencimiento(vencimiento) {
+  const productRows = document.querySelectorAll('.product-row');
+  console.log(`Vencimiento seleccionado: ${vencimiento}`);
+
+  this.state.filteredRows = [];
+  const ahora = new Date();
+  ahora.setHours(0, 0, 0, 0);
+  
+  productRows.forEach(row => {
+    const estadoVenc = row.getAttribute('data-vencimiento');
+    const fechaVencStr = row.getAttribute('data-fecha-venc');
+    let shouldShow = false;
+
+    if (!fechaVencStr) {
+      shouldShow = false;
+    } else {
+      if (vencimiento === 'vencido' && (estadoVenc === 'vencido' || estadoVenc === 'vence_hoy')) {
+        shouldShow = true;
+      } else if (vencimiento === 'critico' && estadoVenc === 'critico') {
+        shouldShow = true;
+      } else if (vencimiento === 'proximo' && estadoVenc === 'proximo') {
+        shouldShow = true;
+      }
+    }
+
+    if (shouldShow) {
+      row.classList.remove('hidden');
+      this.state.filteredRows.push(row);
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+
+  this.state.page = 1;
+  this.applyPagination();
+},
+
+validarFechas(fechaElab, fechaVenc) {
+  const warning = document.getElementById('fecha_warning');
+  const warningText = document.getElementById('fecha_warning_text');
+  
+  if (!warning || !warningText) return true;
+
+  warning.classList.add('hidden');
+
+  if (!fechaElab && !fechaVenc) return true;
+
+  if (fechaElab && fechaVenc) {
+    const elab = new Date(fechaElab);
+    const venc = new Date(fechaVenc);
+    
+    if (elab > venc) {
+      warningText.textContent = 'La fecha de elaboración no puede ser posterior a la fecha de vencimiento';
+      warning.classList.remove('hidden');
+      warning.classList.remove('bg-yellow-50', 'dark:bg-yellow-900/20', 'border-yellow-300', 'dark:border-yellow-700', 'text-yellow-500', 'dark:text-yellow-400');
+      warning.classList.add('bg-red-50', 'dark:bg-red-900/20', 'border-red-300', 'dark:border-red-700', 'text-red-500', 'dark:text-red-400');
+      return false;
+    }
+    
+    const ahora = new Date();
+    ahora.setHours(0, 0, 0, 0);
+    const diasRestantes = Math.ceil((venc - ahora) / (1000 * 60 * 60 * 24));
+    
+    if (diasRestantes < 0) {
+      warningText.textContent = '⚠️ Este producto ya está vencido';
+      warning.classList.remove('hidden');
+    } else if (diasRestantes === 0) {
+      warningText.textContent = '⚠️ Este producto vence HOY';
+      warning.classList.remove('hidden');
+    } else if (diasRestantes <= 7) {
+      warningText.textContent = `⚠️ Este producto vence en ${diasRestantes} días (Crítico)`;
+      warning.classList.remove('hidden');
+    } else if (diasRestantes <= 30) {
+      warningText.textContent = `📅 Este producto vence en ${diasRestantes} días`;
+      warning.classList.remove('hidden');
+    }
+  }
+
+  return true;
+},
+
   // -------------------- Modal Actions --------------------
   modalActions(e) {
     const btn = e.target.closest('button');
@@ -282,21 +364,41 @@ filterByStatus(status) {
     if (!this.modalContent) return;
     this.modalTitle.textContent = "Agregar Nuevo Producto";
     this.modalContent.innerHTML = this.templates.formAdd();
+    this.configurarAsignacionEstante(this.modalContent);
+    this.configurarValidacionFechas();
     this.modal.classList.remove('hidden');
+  },
+
+  configurarValidacionFechas() {
+    const fechaElab = document.getElementById('fecha_elaboracion');
+    const fechaVenc = document.getElementById('fecha_vencimiento');
+    
+    if (fechaElab && fechaVenc) {
+      const validar = () => {
+        this.validarFechas(fechaElab.value, fechaVenc.value);
+      };
+      
+      fechaElab.addEventListener('change', validar);
+      fechaVenc.addEventListener('change', validar);
+    }
   },
 
   saveNew(form) {
     const data = Object.fromEntries(new FormData(form).entries());
+    
+    // Validar fechas antes de enviar
+    if (!this.validarFechas(data.fecha_elaboracion, data.fecha_vencimiento)) {
+      return;
+    }
+    
     data.stock = parseInt(data.stock);
     data.peso = parseFloat(data.peso);
     data.precio_unitario = parseFloat(data.precio_unitario);
-    data.id_estante = parseInt(data.id_estante);
+    data.id_estante = this.obtenerEstantePorCategoria(data.categoria);
     
-    // Validar que se haya seleccionado un estante
-    if (!data.id_estante || data.id_estante <= 0) {
-      alert('Debe seleccionar un estante válido');
-      return;
-    }
+    // Enviar fechas solo si no están vacías
+    if (!data.fecha_elaboracion) delete data.fecha_elaboracion;
+    if (!data.fecha_vencimiento) delete data.fecha_vencimiento;
 
 
     const btn = form.querySelector('button[type="submit"]');
@@ -348,29 +450,65 @@ filterByStatus(status) {
     if (!p) return;
     this.modalTitle.textContent = `Editar Producto: ${p.nombre}`;
     this.modalContent.innerHTML = this.templates.formEdit(p);
+    this.configurarAsignacionEstante(this.modalContent);
+    this.configurarValidacionFechas();
   },
 
   saveEdit(form) {
     const fd = new FormData(form);
+    
+    // Validar fechas antes de guardar
+    const fechaElab = fd.get('fecha_elaboracion');
+    const fechaVenc = fd.get('fecha_vencimiento');
+    if (!this.validarFechas(fechaElab, fechaVenc)) {
+      return;
+    }
+    
     const updated = {
-      ...this.state.current,
       nombre: fd.get('nombre'),
       categoria: fd.get('categoria'),
       stock: parseInt(fd.get('stock')),
       peso: parseFloat(fd.get('peso')),
       descripcion: fd.get('descripcion'),
-      codigo_estante: this.state.current.codigo_estante || this.state.current.d_estante || '',
-      d_estante: this.state.current.codigo_estante || this.state.current.d_estante || '',
-      modificado_por: 'Usuario Actual',
-      fecha_modificacion: new Date().toLocaleString()
+      fecha_elaboracion: fechaElab || null,
+      fecha_vencimiento: fechaVenc || null
     };
 
-    console.info('Actualizando producto:', updated);
-    setTimeout(() => {
-      this.state.current = updated;
-      this.showDetails(updated);
-      console.info('Producto actualizado');
-    }, 400);
+    const btn = form.querySelector('button[type="submit"]');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Guardando...';
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const idproducto = this.state.current.idproducto;
+
+    fetch(`/api/productos/editar/${idproducto}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(updated)
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        console.info('Producto actualizado', res);
+        this.closeModal();
+        location.reload();
+      } else {
+        console.error(res.error);
+        alert('Error al actualizar: ' + (res.error || 'Error desconocido'));
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    })
+    .catch(err => {
+      console.error('Error al actualizar producto', err);
+      alert('Error de conexión al actualizar el producto');
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    });
   },
 
   deleteProduct(id) {
@@ -389,124 +527,62 @@ filterByStatus(status) {
   templates: {
     formAdd() {
       return `
-      <form id="addProductForm" class="space-y-5">
-        <!-- Información Básica -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
-          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">info</span>
-            Información Básica
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Nombre del Producto *</label>
-              <input type="text" name="nombre" required 
-                     placeholder="Ej: Ibuprofeno 400mg"
-                     class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Categoría *</label>
-              <select name="categoria" required 
-                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-                <option value="">Seleccionar categoría</option>
-                <option>Antiinflamatorio</option>
-                <option>Antibiótico</option>
-                <option>Suplemento</option>
-                <option>Antihistamínico</option>
-                <option>Broncodilatador</option>
-                <option>Analgésico</option>
-                <option>Antidiabetico</option>
-                <option>Antihipertensivo</option>
-                <option>Dermocosmética</option>
-                <option>Desinfectante</option>
-                <option>Primeros Auxilios</option>
-                <option>Equipamiento</option>
-                <option>Higiene</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Ubicación y Stock -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
-          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">warehouse</span>
-            Ubicación y Stock Inicial
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Estante *</label>
-              <select name="id_estante" required 
-                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-                <option value="">Seleccione un estante</option>
-                <option value="1">Estante 1</option>
-                <option value="2">Estante 2</option>
-                <option value="3">Estante 3</option>
-                <option value="4">Estante 4</option>
-                <option value="5">Estante 5</option>
-                <option value="6">Estante 6</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Stock Inicial</label>
-              <input type="number" name="stock" min="0" value="0" 
-                     placeholder="0"
-                     class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Cantidad inicial en unidades</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Datos Técnicos -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
-          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">scale</span>
-            Datos Técnicos y Precio
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Peso Unitario (gramos) *</label>
-              <div class="relative">
-                <input type="number" name="peso" min="0" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 pr-12 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-500 dark:text-neutral-400">g</span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Precio Unitario *</label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-500 dark:text-neutral-400">$</span>
-                <input type="number" name="precio_unitario" min="0" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Información Adicional -->
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] rounded-lg p-4 border border-neutral-300 dark:border-neutral-700">
-          <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-lg text-primary-600 dark:text-primary-400">description</span>
-            Información Adicional
-          </h4>
+      <form id="addProductForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">Descripción</label>
-            <textarea name="descripcion" rows="3" 
-                      placeholder="Detalles adicionales del producto, indicaciones, contraindicaciones, etc."
-                      class="w-full bg-white dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none"></textarea>
+            <label class="block text-sm font-medium mb-1">Nombre *</label>
+            <input type="text" name="nombre" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Categoría *</label>
+            <select name="categoria" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+              <option value="">Seleccionar categoría</option>
+              <option>Antiinflamatorio</option><option>Antibiótico</option>
+              <option>Suplemento</option><option>Antihistamínico</option>
+              <option>Broncodilatador</option><option>Analgésico</option>
+              <option>Antidiabetico</option><option>Antihipertensivo</option>
+              <option>Dermocosmética</option><option>Desinfectante</option>
+              <option>Primeros Auxilios</option><option>Equipamiento</option>
+              <option>Higiene</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Estante asignado</label>
+            <input type="text" name="id_estante" readonly placeholder="Asignado automáticamente" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Peso Unitario (g) *</label>
+            <input type="number" name="peso" min="0" step="0.01" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Precio Unitario *</label>
+            <input type="number" name="precio_unitario" min="0" step="0.01" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Estante</label>
+            <input type="text" name="d_estante" placeholder="Ej: A1, B2" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Fecha de Elaboración</label>
+            <input type="date" name="fecha_elaboracion" id="fecha_elaboracion" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Fecha de Vencimiento</label>
+            <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
           </div>
         </div>
-
-        <!-- Botones de Acción -->
-        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-300 dark:border-neutral-700">
-          <button type="button" class="btn-cancelar-add px-5 py-2.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 rounded-lg text-sm font-semibold transition-all flex items-center gap-2">
-            <span class="material-symbols-outlined text-base">close</span>
-            Cancelar
-          </button>
-          <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm">
-            <span class="material-symbols-outlined text-base">add</span>
-            Agregar Producto
+        <div id="fecha_warning" class="hidden text-sm text-yellow-500 dark:text-yellow-400 flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-md px-3 py-2">
+          <span class="material-symbols-outlined text-base">warning</span>
+          <span id="fecha_warning_text"></span>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Descripción</label>
+          <textarea name="descripcion" rows="3" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-700">
+          <button type="button" class="btn-cancelar-add px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-base">add</span>Guardar</span>
           </button>
         </div>
       </form>`;
@@ -528,13 +604,30 @@ filterByStatus(status) {
           </div>
         </div>
         <div class="bg-[var(--card-bg-dark)] p-4 rounded-lg">
-          <h4 class="text-lg font-semibold mb-3 text-[var(--primary-color)]">Auditoría</h4>
+          <h4 class="text-lg font-semibold mb-3 text-[var(--primary-color)]">Fechas y Vencimiento</h4>
           <div class="space-y-2 text-neutral-100">
-            <p><span class="font-medium">Fecha de Ingreso:</span> ${p.fecha_ingreso || 'N/A'}</p>
-            <p><span class="font-medium">Ingresado por:</span> ${p.ingresado_por || 'N/A'}</p>
-            <p><span class="font-medium">Modificado por:</span> ${p.modificado_por || 'N/A'}</p>
-            <p><span class="font-medium">Fecha de Modificación:</span> ${p.fecha_modificacion || 'N/A'}</p>
+            <p><span class="font-medium">Fecha Elaboración:</span> ${p.fecha_elaboracion_formato || p.fecha_elaboracion || 'N/A'}</p>
+            <p><span class="font-medium">Fecha Vencimiento:</span> ${p.fecha_vencimiento_formato || p.fecha_vencimiento || 'N/A'}</p>
+            ${p.estado_vencimiento ? `
+              <p><span class="font-medium">Estado:</span> 
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                  ${p.estado_vencimiento.estado === 'vencido' || p.estado_vencimiento.estado === 'vence_hoy' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400' : 
+                    p.estado_vencimiento.estado === 'critico' ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400' :
+                    p.estado_vencimiento.estado === 'proximo' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400' :
+                    'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400'}">
+                  ${p.estado_vencimiento.mensaje}
+                </span>
+              </p>` : ''}
           </div>
+        </div>
+      </div>
+      <div class="bg-[var(--card-bg-dark)] p-4 rounded-lg mb-6">
+        <h4 class="text-lg font-semibold mb-3 text-[var(--primary-color)]">Auditoría</h4>
+        <div class="space-y-2 text-neutral-100">
+          <p><span class="font-medium">Fecha de Ingreso:</span> ${p.fecha_ingreso || 'N/A'}</p>
+          <p><span class="font-medium">Ingresado por:</span> ${p.ingresado_por || 'N/A'}</p>
+          <p><span class="font-medium">Modificado por:</span> ${p.modificado_por || 'N/A'}</p>
+          <p><span class="font-medium">Fecha de Modificación:</span> ${p.fecha_modificacion || 'N/A'}</p>
         </div>
       </div>
       <div class="flex justify-end gap-3">
@@ -568,6 +661,18 @@ filterByStatus(status) {
             <label class="block text-sm font-medium mb-1">Estante</label>
             <input type="text" name="d_estante" value="${p.codigo_estante || p.d_estante || ''}" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100" disabled>
           </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Fecha de Elaboración</label>
+            <input type="date" name="fecha_elaboracion" id="fecha_elaboracion" value="${p.fecha_elaboracion || ''}" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Fecha de Vencimiento</label>
+            <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="${p.fecha_vencimiento || ''}" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
+          </div>
+        </div>
+        <div id="fecha_warning" class="hidden text-sm text-yellow-500 dark:text-yellow-400 flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-md px-3 py-2">
+          <span class="material-symbols-outlined text-base">warning</span>
+          <span id="fecha_warning_text"></span>
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Descripción</label>
@@ -712,20 +817,86 @@ filterByStatus(status) {
   },
 
   // -------------------- Exportar --------------------
-  exportVisible() {
-    const rows = this.state.filteredRows;
-    if (rows.length === 0) return alert('No hay datos para exportar');
-    let csv = 'ID,Código,Nombre,Categoría,Stock,Peso,Estado,Fecha\n';
-    rows.forEach(r => {
-      const cells = r.querySelectorAll('td');
-      const arr = Array.from(cells).slice(0,7).map(c => `"${c.textContent.trim()}"`);
-      csv += arr.join(',') + '\n';
-    });
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'inventario_'+new Date().toISOString().split('T')[0]+'.csv';
-    document.body.appendChild(link); link.click(); link.remove();
+  async exportVisible() {
+    try {
+      console.log('🔵 [INVENTARIO] Iniciando exportación...');
+      const rows = this.state.filteredRows;
+      console.log('🔵 [INVENTARIO] Filas filtradas:', rows.length);
+      
+      if (rows.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+      }
+
+      // Mostrar notificación de carga
+      if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion('📊 Generando archivo Excel profesional...', 'info');
+      }
+
+      // Preparar filtros actuales
+      const filtros = {
+        categoria: this.state.filters.category || null,
+        estante: null, // Agregar si existe filtro de estante
+        estado: this.state.filters.status || null
+      };
+      console.log('🔵 [INVENTARIO] Filtros:', filtros);
+
+      // Llamar al endpoint del backend
+      console.log('🔵 [INVENTARIO] Llamando a /api/inventario/exportar-excel...');
+      const response = await fetch('/api/inventario/exportar-excel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filtros })
+      });
+
+      console.log('🔵 [INVENTARIO] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [INVENTARIO] Error del servidor:', errorText);
+        throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+      }
+
+      // Obtener el blob del archivo
+      console.log('🔵 [INVENTARIO] Obteniendo blob...');
+      const blob = await response.blob();
+      console.log('🔵 [INVENTARIO] Blob size:', blob.size, 'bytes');
+      
+      // Crear URL temporal y descargar
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Nombre del archivo
+      const fecha = new Date().toISOString().split('T')[0];
+      link.download = `Weigence_Inventario_${fecha}.xlsx`;
+      
+      console.log('🔵 [INVENTARIO] Descargando archivo:', link.download);
+      
+      // Simular click para descargar
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ [INVENTARIO] Exportación exitosa');
+      if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion(`✅ Inventario exportado: ${rows.length} productos`, 'success');
+      }
+      
+    } catch (error) {
+      console.error('❌ [INVENTARIO] Error completo:', error);
+      console.error('❌ [INVENTARIO] Stack:', error.stack);
+      if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion(`Error al exportar: ${error.message}`, 'error');
+      } else {
+        alert('Error al exportar el inventario: ' + error.message);
+      }
+    }
   }
 };
 
@@ -771,39 +942,19 @@ const WeigenceMonitor = {
             ? "green"
             : "gray";
 
-        // Convertir gramos a kilogramos para mostrar
-        const pesoActualKg = ((e.peso_actual || 0) / 1000).toFixed(2);
-        const pesoMaximoKg = ((e.peso_maximo || 0) / 1000).toFixed(2);
-        
-        // Determinar color e icono del indicador de pesa
-        let pesaIndicador = '';
-        if (e.id_estante >= 6) {
-          const pesaActiva = e.estado_pesa === true;
-          const pesaColor = pesaActiva ? 'green' : 'red';
-          const pesaIcon = pesaActiva ? 'check_circle' : 'error';
-          const pesaTexto = pesaActiva ? 'Sensor Activo' : 'Sensor Inactivo';
-          pesaIndicador = `
-            <div class="flex items-center gap-1 mt-2 text-xs">
-              <span class="material-symbols-outlined text-${pesaColor}-500" style="font-size: 16px;">${pesaIcon}</span>
-              <span class="text-${pesaColor}-600 dark:text-${pesaColor}-400 font-medium">${pesaTexto}</span>
-            </div>
-          `;
-        }
-
         contenedor.insertAdjacentHTML(
           "beforeend",
           `
           <div class="border border-${color}-400/50 bg-${color}-400/10 rounded-md p-3 animate-fadeIn">
             <div class="flex justify-between items-center mb-2">
               <span class="font-bold">Estante ${e.id_estante}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado_calculado || e.estado || 'estable'}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado}</span>
             </div>
-            <p class="text-sm mb-1">Ocupación: ${(e.ocupacion_pct || 0).toFixed(1)}%</p>
+            <p class="text-sm mb-1">Ocupación: ${e.ocupacion_pct || 0}%</p>
             <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
               <div class="bg-${color}-500 h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
             </div>
-            <p class="text-sm">Peso: ${pesoActualKg} kg / ${pesoMaximoKg} kg</p>
-            ${pesaIndicador}
+            <p class="text-sm">Peso: ${e.peso_actual} kg / ${e.peso_maximo} kg</p>
           </div>`
         );
       });
@@ -1159,7 +1310,7 @@ const WeigenceMonitor = {
   WeigenceMonitor.actualizarSVG = async function () {
     const svg = document.getElementById("svg-almacen");
       if (!svg) {
-        // SVG no presente en esta página, es normal
+        console.warn("SVG del almacén no encontrado en el DOM todavía");
         return;
       }
 
@@ -1554,51 +1705,23 @@ observer.observe(document.documentElement, { attributes: true });
 
 
 // Integrar con el resto
-if (typeof WeigenceMonitor !== 'undefined' && typeof WeigenceMonitor.actualizarTodo === 'function') {
+if (typeof WeigenceMonitor.actualizarTodo === 'function') {
   const oldUpdate = WeigenceMonitor.actualizarTodo.bind(WeigenceMonitor);
   WeigenceMonitor.actualizarTodo = async function () {
     await oldUpdate();
     this.actualizarSVG();
   };
-} else if (typeof WeigenceMonitor !== 'undefined') {
+} else {
   WeigenceMonitor.actualizarTodo = async function () {
     this.actualizarSVG();
   };
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  if (typeof WeigenceMonitor !== 'undefined') {
-    await WeigenceMonitor.init();
-    await WeigenceMonitor.actualizarSVG();
-  }
+  await WeigenceMonitor.init();
+  await WeigenceMonitor.actualizarSVG();
   await cargarAlertas();
   Inventario.init();
-  
-  // Botón de actualizar estantes
-  const btnActualizarEstantes = document.getElementById('btnActualizarEstantes');
-  if (btnActualizarEstantes) {
-    btnActualizarEstantes.addEventListener('click', async () => {
-      // Cambiar icono a loading
-      const icon = btnActualizarEstantes.querySelector('.material-symbols-outlined');
-      const originalText = icon.textContent;
-      icon.textContent = 'sync';
-      icon.classList.add('animate-spin');
-      btnActualizarEstantes.disabled = true;
-      
-      // Actualizar estantes
-      if (typeof WeigenceMonitor !== 'undefined') {
-        await WeigenceMonitor.actualizarEstantes();
-      }
-      
-      // Restaurar botón
-      setTimeout(() => {
-        icon.textContent = originalText;
-        icon.classList.remove('animate-spin');
-        btnActualizarEstantes.disabled = false;
-      }, 500);
-    });
-  }
-  
   console.info("Weigence Inventory System listo.");
 });
 

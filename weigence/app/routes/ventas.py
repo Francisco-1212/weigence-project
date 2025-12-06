@@ -343,3 +343,87 @@ def api_promedio_consumo():
     except Exception as e:
         print(f"❌ Error en api_promedio_consumo: {e}")
         return jsonify({"promedio_total": 0, "promedio_por_producto": []})
+
+
+# =============================================
+# Exportación de Ventas a Excel
+# =============================================
+
+# Endpoint registrado en __init__.py con exención CSRF
+@requiere_rol('operador', 'supervisor', 'administrador')
+def exportar_ventas_excel():
+    """Exporta ventas a Excel con formato profesional"""
+    from flask import send_file
+    from app.utils.excel_exporter import ExcelExporter
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Obtener filtros del request
+        data = request.get_json() or {}
+        filtros = data.get('filtros', {})
+        
+        # Obtener ventas desde la base de datos
+        query = supabase.table("ventas").select(
+            "id_venta, fecha_venta, rut_vendedor, total"
+        ).order("fecha_venta", desc=True)
+        
+        # Aplicar filtros de fecha si existen
+        if filtros.get('fechaDesde'):
+            query = query.gte('fecha_venta', filtros['fechaDesde'])
+        if filtros.get('fechaHasta'):
+            query = query.lte('fecha_venta', filtros['fechaHasta'])
+        
+        # Ejecutar query
+        response = query.execute()
+        ventas = response.data or []
+        
+        # Obtener detalles de ventas
+        detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data or []
+        
+        # Obtener usuarios (vendedores)
+        usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
+        usuarios_dict = {u["rut_usuario"]: u["nombre"] for u in usuarios}
+        
+        # Enriquecer datos de ventas
+        ventas_enriquecidas = []
+        for venta in ventas:
+            # Calcular productos y unidades
+            detalles = [d for d in detalle_ventas if d.get('idventa') == venta['id_venta']]
+            total_productos = len(set(d['idproducto'] for d in detalles))
+            total_unidades = sum(d.get('cantidad', 0) for d in detalles)
+            
+            ventas_enriquecidas.append({
+                'id_venta': venta['id_venta'],
+                'fecha': venta['fecha_venta'],
+                'vendedor_rut': venta['rut_vendedor'],
+                'vendedor_nombre': usuarios_dict.get(venta['rut_vendedor'], 'Desconocido'),
+                'total': venta['total'],
+                'total_productos': total_productos,
+                'total_unidades': total_unidades
+            })
+        
+        # Generar Excel
+        exporter = ExcelExporter()
+        excel_file = exporter.exportar_ventas(ventas_enriquecidas, filtros)
+        
+        # Generar nombre de archivo
+        fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'Weigence_Ventas_{fecha_actual}.xlsx'
+        
+        logger.info(f"Exportación Excel generada: {filename} ({len(ventas)} ventas)")
+        
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        logger.error(f"Error al exportar ventas a Excel: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Error al generar el archivo Excel: {str(e)}'
+        }), 500

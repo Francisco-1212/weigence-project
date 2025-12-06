@@ -955,7 +955,7 @@ function initBotonesAccion() {
   console.log('✅ Botones de acción inicializados correctamente');
 }
 
-function exportarReporteVentas() {
+async function exportarReporteVentas() {
   try {
     const ventas = Ventas.state.filteredRows;
     
@@ -964,76 +964,57 @@ function exportarReporteVentas() {
       return;
     }
 
-    // Preparar datos CSV
-    const headers = ['ID Venta', 'Fecha', 'Vendedor', 'RUT Vendedor', 'Total', 'Productos', 'Unidades'];
-    const rows = [];
+    // Mostrar notificación de carga
+    mostrarNotificacion('📊 Generando archivo Excel profesional...', 'info');
 
-    ventas.forEach(row => {
-      const idVenta = row.dataset.idventa;
-      const fecha = row.dataset.fecha;
-      const vendedorNombre = row.dataset.vendedorNombre;
-      const vendedorRut = row.dataset.vendedorRut;
-      const total = parseFloat(row.dataset.total);
-      
-      // Obtener detalles de productos
-      const ventaData = Ventas.state.detallesVentas[idVenta];
-      let totalProductos = 0;
-      let totalUnidades = 0;
-      
-      if (ventaData && ventaData.items) {
-        totalProductos = ventaData.items.length;
-        totalUnidades = ventaData.items.reduce((sum, item) => sum + (item.cantidad || 0), 0);
-      }
+    // Preparar filtros de fecha si existen
+    const filtros = {
+      fechaDesde: Ventas.state.filters?.dateStart || null,
+      fechaHasta: Ventas.state.filters?.dateEnd || null
+    };
 
-      rows.push([
-        idVenta,
-        formatearFecha(fecha),
-        vendedorNombre,
-        vendedorRut,
-        total.toFixed(2),
-        totalProductos,
-        totalUnidades
-      ]);
+    // Llamar al endpoint del backend
+    const response = await fetch('/api/ventas/exportar-excel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filtros })
     });
 
-    // Generar CSV
-    let csv = headers.join(',') + '\n';
-    rows.forEach(row => {
-      csv += row.map(cell => {
-        // Escapar comillas y envolver en comillas si contiene comas
-        const cellStr = String(cell);
-        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-          return '"' + cellStr.replace(/"/g, '""') + '"';
-        }
-        return cellStr;
-      }).join(',') + '\n';
-    });
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status}`);
+    }
 
-    // Agregar resumen al final
-    const totalGeneral = rows.reduce((sum, row) => sum + parseFloat(row[4]), 0);
-    const promedioVenta = totalGeneral / rows.length;
-    csv += '\n';
-    csv += 'RESUMEN\n';
-    csv += `Total de Ventas,${rows.length}\n`;
-    csv += `Total General,$${totalGeneral.toFixed(2)}\n`;
-    csv += `Promedio por Venta,$${promedioVenta.toFixed(2)}\n`;
-
-    // Descargar archivo
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Obtener el blob del archivo
+    const blob = await response.blob();
+    
+    // Crear URL temporal y descargar
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
+    link.href = url;
+    
+    // Nombre del archivo
     const fecha = new Date().toISOString().split('T')[0];
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_ventas_${fecha}.csv`;
+    link.download = `Weigence_Ventas_${fecha}.xlsx`;
+    
+    // Simular click para descargar
+    document.body.appendChild(link);
     link.click();
+    
+    // Limpiar
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
-    mostrarNotificacion(`Reporte exportado exitosamente: ${rows.length} ventas`, 'success');
-    console.log('✅ Reporte exportado:', rows.length, 'ventas');
+    mostrarNotificacion(`✅ Reporte de ventas exportado: ${ventas.length} registros`, 'success');
+    console.log('✅ Reporte exportado:', ventas.length, 'ventas');
+    
   } catch (error) {
     if (window.errorLogger) {
       window.errorLogger.error('Error al exportar reporte', 'ventas', '', error);
     }
     console.error('❌ Error al exportar reporte:', error);
-    mostrarNotificacion('Error al exportar el reporte', 'error');
+    mostrarNotificacion('Error al exportar el reporte. Intente nuevamente.', 'error');
   }
 }
 
