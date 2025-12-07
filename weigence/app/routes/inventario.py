@@ -56,7 +56,11 @@ def inventario():
         session['last_page'] = 'inventario'
     try:
         # === 1. Cargar productos y categorías ===
-        productos = supabase.table("productos").select("*").execute().data or []
+        # Intentar filtrar por activo=True, si no existe la columna, cargar todos
+        try:
+            productos = supabase.table("productos").select("*").eq("activo", True).execute().data or []
+        except:
+            productos = supabase.table("productos").select("*").execute().data or []
 
         estantes_catalogo = obtener_catalogo_estantes()
         categorias_map = construir_mapa_categorias(productos)
@@ -404,11 +408,24 @@ def agregar_producto():
 @bp.route("/api/productos/<int:id>", methods=["DELETE"])
 @requiere_rol('supervisor', 'administrador')
 def eliminar_producto(id):
+    # Intentar eliminación lógica primero (si existe la columna 'activo')
     try:
-        result = supabase.table("productos").delete().eq("idproducto", id).execute()
+        result = supabase.table("productos").update({"activo": False}).eq("idproducto", id).execute()
         return jsonify({"success": True, "result": result.data})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    except Exception as e1:
+        # Si falla (columna no existe), intentar eliminación física
+        try:
+            result = supabase.table("productos").delete().eq("idproducto", id).execute()
+            return jsonify({"success": True, "result": result.data})
+        except Exception as e2:
+            error_msg = str(e2)
+            # Detectar error de clave foránea
+            if '23503' in error_msg or 'foreign key constraint' in error_msg:
+                return jsonify({
+                    "success": False, 
+                    "error": "No se puede eliminar este producto porque tiene ventas registradas. Por favor, ejecuta la migración SQL para habilitar la eliminación lógica."
+                }), 400
+            return jsonify({"success": False, "error": error_msg}), 500
 
 
 @bp.route("/api/productos/editar/<int:id>", methods=["PUT"])

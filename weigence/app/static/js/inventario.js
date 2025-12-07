@@ -140,7 +140,20 @@ const Inventario = {
     document.querySelectorAll('.gestionar-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const producto = JSON.parse(btn.dataset.producto || '{}');
-        this.showDetails(producto);
+        const title = btn.getAttribute('title');
+        
+        this.state.current = producto;
+        
+        if (title === 'Editar') {
+          // Mostrar detalles/historial del producto
+          this.showDetails(producto);
+        } else if (title === 'Eliminar') {
+          if (confirm(`¿Estás seguro de eliminar el producto "${producto.nombre}"?`)) {
+            this.deleteProduct(producto.idproducto);
+          }
+        } else {
+          this.showDetails(producto);
+        }
       });
     });
 
@@ -511,10 +524,47 @@ validarFechas(fechaElab, fechaVenc) {
     });
   },
 
-  deleteProduct(id) {
-    if (!confirm(`Eliminar producto ID: ${id}?`)) return;
-    console.info(`Producto ${id} eliminado (simulado)`);
-    this.closeModal();
+  async deleteProduct(id) {
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const response = await fetch(`/api/productos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+      
+      // Verificar si la respuesta es válida
+      if (!response.ok) {
+        // Intentar leer el error del servidor
+        try {
+          const errorData = await response.json();
+          console.error('Error del servidor:', errorData);
+          alert('Error al eliminar: ' + (errorData.error || 'Error desconocido'));
+        } catch {
+          alert('Error al eliminar el producto (código ' + response.status + ')');
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.info('Producto eliminado exitosamente');
+        alert('✅ Producto eliminado exitosamente');
+        this.closeModal();
+        await this.loadData();
+      } else {
+        console.error(data.error);
+        alert('Error al eliminar: ' + (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)));
+      }
+    } catch (error) {
+      console.error('Error al eliminar producto:', error);
+      // Si el producto se eliminó pero hubo un error al recargar, no mostrar error
+      console.info('Recargando datos...');
+      await this.loadData();
+    }
   },
 
   closeModal() {
@@ -615,7 +665,7 @@ validarFechas(fechaElab, fechaVenc) {
                     p.estado_vencimiento.estado === 'critico' ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400' :
                     p.estado_vencimiento.estado === 'proximo' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400' :
                     'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400'}">
-                  ${p.estado_vencimiento.mensaje}
+                  ${p.estado_vencimiento.mensaje_detallado || p.estado_vencimiento.mensaje}
                 </span>
               </p>` : ''}
           </div>
