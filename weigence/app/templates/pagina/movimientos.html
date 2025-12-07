@@ -298,5 +298,15 @@
 </script>
 <script src="{{ url_for('static', filename='js/movimiento_inventario.js') }}"></script>
 <script src="{{ url_for('static', filename='js/movimientos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/peso_estable.js') }}"></script>
+<script>
+  // Iniciar monitoreo simple de cambios de peso
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.detectorPeso) {
+      window.detectorPeso.iniciarMonitoreo([1, 2, 3, 4, 5, 6], 15000);
+      console.log('✅ Sistema de detección de peso iniciado (cada 15s)');
+    }
+  });
+</script>
 
 {% endblock %}
