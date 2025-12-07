@@ -1036,14 +1036,15 @@ const WeigenceMonitor = {
           `
           <div class="border ${borderClass} ${bgClass} rounded-md p-3 animate-fadeIn">
             <div class="flex justify-between items-center mb-2">
-              <span class="font-bold">Estante ${e.id_estante}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-${color}-200 text-${color}-800">${e.estado_calculado || e.estado || 'estable'}</span>
+              <span class="font-bold text-neutral-900 dark:text-neutral-100">Estante ${e.id_estante}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeBgClass} ${badgeTextClass}">${badgeText}</span>
             </div>
-            <p class="text-sm mb-1">Ocupación: ${e.ocupacion_pct || 0}%</p>
+            <p class="text-sm mb-1 text-neutral-700 dark:text-neutral-300">Ocupación: ${(e.ocupacion_pct || 0).toFixed(1)}%</p>
             <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
               <div class="${barBgClass} h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
             </div>
-            <p class="text-sm">Peso: ${e.peso_actual} kg / ${e.peso_maximo} kg</p>
+            <p class="text-sm text-neutral-700 dark:text-neutral-300">Peso: ${pesoActualKg} kg / ${pesoMaximoKg} kg</p>
+            ${pesaIndicador}
           </div>`
         );
       });
