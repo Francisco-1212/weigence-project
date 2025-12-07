@@ -986,30 +986,30 @@ const WeigenceMonitor = {
         // Determinar estado (usar estado_calculado que viene del backend)
         const estado = e.estado_calculado || e.estado || 'estable';
         
-        // Definir clases CSS completas y texto del badge según el estado
-        let borderClass, bgClass, badgeBgClass, badgeTextClass, barBgClass, badgeText;
+        // Definir colores y texto según el estado
+        let borderColor, bgColor, badgeBg, badgeText, barColor, textoBadge;
         
         if (estado === 'critico') {
-          borderClass = 'border-red-400/50';
-          bgClass = 'bg-red-400/10';
-          badgeBgClass = 'bg-red-200';
-          badgeTextClass = 'text-red-800';
-          barBgClass = 'bg-red-500';
-          badgeText = 'crítico';
+          borderColor = '#fca5a5';
+          bgColor = 'rgba(248, 113, 113, 0.1)';
+          badgeBg = '#fecaca';
+          badgeText = '#991b1b';
+          barColor = '#ef4444';
+          textoBadge = 'Crítico';
         } else if (estado === 'advertencia') {
-          borderClass = 'border-yellow-400/50';
-          bgClass = 'bg-yellow-400/10';
-          badgeBgClass = 'bg-yellow-200';
-          badgeTextClass = 'text-yellow-800';
-          barBgClass = 'bg-yellow-500';
-          badgeText = 'alerta';
+          borderColor = '#fcd34d';
+          bgColor = 'rgba(250, 204, 21, 0.1)';
+          badgeBg = '#fef08a';
+          badgeText = '#854d0e';
+          barColor = '#eab308';
+          textoBadge = 'Alerta';
         } else {
-          borderClass = 'border-green-400/50';
-          bgClass = 'bg-green-400/10';
-          badgeBgClass = 'bg-green-200';
-          badgeTextClass = 'text-green-800';
-          barBgClass = 'bg-green-500';
-          badgeText = 'estable';
+          borderColor = '#86efac';
+          bgColor = 'rgba(74, 222, 128, 0.1)';
+          badgeBg = '#bbf7d0';
+          badgeText = '#166534';
+          barColor = '#22c55e';
+          textoBadge = 'Estable';
         }
 
         // Convertir gramos a kilogramos para mostrar
@@ -1020,13 +1020,14 @@ const WeigenceMonitor = {
         let pesaIndicador = '';
         if (e.id_estante >= 6) {
           const pesaActiva = e.estado_pesa === true;
-          const pesaColor = pesaActiva ? 'green' : 'red';
+          const pesaColorIcon = pesaActiva ? '#22c55e' : '#ef4444';
+          const pesaColorText = pesaActiva ? '#16a34a' : '#dc2626';
           const pesaIcon = pesaActiva ? 'check_circle' : 'error';
           const pesaTexto = pesaActiva ? 'Sensor Activo' : 'Sensor Inactivo';
           pesaIndicador = `
             <div class="flex items-center gap-1 mt-2 text-xs">
-              <span class="material-symbols-outlined text-${pesaColor}-500" style="font-size: 16px;">${pesaIcon}</span>
-              <span class="text-${pesaColor}-600 dark:text-${pesaColor}-400 font-medium">${pesaTexto}</span>
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${pesaColorIcon};">${pesaIcon}</span>
+              <span class="font-medium" style="color: ${pesaColorText};">${pesaTexto}</span>
             </div>
           `;
         }
@@ -1034,14 +1035,14 @@ const WeigenceMonitor = {
         contenedor.insertAdjacentHTML(
           "beforeend",
           `
-          <div class="border ${borderClass} ${bgClass} rounded-md p-3 animate-fadeIn">
+          <div class="border rounded-md p-3 animate-fadeIn" style="border-color: ${borderColor}; background-color: ${bgColor};">
             <div class="flex justify-between items-center mb-2">
               <span class="font-bold text-neutral-900 dark:text-neutral-100">Estante ${e.id_estante}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeBgClass} ${badgeTextClass}">${badgeText}</span>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background-color: ${badgeBg}; color: ${badgeText};">${textoBadge}</span>
             </div>
             <p class="text-sm mb-1 text-neutral-700 dark:text-neutral-300">Ocupación: ${(e.ocupacion_pct || 0).toFixed(1)}%</p>
             <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-              <div class="${barBgClass} h-2.5 rounded-full" style="width:${Math.min(e.ocupacion_pct || 0, 100)}%"></div>
+              <div class="h-2.5 rounded-full transition-all duration-300" style="width: ${Math.min(e.ocupacion_pct || 0, 100)}%; background-color: ${barColor};"></div>
             </div>
             <p class="text-sm text-neutral-700 dark:text-neutral-300">Peso: ${pesoActualKg} kg / ${pesoMaximoKg} kg</p>
             ${pesaIndicador}
