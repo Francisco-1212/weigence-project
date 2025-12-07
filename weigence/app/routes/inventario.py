@@ -94,7 +94,12 @@ def inventario():
 
         if productos_a_actualizar:
             try:
-                supabase.table("productos").upsert(productos_a_actualizar).execute()
+                # Actualizar cada producto individualmente para evitar problemas con campos NOT NULL
+                for prod_update in productos_a_actualizar:
+                    supabase.table("productos") \
+                        .update({"id_estante": prod_update["id_estante"]}) \
+                        .eq("idproducto", prod_update["idproducto"]) \
+                        .execute()
             except Exception as err:
                 print(f"Advertencia al sincronizar id_estante de productos: {err}")
 

@@ -72,9 +72,21 @@ class AdvancedMLInsights:
         """Detecta estantes con capacidad excedida o productos sin stock."""
         try:
             # Productos sin stock o con stock bajo
-            response = self.supabase.table('productos') \
-                .select('nombre, stock, id_estante') \
-                .execute()
+            try:
+                response = self.supabase.table('productos') \
+                    .select('nombre, stock, id_estante') \
+                    .limit(200) \
+                    .execute()
+            except Exception as conn_err:
+                logger.warning(f"Error de conexión en productos: {conn_err}")
+                return {
+                    'without_stock': [],
+                    'below_min': [],
+                    'below_minimum': [],
+                    'above_max': [],
+                    'shelves_exceeded': [],
+                    'total_issues': 0
+                }
             
             products_without_stock = []
             products_below_min = []
@@ -97,16 +109,26 @@ class AdvancedMLInsights:
                         })
             
             # Estantes con peso excedido - CALCULAR PESO REAL desde productos
-            estantes_response = self.supabase.table('estantes') \
-                .select('id_estante, nombre, peso_maximo') \
-                .execute()
-            
             shelves_exceeded = []
+            try:
+                estantes_response = self.supabase.table('estantes') \
+                    .select('id_estante, nombre, peso_maximo') \
+                    .limit(50) \
+                    .execute()
+            except Exception as est_err:
+                logger.warning(f"Error consultando estantes: {est_err}")
+                estantes_response = type('obj', (object,), {'data': None})
+            
             if estantes_response.data:
                 # Obtener productos por estante para calcular peso real
-                productos_response = self.supabase.table('productos') \
-                    .select('id_estante, peso, stock') \
-                    .execute()
+                try:
+                    productos_response = self.supabase.table('productos') \
+                        .select('id_estante, peso, stock') \
+                        .limit(200) \
+                        .execute()
+                except Exception as prod_err:
+                    logger.warning(f"Error consultando productos para peso: {prod_err}")
+                    productos_response = type('obj', (object,), {'data': None})
                 
                 # Calcular peso actual por estante
                 peso_por_estante = {}
