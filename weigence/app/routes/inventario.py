@@ -587,8 +587,8 @@ def actualizar_stock(id):
 @requiere_rol('operador', 'supervisor', 'administrador')
 def estantes_estado():
     try:
-        # Consultar directamente la tabla estantes
-        estantes = supabase.table("estantes").select("*").execute().data or []
+        # Consultar directamente la tabla estantes (limitado a 10 estantes, ordenados)
+        estantes = supabase.table("estantes").select("*").order("id_estante").limit(10).execute().data or []
         
         # Calcular el estado y ocupación para cada estante
         resultado = []
@@ -631,6 +631,66 @@ def estantes_estado():
                 'ocupacion_pct': round(ocupacion_pct, 2),
                 'estado_pesa': estado_pesa
             })
+            
+            # Si el estante está estable, resolver alertas previas
+            if estado_calculado == 'estable':
+                try:
+                    # Resolver alertas de este estante que estén pendientes
+                    supabase.table("alertas").update({
+                        "estado": "resuelto"
+                    }).eq("id_estante", id_estante).in_("estado", ["pendiente", "activo"]).execute()
+                except Exception as resolve_err:
+                    print(f"[ERROR] Error al resolver alertas del estante {id_estante}: {resolve_err}")
+            
+            # Generar alertas para estantes críticos (>=90% ocupación)
+            if estado_calculado == 'critico':
+                try:
+                    titulo_alerta = f"Estante {id_estante} lleno"
+                    existentes = supabase.table("alertas").select("id").eq("titulo", titulo_alerta).in_("estado", ["pendiente", "activo"]).execute().data or []
+                    
+                    if not existentes:
+                        print(f"[ALERTA] Creando alerta crítica para estante {id_estante} ({round(ocupacion_pct, 1)}%)")
+                        resultado_insert = supabase.table("alertas").insert({
+                            "titulo": titulo_alerta,
+                            "descripcion": f"El estante {id_estante} está al {round(ocupacion_pct, 1)}% de su capacidad. Se requiere reorganización urgente.",
+                            "icono": "warning",
+                            "tipo_color": "rojo",
+                            "estado": "activo",
+                            "fecha_creacion": datetime.now().isoformat(),
+                            "id_estante": id_estante,
+                            "idusuario": None,
+                            "idproducto": None
+                        }).execute()
+                        print(f"[ALERTA] Alerta crítica creada: {resultado_insert.data}")
+                    else:
+                        print(f"[ALERTA] Ya existe alerta crítica para estante {id_estante}")
+                except Exception as alert_err:
+                    print(f"[ERROR] Error al crear alerta de estante lleno: {alert_err}")
+            
+            # Generar alertas para estantes en advertencia (>=70% ocupación)
+            elif estado_calculado == 'advertencia':
+                try:
+                    titulo_alerta = f"Estante {id_estante} por llenarse"
+                    existentes = supabase.table("alertas").select("id").eq("titulo", titulo_alerta).in_("estado", ["pendiente", "activo"]).execute().data or []
+                    
+                    if not existentes:
+                        print(f"[ALERTA] Creando alerta de advertencia para estante {id_estante} ({round(ocupacion_pct, 1)}%)")
+                        resultado_insert = supabase.table("alertas").insert({
+                            "titulo": titulo_alerta,
+                            "descripcion": f"El estante {id_estante} está al {round(ocupacion_pct, 1)}% de su capacidad. Considere reorganizar productos.",
+                            "icono": "info",
+                            "tipo_color": "amarilla",
+                            "estado": "activo",
+                            "fecha_creacion": datetime.now().isoformat(),
+                            "id_estante": id_estante,
+                            "idusuario": None,
+                            "idproducto": None
+                        }).execute()
+                        print(f"[ALERTA] Alerta de advertencia creada: {resultado_insert.data}")
+                    else:
+                        print(f"[ALERTA] Ya existe alerta de advertencia para estante {id_estante}")
+                except Exception as alert_err:
+                    print(f"[ERROR] Error al crear alerta de advertencia: {alert_err}")
             
             # Generar alerta si la pesa está inactiva (solo para estante 6+)
             if id_estante >= 6 and estado_pesa == False:
@@ -688,6 +748,61 @@ def alertas_activas():
         logger = logging.getLogger(__name__)
         logger.error(f"Error en /api/alertas_activas: {e}")
         return jsonify({"error": "Error al obtener alertas", "success": False}), 500
+
+# ------------------------------------------------------------
+# Endpoint de debug para verificar alertas de estantes
+# ------------------------------------------------------------
+@bp.route("/api/debug/alertas_estantes")
+@requiere_rol('operador', 'supervisor', 'administrador')
+def debug_alertas_estantes():
+    try:
+        # Obtener todas las alertas de estantes
+        alertas = supabase.table("alertas").select("*").like("titulo", "%Estante%").order("fecha_creacion", desc=True).execute().data or []
+        return jsonify({
+            "total": len(alertas),
+            "alertas": alertas
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------------------------------------------------
+# Limpiar alertas de productos inexistentes
+# ------------------------------------------------------------
+@bp.route("/api/limpiar_alertas_huerfanas")
+@requiere_rol('operador', 'supervisor', 'administrador')
+def limpiar_alertas_huerfanas():
+    try:
+        # Obtener productos activos
+        try:
+            productos = supabase.table("productos").select("idproducto, nombre").eq("activo", True).execute().data or []
+        except:
+            productos = supabase.table("productos").select("idproducto, nombre").execute().data or []
+        
+        ids_activos = {p["idproducto"] for p in productos}
+        nombres_activos = {p["nombre"].lower() for p in productos}
+        
+        # Obtener alertas con idproducto
+        alertas = supabase.table("alertas").select("*").not_.is_("idproducto", "null").in_("estado", ["pendiente", "activo"]).execute().data or []
+        
+        resueltas = 0
+        for alerta in alertas:
+            id_prod = alerta.get("idproducto")
+            titulo = alerta.get("titulo", "").lower()
+            
+            # Verificar si el producto existe
+            if id_prod not in ids_activos:
+                # Resolver alerta
+                supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alerta["id"]).execute()
+                resueltas += 1
+                print(f"[LIMPIEZA] Resuelta: {alerta.get('titulo')}")
+        
+        return jsonify({
+            "success": True,
+            "alertas_resueltas": resueltas,
+            "message": f"Se resolvieron {resueltas} alertas de productos inexistentes"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ------------------------------------------------------------

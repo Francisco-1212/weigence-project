@@ -80,16 +80,32 @@ def generar_alertas_basicas():
     - Marca pendiente si el stock esta bajo o agotado.
     - Marca resuelto si el producto vuelve a stock normal (>5).
     - Crea alertas de vencimiento basado en fecha_ingreso.
+    - Solo procesa productos activos (activo=True o sin columna activo).
     """
     try:
         nuevas = []
         fecha_hoy = datetime.now()
 
-        existentes = supabase.table("alertas").select("id, titulo, estado").execute().data or []
+        existentes = supabase.table("alertas").select("id, titulo, estado, idproducto").execute().data or []
         titulos_activos = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "pendiente"}
         titulos_resueltos = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "resuelto"}
 
-        productos = supabase.table("productos").select("idproducto, nombre, stock, fecha_ingreso").execute().data or []
+        # Obtener solo productos activos
+        try:
+            productos = supabase.table("productos").select("idproducto, nombre, stock, fecha_ingreso, activo").eq("activo", True).execute().data or []
+        except:
+            # Si la columna activo no existe, obtener todos
+            productos = supabase.table("productos").select("idproducto, nombre, stock, fecha_ingreso").execute().data or []
+        
+        # Obtener IDs de productos activos
+        ids_productos_activos = {p.get("idproducto") for p in productos}
+        
+        # Resolver alertas de productos que ya no existen o están inactivos
+        for alerta in existentes:
+            id_prod = alerta.get("idproducto")
+            if id_prod and id_prod not in ids_productos_activos and alerta.get("estado") in ["pendiente", "activo"]:
+                supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alerta["id"]).execute()
+                print(f"[ALERTA] Resuelta alerta de producto inexistente/inactivo: {alerta.get('titulo')}")
 
         for p in productos:
             nombre = p.get("nombre", "Producto sin nombre")

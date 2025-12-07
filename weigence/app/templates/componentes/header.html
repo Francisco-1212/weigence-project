@@ -182,7 +182,7 @@
                         </div>
                       {% endif %}
 
-                      <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ notif.fecha_creacion or notif.timestamp or notif.fecha_formateada }}</p>
+                      <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ notif.fecha_formateada or notif.fecha_creacion or notif.timestamp }}</p>
                     </div>
 
                     {% if notif.tipo_color == 'rojo' %}

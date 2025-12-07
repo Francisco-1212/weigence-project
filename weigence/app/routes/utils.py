@@ -85,17 +85,76 @@ def obtener_notificaciones(usuario_id=None):
         except Exception as err:
             print(f"Advertencia: no se pudieron regenerar alertas automáticamente ({err})")
 
-        # === 2) Leer alertas desde Supabase ===
+        # === 2) Obtener productos activos primero ===
+        try:
+            productos_activos = supabase.table("productos").select("idproducto, nombre").eq("activo", True).execute().data or []
+        except:
+            productos_activos = supabase.table("productos").select("idproducto, nombre").execute().data or []
+        
+        ids_activos = {p["idproducto"] for p in productos_activos}
+        nombres_activos = {p["nombre"].lower() for p in productos_activos}
+        
+        print(f"[DEBUG] Productos activos: {len(ids_activos)}")
+        
+        # === 3) Leer alertas desde Supabase ===
         query = (
             supabase.table("alertas")
             .select("*")
-            .neq("estado", "descartada")
+            .in_("estado", ["pendiente", "activo"])
             .order("fecha_creacion", desc=True)
         )
-        data = query.limit(30).execute()
-        alertas = data.data or []
+        data = query.limit(50).execute()
+        alertas_raw = data.data or []
+        
+        print(f"[DEBUG] Alertas obtenidas: {len(alertas_raw)}")
+        
+        # === 4) Filtrar y resolver alertas de productos inexistentes ===
+        alertas = []
+        alertas_a_resolver = []
+        
+        for a in alertas_raw:
+            id_prod = a.get("idproducto")
+            titulo = a.get("titulo", "")
+            
+            # Si la alerta tiene idproducto, verificar que el producto existe
+            if id_prod:
+                if id_prod not in ids_activos:
+                    # Marcar para resolver
+                    alertas_a_resolver.append(a["id"])
+                    print(f"[FILTRO] Alerta descartada (producto inexistente): {titulo}")
+                    continue
+            
+            # Si el título menciona un producto específico, verificar que existe
+            titulo_lower = titulo.lower()
+            if any(palabra in titulo_lower for palabra in ["vencer", "vencido", "stock", "agotado"]):
+                # Extraer nombre del producto del título
+                encontrado = False
+                for nombre in nombres_activos:
+                    if nombre in titulo_lower:
+                        encontrado = True
+                        break
+                
+                if not encontrado and id_prod:
+                    # El producto mencionado no existe
+                    alertas_a_resolver.append(a["id"])
+                    print(f"[FILTRO] Alerta descartada (nombre no encontrado): {titulo}")
+                    continue
+            
+            # Alerta válida
+            alertas.append(a)
+        
+        # Resolver alertas inválidas en batch
+        if alertas_a_resolver:
+            try:
+                for alert_id in alertas_a_resolver:
+                    supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alert_id).execute()
+                print(f"[LIMPIEZA] {len(alertas_a_resolver)} alertas resueltas automáticamente")
+            except Exception as resolve_err:
+                print(f"[ERROR] Error al resolver alertas: {resolve_err}")
+        
+        print(f"[DEBUG] Alertas válidas: {len(alertas)}")
 
-        # === 3) Alerta dinámica: productos sin pesaje en 7 días ===
+        # === 5) Alerta dinámica: productos sin pesaje en 7 días ===
         hoy = datetime.now()
         hace_7d = (hoy - timedelta(days=7)).isoformat()
 
@@ -123,9 +182,21 @@ def obtener_notificaciones(usuario_id=None):
                 "fecha_creacion": hoy.isoformat(),
             }
             if not any(a.get("id") == alerta_sint["id"] for a in alertas):
-                alertas.insert(0, alerta_sint)
+                # Agregar al final en lugar de al principio para que las alertas críticas aparezcan primero
+                alertas.append(alerta_sint)
 
-        # === 4) Agrupar por fecha para el header ===
+        # === 6) Ordenar alertas por fecha (más recientes primero) ===
+        def obtener_timestamp(alerta):
+            try:
+                fecha = alerta.get("fecha_creacion") or hoy.isoformat()
+                return datetime.fromisoformat(str(fecha).split(".")[0]).timestamp()
+            except:
+                return 0
+        
+        # Ordenar por fecha descendente (más recientes primero)
+        alertas = sorted(alertas, key=lambda a: obtener_timestamp(a), reverse=True)
+
+        # === 7) Agrupar por fecha para el header y formatear fechas ===
         hoy_d = datetime.now().date()
         ayer_d = hoy_d - timedelta(days=1)
         grupos = defaultdict(list)
@@ -133,13 +204,17 @@ def obtener_notificaciones(usuario_id=None):
         for a in alertas:
             f_raw = a.get("fecha_creacion") or a.get("timestamp")
             try:
-                f = (
-                    datetime.fromisoformat(str(f_raw).split(".")[0]).date()
+                f_dt = (
+                    datetime.fromisoformat(str(f_raw).split(".")[0])
                     if f_raw
-                    else hoy_d
+                    else datetime.now()
                 )
+                f = f_dt.date()
+                # Formatear fecha como "HH:MM:SS - DD/MM/YYYY"
+                a["fecha_formateada"] = f_dt.strftime("%H:%M:%S - %d/%m/%Y")
             except Exception:
                 f = hoy_d
+                a["fecha_formateada"] = datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
 
             if f == hoy_d:
                 grupos["Hoy"].append(a)

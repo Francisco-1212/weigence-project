@@ -91,5 +91,48 @@ document.addEventListener('DOMContentLoaded', () => {
       })
         .catch(()=>{});
     });
+    // Actualizar badge
+    actualizarBadgeNotificaciones();
   });
+  
+  // Función para actualizar el badge de notificaciones
+  window.actualizarBadgeNotificaciones = function() {
+    fetch('/api/notificaciones', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        const count = data.length || 0;
+        const badge = document.querySelector('.badge-count');
+        const badgeNotif = document.querySelector('.badge-notif');
+        
+        if (count > 0) {
+          if (badge) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+          }
+          if (badgeNotif) {
+            badgeNotif.textContent = count;
+          }
+        } else {
+          if (badge) badge.classList.add('hidden');
+          if (badgeNotif) badgeNotif.textContent = '0';
+        }
+      })
+      .catch(err => console.error('Error actualizando badge:', err));
+  };
+  
+  // Función para recargar el panel de notificaciones
+  window.recargarPanelNotificaciones = function() {
+    // Recargar la página solo si el panel está abierto
+    const panel = document.getElementById('notification-panel');
+    if (panel && !panel.classList.contains('translate-x-full')) {
+      // Panel abierto - recargar solo el contenido
+      location.reload();
+    } else {
+      // Panel cerrado - solo actualizar badge
+      actualizarBadgeNotificaciones();
+    }
+  };
+  
+  // Actualizar badge cada 15 segundos
+  setInterval(actualizarBadgeNotificaciones, 15000);
 });

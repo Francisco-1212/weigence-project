@@ -956,6 +956,26 @@ const WeigenceMonitor = {
   async init() {
     await this.actualizarTodo();
     setInterval(() => this.actualizarTodo(), 60000); // refresco cada 60 s
+    
+    // Iniciar actualización automática de alertas
+    this.iniciarActualizacionAutomatica();
+    
+    // Evento del botón actualizar
+    const btnActualizar = document.querySelector('#btnActualizarEstantes');
+    if (btnActualizar) {
+      btnActualizar.addEventListener('click', async () => {
+        btnActualizar.disabled = true;
+        btnActualizar.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">refresh</span> Actualizando...';
+        await this.actualizarEstantes();
+        await this.actualizarAlertas();
+        // Actualizar badge de notificaciones
+        if (window.actualizarBadgeNotificaciones) {
+          window.actualizarBadgeNotificaciones();
+        }
+        btnActualizar.disabled = false;
+        btnActualizar.innerHTML = '<span class="material-symbols-outlined text-base">refresh</span> Actualizar';
+      });
+    }
   },
 
   async actualizarTodo() {
@@ -966,10 +986,25 @@ const WeigenceMonitor = {
 
   // -------------------- 1. Monitoreo de estantes --------------------
   async actualizarEstantes() {
+    const contenedor = document.querySelector("#monitoreo-estantes");
+    if (!contenedor) return;
+    
     try {
-      const res = await fetch("/api/estantes_estado");
+      // Mostrar indicador de carga
+      contenedor.innerHTML = '<div class="col-span-full text-center py-4 text-neutral-500"><span class="material-symbols-outlined animate-spin">refresh</span> Cargando estantes...</div>';
+      
+      // Agregar timeout de 5 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const res = await fetch("/api/estantes_estado", { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       let data = await res.json();
-      if (!Array.isArray(data)) return;
+      if (!Array.isArray(data)) {
+        contenedor.innerHTML = '<div class="col-span-full text-center py-4 text-red-500">Error al cargar estantes</div>';
+        return;
+      }
       
       // Ordenar estantes numéricamente por id_estante (1, 2, 3, 4, 5, 6)
       data = data.sort((a, b) => {
@@ -978,8 +1013,8 @@ const WeigenceMonitor = {
         return numA - numB;
       });
 
-      const contenedor = document.querySelector("#monitoreo-estantes");
-      if (!contenedor) return;
+      // Las alertas de estantes se crean automáticamente en el backend
+      // y aparecen en el panel de notificaciones del header
       contenedor.innerHTML = "";
 
       data.forEach(e => {
@@ -1051,18 +1086,30 @@ const WeigenceMonitor = {
       });
     } catch (err) {
       console.error("Error monitoreo estantes:", err);
+      if (err.name === 'AbortError') {
+        contenedor.innerHTML = '<div class="col-span-full text-center py-4 text-yellow-600">⏱️ Tiempo de espera agotado. <button onclick="WeigenceMonitor.actualizarEstantes()" class="underline">Reintentar</button></div>';
+      } else {
+        contenedor.innerHTML = '<div class="col-span-full text-center py-4 text-red-500">❌ Error al cargar estantes</div>';
+      }
     }
   },
 
   // -------------------- 2. Alertas y acciones sugeridas --------------------
   async actualizarAlertas() {
     try {
-      const res = await fetch("/api/alertas_activas");
+      const res = await fetch("/api/alertas_activas", { cache: 'no-store' });
       const data = await res.json();
       if (!Array.isArray(data)) return;
 
       const cont = document.querySelector("#alertas-sugeridas");
       if (!cont) return;
+      
+      // Solo actualizar si hay cambios
+      const currentIds = Array.from(cont.querySelectorAll('[data-id]')).map(el => el.dataset.id).join(',');
+      const newIds = data.slice(0, 3).map(a => a.id).join(',');
+      
+      if (currentIds === newIds) return; // No hay cambios
+      
       cont.innerHTML = "";
 
       data.slice(0, 3).forEach(a => {
@@ -1101,10 +1148,22 @@ const WeigenceMonitor = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: "resuelto" }),
       });
+      // Actualizar alertas y notificaciones
       this.actualizarAlertas();
+      if (window.actualizarBadgeNotificaciones) {
+        window.actualizarBadgeNotificaciones();
+      }
     } catch (e) {
       console.error("Error resolviendo alerta:", e);
     }
+  },
+  
+  // Inicializar actualización automática de alertas
+  iniciarActualizacionAutomatica() {
+    // Actualizar alertas cada 30 segundos
+    setInterval(() => {
+      this.actualizarAlertas();
+    }, 30000);
   },
 
   // -------------------- 3. Proyección de consumo --------------------
