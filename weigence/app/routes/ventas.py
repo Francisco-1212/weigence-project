@@ -356,18 +356,21 @@ def exportar_ventas_excel():
     from flask import send_file
     from app.utils.excel_exporter import ExcelExporter
     import logging
+    import traceback
     
     logger = logging.getLogger(__name__)
     
     try:
+        print("🔵 [BACKEND] Iniciando exportación de ventas...")
+        
         # Obtener filtros del request
         data = request.get_json() or {}
         filtros = data.get('filtros', {})
+        print(f"🔵 [BACKEND] Filtros recibidos: {filtros}")
         
         # Obtener ventas desde la base de datos
-        query = supabase.table("ventas").select(
-            "id_venta, fecha_venta, rut_vendedor, total"
-        ).order("fecha_venta", desc=True)
+        print("🔵 [BACKEND] Consultando ventas...")
+        query = supabase.table("ventas").select("*").order("fecha_venta", desc=True)
         
         # Aplicar filtros de fecha si existen
         if filtros.get('fechaDesde'):
@@ -378,35 +381,116 @@ def exportar_ventas_excel():
         # Ejecutar query
         response = query.execute()
         ventas = response.data or []
+        print(f"🔵 [BACKEND] Ventas obtenidas: {len(ventas)}")
         
-        # Obtener detalles de ventas
-        detalle_ventas = supabase.table("detalle_ventas").select("*").execute().data or []
+        if len(ventas) == 0:
+            print("⚠️ [BACKEND] No hay ventas para exportar")
+            return jsonify({
+                'success': False,
+                'message': 'No hay ventas registradas para exportar'
+            }), 404
         
         # Obtener usuarios (vendedores)
+        print("🔵 [BACKEND] Obteniendo información de vendedores...")
         usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
         usuarios_dict = {u["rut_usuario"]: u["nombre"] for u in usuarios}
+        print(f"🔵 [BACKEND] Vendedores encontrados: {len(usuarios_dict)}")
+        
+        # Debug: Imprimir estructura de la primera venta
+        if ventas and len(ventas) > 0:
+            print(f"🔵 [BACKEND] Estructura de venta ejemplo: {list(ventas[0].keys())}")
+            print(f"🔵 [BACKEND] Primera venta completa: {ventas[0]}")
+            print(f"🔵 [BACKEND] Usuarios disponibles: {list(usuarios_dict.keys())[:5]}")
         
         # Enriquecer datos de ventas
+        print("🔵 [BACKEND] Enriqueciendo datos de ventas...")
         ventas_enriquecidas = []
-        for venta in ventas:
-            # Calcular productos y unidades
-            detalles = [d for d in detalle_ventas if d.get('idventa') == venta['id_venta']]
-            total_productos = len(set(d['idproducto'] for d in detalles))
-            total_unidades = sum(d.get('cantidad', 0) for d in detalles)
+        
+        for idx, venta in enumerate(ventas, 1):
+            if idx % 10 == 0:
+                print(f"🔵 [BACKEND] Procesando venta {idx}/{len(ventas)}...")
+            
+            # Obtener ID de venta (puede ser 'id_venta' o 'idventa')
+            id_venta = venta.get('id_venta') or venta.get('idventa')
+            
+            # IMPORTANTE: Las ventas se guardan con 'rut_usuario', no 'rut_vendedor'
+            rut_vendedor = (venta.get('rut_usuario') or      # Este es el campo correcto
+                           venta.get('rut_vendedor') or 
+                           venta.get('rutvendedor') or 
+                           venta.get('rutusuario') or 
+                           venta.get('rut') or 
+                           venta.get('vendedor_rut'))
+            
+            if idx == 1:
+                print(f"🔵 [BACKEND] Debug venta 1 - Campos disponibles: {list(venta.keys())}")
+                print(f"🔵 [BACKEND] Debug venta 1 - RUT Usuario: '{venta.get('rut_usuario')}'")
+                print(f"🔵 [BACKEND] Debug venta 1 - RUT encontrado: '{rut_vendedor}'")
+            
+            # Obtener detalles de esta venta específica
+            total_productos = 0
+            total_unidades = 0
+            productos_nombres = []
+            
+            try:
+                detalle_response = supabase.table("detalle_ventas").select("*, productos(nombre)").eq('idventa', id_venta).execute()
+                detalles = detalle_response.data or []
+                
+                if detalles:
+                    print(f"🔵 [BACKEND] Venta {id_venta}: {len(detalles)} detalles encontrados")
+                    productos_unicos = {}
+                    for d in detalles:
+                        id_producto = d.get('idproducto')
+                        if id_producto:
+                            productos_unicos[id_producto] = d.get('productos', {}).get('nombre', f'Producto {id_producto}')
+                        total_unidades += d.get('cantidad', 0)
+                    total_productos = len(productos_unicos)
+                    productos_nombres = list(productos_unicos.values())
+                else:
+                    print(f"⚠️ [BACKEND] Venta {id_venta}: Sin detalles encontrados")
+            except Exception as e:
+                print(f"⚠️ [BACKEND] Error obteniendo detalles de venta {id_venta}: {e}")
+            
+            # Buscar el nombre del vendedor
+            vendedor_nombre = usuarios_dict.get(rut_vendedor, None)
+            
+            # Si no se encuentra por RUT exacto, intentar buscar sin guión
+            if not vendedor_nombre and rut_vendedor:
+                rut_sin_guion = str(rut_vendedor).replace('-', '')
+                for rut_key, nombre in usuarios_dict.items():
+                    if str(rut_key).replace('-', '') == rut_sin_guion:
+                        vendedor_nombre = nombre
+                        rut_vendedor = rut_key  # Actualizar con el formato correcto
+                        break
+            
+            if not vendedor_nombre:
+                vendedor_nombre = 'Desconocido'
+            
+            # Si aún no hay RUT, marcar como N/A
+            if not rut_vendedor:
+                rut_vendedor = 'N/A'
             
             ventas_enriquecidas.append({
-                'id_venta': venta['id_venta'],
-                'fecha': venta['fecha_venta'],
-                'vendedor_rut': venta['rut_vendedor'],
-                'vendedor_nombre': usuarios_dict.get(venta['rut_vendedor'], 'Desconocido'),
-                'total': venta['total'],
+                'id_venta': id_venta or '',
+                'fecha': venta.get('fecha_venta', ''),
+                'vendedor_rut': rut_vendedor,
+                'vendedor_nombre': vendedor_nombre,
+                'total': venta.get('total', 0),
                 'total_productos': total_productos,
-                'total_unidades': total_unidades
+                'total_unidades': total_unidades,
+                'productos': ', '.join(productos_nombres[:3]) + ('...' if len(productos_nombres) > 3 else '')
             })
+            
+            if idx == 1:
+                print(f"🔵 [BACKEND] Ejemplo de venta enriquecida: {ventas_enriquecidas[0]}")
+                print(f"🔵 [BACKEND] RUT final: '{rut_vendedor}', Nombre: '{vendedor_nombre}'")
+        
+        print(f"🔵 [BACKEND] Ventas enriquecidas: {len(ventas_enriquecidas)} registros")
         
         # Generar Excel
+        print("🔵 [BACKEND] Generando archivo Excel...")
         exporter = ExcelExporter()
         excel_file = exporter.exportar_ventas(ventas_enriquecidas, filtros)
+        print(f"✅ [BACKEND] Excel generado exitosamente")
         
         # Generar nombre de archivo
         fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -414,6 +498,7 @@ def exportar_ventas_excel():
         
         logger.info(f"Exportación Excel generada: {filename} ({len(ventas)} ventas)")
         
+        print(f"🔵 [BACKEND] Enviando archivo: {filename}")
         return send_file(
             excel_file,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -422,6 +507,11 @@ def exportar_ventas_excel():
         )
         
     except Exception as e:
+        print(f"❌ [BACKEND] Error al exportar ventas:")
+        print(f"❌ [BACKEND] {type(e).__name__}: {str(e)}")
+        print(f"❌ [BACKEND] Traceback:")
+        traceback.print_exc()
+        
         logger.error(f"Error al exportar ventas a Excel: {e}", exc_info=True)
         return jsonify({
             'success': False,

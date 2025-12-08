@@ -640,9 +640,18 @@
   // 🎯 Filtrar y mostrar hallazgos por severidad
   function filtrarPorSeveridad(severity) {
     state.currentFilter = severity;
-    state.filteredHallazgos = elements.mlHallazgos.filter(h => h.ml_severity === severity);
     
-    console.log(`[IA-CARD] Filtrando por ${severity}:`, state.filteredHallazgos.length, 'hallazgos');
+    // Filtrar por severidad Y por módulo si hay filtro activo
+    let hallazgosFiltrados = elements.mlHallazgos.filter(h => h.ml_severity === severity);
+    
+    // Aplicar filtro de módulo si está activo
+    if (state.filterModule) {
+      hallazgosFiltrados = hallazgosFiltrados.filter(h => h.modulo === state.filterModule);
+    }
+    
+    state.filteredHallazgos = hallazgosFiltrados;
+    
+    console.log(`[IA-CARD] Filtrando por ${severity}${state.filterModule ? ' en módulo ' + state.filterModule : ''}:`, state.filteredHallazgos.length, 'hallazgos');
     
     if (state.filteredHallazgos.length > 0) {
       // Actualizar breadcrumb
@@ -653,6 +662,9 @@
       
       mostrarVista('detail');
       mostrarHallazgoFiltrado(0);
+    } else {
+      // Si no hay hallazgos con esos filtros, mostrar mensaje
+      console.warn(`[IA-CARD] No se encontraron hallazgos con severidad ${severity}${state.filterModule ? ' en módulo ' + state.filterModule : ''}`);
     }
   }
 

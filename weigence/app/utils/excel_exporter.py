@@ -385,8 +385,8 @@ class ExcelExporter:
             filtros
         )
         
-        # Encabezados de columnas
-        headers = ['ID Venta', 'Fecha', 'Vendedor', 'RUT Vendedor', 'Total ($)', 'Productos', 'Unidades Totales']
+        # Encabezados de columnas - Ahora con columna de productos comprados
+        headers = ['ID Venta', 'Fecha', 'Vendedor', 'RUT Vendedor', 'Productos Comprados', 'Total ($)', 'N° Productos', 'Unidades']
         for col_num, header in enumerate(headers, 1):
             cell = self.ws.cell(row=row, column=col_num)
             cell.value = header
@@ -400,7 +400,8 @@ class ExcelExporter:
             
             # ID Venta
             cell = self.ws.cell(row=row, column=1)
-            cell.value = venta.get('id_venta', '')
+            id_venta = venta.get('id_venta', '')
+            cell.value = str(id_venta) if id_venta else 'N/A'
             self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='center', vertical='center')
             
@@ -414,38 +415,50 @@ class ExcelExporter:
                 except:
                     cell.value = fecha_valor
             else:
-                cell.value = fecha_valor
+                cell.value = str(fecha_valor) if fecha_valor else 'N/A'
             self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='center', vertical='center')
             
             # Vendedor
             cell = self.ws.cell(row=row, column=3)
-            cell.value = venta.get('vendedor_nombre', '')
+            vendedor_nombre = venta.get('vendedor_nombre', 'Desconocido')
+            cell.value = str(vendedor_nombre) if vendedor_nombre else 'Desconocido'
             self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
             
             # RUT Vendedor
             cell = self.ws.cell(row=row, column=4)
-            cell.value = venta.get('vendedor_rut', '')
+            rut_vendedor = venta.get('vendedor_rut', '')
+            cell.value = str(rut_vendedor) if rut_vendedor else 'N/A'
             self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='center', vertical='center')
             
-            # Total
+            # Productos Comprados
             cell = self.ws.cell(row=row, column=5)
+            productos = venta.get('productos', 'Sin detalles')
+            cell.value = str(productos) if productos else 'Sin detalles'
+            self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
+            cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            
+            # Total
+            cell = self.ws.cell(row=row, column=6)
             total = venta.get('total', 0)
-            cell.value = float(total)
+            try:
+                cell.value = float(total) if total else 0
+            except (ValueError, TypeError):
+                cell.value = 0
             cell.number_format = '$#,##0.00'
             self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='right', vertical='center')
             
-            # Productos
-            cell = self.ws.cell(row=row, column=6)
-            cell.value = venta.get('total_productos', 0)
+            # N° Productos
+            cell = self.ws.cell(row=row, column=7)
+            cell.value = int(venta.get('total_productos', 0))
             self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='center', vertical='center')
             
             # Unidades
-            cell = self.ws.cell(row=row, column=7)
-            cell.value = venta.get('total_unidades', 0)
+            cell = self.ws.cell(row=row, column=8)
+            cell.value = int(venta.get('total_unidades', 0))
             self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
             cell.alignment = Alignment(horizontal='center', vertical='center')
             

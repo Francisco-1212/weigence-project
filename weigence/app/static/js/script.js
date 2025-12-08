@@ -281,23 +281,174 @@ const topSales = [
             }
         });
 
+// Función auxiliar para exportar archivos
+async function exportarArchivo(url, nombre) {
+  try {
+    // Mostrar indicador de carga
+    const loader = document.createElement('div');
+    loader.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]';
+    loader.innerHTML = `
+      <div class="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-2xl">
+        <div class="flex items-center gap-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+          <span class="text-gray-900 dark:text-white font-semibold">Generando ${nombre}...</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(loader);
+
+    console.log(`📤 [EXPORT] Solicitando exportación: ${url}`);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filtros: {} })
+    });
+
+    console.log(`📥 [EXPORT] Respuesta recibida:`, response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ [EXPORT] Error del servidor:`, errorText);
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    // Verificar si es un blob (archivo)
+    const contentType = response.headers.get('Content-Type');
+    console.log(`📄 [EXPORT] Content-Type:`, contentType);
+    
+    if (!contentType || !contentType.includes('spreadsheet') && !contentType.includes('excel')) {
+      const text = await response.text();
+      console.error(`❌ [EXPORT] Respuesta no es un archivo Excel:`, text);
+      throw new Error('La respuesta del servidor no es un archivo válido');
+    }
+
+    // Obtener el blob del archivo
+    const blob = await response.blob();
+    console.log(`💾 [EXPORT] Blob recibido:`, blob.size, 'bytes');
+    
+    // Obtener el nombre del archivo del header o usar uno por defecto
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = `${nombre}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    console.log(`📁 [EXPORT] Descargando como:`, filename);
+
+    // Crear link temporal y descargar
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    loader.remove();
+
+    // Notificación de éxito
+    console.log(`✅ [EXPORT] Exportación completada exitosamente`);
+    if (typeof mostrarToast === 'function') {
+      mostrarToast(`✅ ${nombre} exportado correctamente`, 'success');
+    }
+
+  } catch (error) {
+    console.error('❌ [EXPORT] Error al exportar:', error);
+    
+    // Remover loader si existe
+    const loader = document.querySelector('.fixed.inset-0.bg-black\\/50');
+    if (loader) loader.remove();
+    
+    // Notificación de error
+    if (typeof mostrarToast === 'function') {
+      mostrarToast(`❌ Error al exportar ${nombre}: ${error.message}`, 'error');
+    } else {
+      alert(`Error al exportar ${nombre}: ${error.message}`);
+    }
+  }
+}
+
 // acciones rapidas dashboard  
 document.addEventListener("DOMContentLoaded", () => {
-  const exportBtn = document.getElementById("btn-exportar");
-  const detalleBtn = document.getElementById("btn-detalle");
+  const exportBtn = document.getElementById("btn-exportar-dashboard");
+  const detalleBtn = document.getElementById("btn-detalle-dashboard");
 
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
-      mostrarToast("Generando reporte PDF/Excel...");
-      // Aquí puedes llamar a tu endpoint Flask para descargar archivos
-      window.location.href = "/exportar_reporte"; // endpoint real si existe
+      // Modal simple para seleccionar qué exportar
+      const opciones = [
+        { text: '📊 Inventario (Excel)', action: async () => await exportarArchivo('/api/inventario/exportar-excel', 'Inventario') },
+        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') }
+      ];
+      
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]';
+      modal.innerHTML = `
+        <div class="bg-white dark:bg-neutral-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Exportar Reporte</h3>
+          <div class="space-y-2 mb-4">
+            ${opciones.map((op, i) => `
+              <button class="export-option w-full text-left px-4 py-3 rounded-lg border border-gray-300 dark:border-neutral-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all" data-index="${i}">
+                ${op.text}
+              </button>
+            `).join('')}
+          </div>
+          <button class="close-modal w-full px-4 py-2 bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all">Cancelar</button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      modal.querySelectorAll('.export-option').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          opciones[i].action();
+          modal.remove();
+        });
+      });
+      
+      modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
     });
   }
 
   if (detalleBtn) {
     detalleBtn.addEventListener("click", () => {
-      mostrarToast("Abriendo vista de inventario/ventas...");
-      window.location.href = "/inventario"; // ajusta ruta real
+      // Modal para seleccionar a qué módulo ir
+      const opciones = [
+        { text: '📦 Inventario', url: '/inventario' },
+        { text: '💰 Ventas', url: '/ventas' },
+        { text: '🚨 Alertas', url: '/alertas' },
+        { text: '🔄 Movimientos', url: '/movimientos' }
+      ];
+      
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]';
+      modal.innerHTML = `
+        <div class="bg-white dark:bg-neutral-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ir a Detalle</h3>
+          <div class="space-y-2 mb-4">
+            ${opciones.map(op => `
+              <a href="${op.url}" class="block w-full text-left px-4 py-3 rounded-lg border border-gray-300 dark:border-neutral-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all">
+                ${op.text}
+              </a>
+            `).join('')}
+          </div>
+          <button class="close-modal w-full px-4 py-2 bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all">Cancelar</button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
     });
   }
 });
