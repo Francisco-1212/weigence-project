@@ -23,6 +23,8 @@ def alertas():
         # Generar alertas automáticamente al cargar la página
         generar_alertas_basicas()
         generar_alertas_peso_estantes()
+        
+        # Obtener todas las alertas y ordenar: pendientes primero, luego por fecha
         alertas = (
             supabase.table("alertas")
             .select("*")
@@ -31,6 +33,11 @@ def alertas():
             .data
             or []
         )
+        
+        # Ordenar: pendientes primero, luego resueltas, ambas por fecha descendente
+        alertas_pendientes = [a for a in alertas if a.get("estado") == "pendiente"]
+        alertas_resueltas = [a for a in alertas if a.get("estado") != "pendiente"]
+        alertas = alertas_pendientes + alertas_resueltas
 
         productos = supabase.table("productos").select("idproducto, nombre").execute().data or []
         usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
@@ -299,19 +306,44 @@ def actualizar_alerta(alerta_id):
 def generar_alertas_peso_estantes():
     """
     Crea o actualiza alertas cuando el peso_actual de un estante difiere del peso_objetivo.
-    - Crea alerta si hay diferencia significativa (>5% o >5kg)
+    - Crea alerta si hay diferencia significativa (>1kg o >2%)
     - Marca como resuelto si el peso vuelve a estar dentro del rango aceptable
     """
     try:
+        import random
+        ejecucion_id = random.randint(1000, 9999)
         nuevas = []
+        
+        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== INICIANDO ====================")
+        print(f"[ALERTAS PESO #{ejecucion_id}] Verificacion de peso de estantes...")
         
         # Obtener alertas existentes de estantes
         existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
-        alertas_estantes_activas = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "pendiente" and a.get("id_estante")}
-        alertas_estantes_resueltas = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "resuelto" and a.get("id_estante")}
+        
+        print(f"[ALERTAS PESO #{ejecucion_id}] Total de alertas en BD: {len(existentes)}")
+        
+        # Filtrar alertas de estantes
+        alertas_estantes_activas = {}
+        alertas_estantes_resueltas = {}
+        
+        for a in existentes:
+            if a.get("id_estante"):
+                titulo_lower = a["titulo"].lower()
+                if a.get("estado") == "pendiente":
+                    alertas_estantes_activas[titulo_lower] = a["id"]
+                    print(f"[ALERTAS PESO #{ejecucion_id}] Alerta ACTIVA: '{a['titulo']}' (ID: {a['id']}, Estado: {a['estado']})")
+                elif a.get("estado") == "resuelto":
+                    alertas_estantes_resueltas[titulo_lower] = a["id"]
+                    print(f"[ALERTAS PESO #{ejecucion_id}] Alerta RESUELTA: '{a['titulo']}' (ID: {a['id']}, Estado: {a['estado']})")
+        
+        print(f"[ALERTAS PESO #{ejecucion_id}] Activas: {len(alertas_estantes_activas)}, Resueltas: {len(alertas_estantes_resueltas)}")
+        print(f"[ALERTAS PESO #{ejecucion_id}] Diccionario activas: {list(alertas_estantes_activas.keys())}")
+        print(f"[ALERTAS PESO #{ejecucion_id}] Diccionario resueltas: {list(alertas_estantes_resueltas.keys())}")
         
         # Obtener todos los estantes con peso_actual y peso_objetivo
         estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
+        
+        print(f"[ALERTAS PESO #{ejecucion_id}] Procesando {len(estantes)} estantes...")
         
         for estante in estantes:
             id_estante = estante.get("id_estante")
@@ -319,41 +351,61 @@ def generar_alertas_peso_estantes():
             peso_actual = float(estante.get("peso_actual", 0))
             peso_objetivo = float(estante.get("peso_objetivo", 0))
             
+            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Actual={peso_actual}kg, Objetivo={peso_objetivo}kg")
+            
+            # Si el peso_objetivo es 0, saltar este estante
+            if peso_objetivo <= 0:
+                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Peso objetivo es 0, omitiendo...")
+                continue
+            
             # Calcular diferencia
             diferencia = abs(peso_actual - peso_objetivo)
             porcentaje_diferencia = (diferencia / peso_objetivo * 100) if peso_objetivo > 0 else 0
             
-            # Definir umbral: 5% o 5kg, lo que sea mayor
-            umbral_kg = max(5, peso_objetivo * 0.05)
+            # Definir umbral más sensible: 1kg o 2%, lo que sea mayor
+            umbral_kg = max(1, peso_objetivo * 0.02)
             
-            titulo_discrepancia = f"Discrepancia de peso en {nombre}".lower()
+            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Diferencia={diferencia:.2f}kg ({porcentaje_diferencia:.1f}%), Umbral={umbral_kg:.2f}kg")
+            
+            # Título normalizado para comparación
+            titulo_discrepancia = f"Discrepancia de peso en {nombre}"
+            titulo_lower = titulo_discrepancia.lower()
+            
+            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Buscando='{titulo_lower}'")
+            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: En activas? {titulo_lower in alertas_estantes_activas} -> {alertas_estantes_activas.get(titulo_lower, 'N/A')}")
+            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: En resueltas? {titulo_lower in alertas_estantes_resueltas} -> {alertas_estantes_resueltas.get(titulo_lower, 'N/A')}")
             
             # Si la diferencia es significativa
-            if diferencia > umbral_kg and peso_objetivo > 0:
+            if diferencia > umbral_kg:
+                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ⚠️ DIFERENCIA DETECTADA")
+                
                 if peso_actual > peso_objetivo:
                     tipo_discrepancia = "exceso"
-                    descripcion = f"El estante tiene {diferencia:.2f}kg más de lo esperado. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
+                    descripcion = f"Al estante le sobran {diferencia:.2f}kg. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
                     icono = "trending_up"
-                    tipo_color = "naranja"
+                    tipo_color = "rojo"
                 else:
                     tipo_discrepancia = "faltante"
                     descripcion = f"Al estante le faltan {diferencia:.2f}kg. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
                     icono = "trending_down"
-                    tipo_color = "amarilla"
+                    tipo_color = "rojo"
                 
-                # Crear o reactivar alerta
-                if titulo_discrepancia not in alertas_estantes_activas:
-                    if titulo_discrepancia in alertas_estantes_resueltas:
+                # Crear o reactivar alerta (usar titulo_lower para comparación)
+                if titulo_lower not in alertas_estantes_activas:
+                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✅ NO existe alerta activa")
+                    if titulo_lower in alertas_estantes_resueltas:
                         # Reactivar alerta resuelta
+                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: 🔄 Reactivando alerta resuelta (ID: {alertas_estantes_resueltas[titulo_lower]})")
                         supabase.table("alertas").update({
                             "estado": "pendiente",
                             "descripcion": descripcion,
                             "fecha_modificacion": datetime.now().isoformat()
-                        }).eq("id", alertas_estantes_resueltas[titulo_discrepancia]).execute()
+                        }).eq("id", alertas_estantes_resueltas[titulo_lower]).execute()
                     else:
                         # Crear nueva alerta
-                        nuevas.append({
-                            "titulo": f"Discrepancia de peso en {nombre}",
+                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✨ Creando NUEVA alerta")
+                        nueva_alerta = {
+                            "titulo": titulo_discrepancia,
                             "descripcion": descripcion,
                             "icono": icono,
                             "tipo_color": tipo_color,
@@ -362,25 +414,47 @@ def generar_alertas_peso_estantes():
                             "idusuario": None,
                             "id_estante": id_estante,
                             "fecha_creacion": datetime.now().isoformat(),
-                        })
+                        }
+                        nuevas.append(nueva_alerta)
+                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ➕ Agregada a lista (Total: {len(nuevas)})")
+                else:
+                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ⏭️ Alerta YA EXISTE activa (ID: {alertas_estantes_activas[titulo_lower]})")
             else:
                 # Si el peso está dentro del rango aceptable, resolver alertas activas
-                if titulo_discrepancia in alertas_estantes_activas:
+                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✓ Peso OK")
+                if titulo_lower in alertas_estantes_activas:
+                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: 🔒 Resolviendo alerta (ID: {alertas_estantes_activas[titulo_lower]})")
                     supabase.table("alertas").update({
                         "estado": "resuelto",
                         "fecha_modificacion": datetime.now().isoformat()
-                    }).eq("id", alertas_estantes_activas[titulo_discrepancia]).execute()
-                    print(f"[ALERTA] Resuelta discrepancia de peso en {nombre}")
+                    }).eq("id", alertas_estantes_activas[titulo_lower]).execute()
         
         # Insertar nuevas alertas
+        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== FINALIZANDO ====================")
+        print(f"[ALERTAS PESO #{ejecucion_id}] Alertas en lista 'nuevas': {len(nuevas)}")
         if nuevas:
-            supabase.table("alertas").insert(nuevas).execute()
-            print(f"[ALERTA] {len(nuevas)} nuevas alertas de peso de estantes creadas.")
+            print(f"[ALERTAS PESO #{ejecucion_id}] 📝 Insertando {len(nuevas)} alertas:")
+            for idx, alerta in enumerate(nuevas, 1):
+                print(f"[ALERTAS PESO #{ejecucion_id}]   {idx}. {alerta['titulo']} (estante {alerta['id_estante']})")
+            
+            try:
+                resultado = supabase.table("alertas").insert(nuevas).execute()
+                print(f"[ALERTAS PESO #{ejecucion_id}] ✅ INSERT EXITOSO: {len(nuevas)} alertas creadas")
+                print(f"[ALERTAS PESO #{ejecucion_id}] IDs creados: {[a.get('id') for a in resultado.data]}")
+            except Exception as e:
+                print(f"[ALERTAS PESO #{ejecucion_id}] ❌ ERROR AL INSERTAR: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"[ALERTAS PESO #{ejecucion_id}] ℹ️ No hay alertas nuevas para insertar")
         
+        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== COMPLETADO ====================")
         return True
     
     except Exception as e:
-        print(f"Error generando alertas de peso de estantes: {e}")
+        print(f"[ALERTAS PESO] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 

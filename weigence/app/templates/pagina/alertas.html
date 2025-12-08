@@ -364,4 +364,65 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/alertas.js') }}?v={{ range(1, 10000)|random }}"></script>
+<script>
+// ===================================================================
+// Función para convertir gramos a kilogramos en las descripciones
+// ===================================================================
+function convertirGramosAKilogramos() {
+  // Convertir en las descripciones de la tabla
+  document.querySelectorAll('.alerta-row').forEach(row => {
+    const descripcionDiv = row.querySelector('.text-sm.text-slate-500');
+    if (descripcionDiv) {
+      let texto = descripcionDiv.textContent;
+      
+      // Patrones para encontrar pesos en gramos
+      // Ejemplo: "134647.00kg" o "52000.00kg" (que en realidad son gramos)
+      texto = texto.replace(/(\d+(?:\.\d+)?)kg/gi, (match, numero) => {
+        const gramos = parseFloat(numero);
+        const kilos = gramos / 1000;
+        // Si es mayor a 1000, definitivamente eran gramos
+        if (gramos >= 1000) {
+          return `${kilos.toFixed(2)}kg`;
+        }
+        return match; // Mantener original si ya está en kg
+      });
+      
+      descripcionDiv.textContent = texto;
+    }
+  });
+  
+  console.log('✅ Conversión de gramos a kilogramos aplicada');
+}
+
+// Ejecutar conversión cuando la página cargue
+document.addEventListener('DOMContentLoaded', () => {
+  convertirGramosAKilogramos();
+});
+
+// También convertir cuando se abra el modal
+const originalAbrirModal = Alertas.abrirModal;
+Alertas.abrirModal = function(alertaId) {
+  originalAbrirModal.call(this, alertaId);
+  
+  // Convertir en la descripción del modal
+  setTimeout(() => {
+    const modalDescripcion = document.getElementById('modal-descripcion');
+    if (modalDescripcion) {
+      let texto = modalDescripcion.textContent;
+      
+      // Convertir gramos a kilogramos
+      texto = texto.replace(/(\d+(?:\.\d+)?)kg/gi, (match, numero) => {
+        const gramos = parseFloat(numero);
+        const kilos = gramos / 1000;
+        if (gramos >= 1000) {
+          return `${kilos.toFixed(2)}kg`;
+        }
+        return match;
+      });
+      
+      modalDescripcion.textContent = texto;
+    }
+  }, 50);
+};
+</script>
 {% endblock %}
