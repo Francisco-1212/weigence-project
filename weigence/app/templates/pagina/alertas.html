@@ -33,25 +33,34 @@
     </div>
   </div>
 
-  <!-- Panel de Filtros -->
-  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm p-6 mb-6">
+  <!-- Botón de filtros -->
+  <div class="mb-6">
+    <button id="toggleFiltrosBtn" class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+      <span class="material-symbols-outlined text-base">filter_alt</span>
+      <span>Filtros</span>
+      <span id="filtrosChevron" class="material-symbols-outlined text-base transition-transform">expand_more</span>
+    </button>
+  </div>
+
+  <!-- Panel de Filtros (Colapsable) -->
+  <div id="panelFiltros" class="hidden bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm p-4 sm:p-6 mb-6 transition-all duration-300">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
           <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">filter_alt</span>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Filtros de Búsqueda</h3>
-          <p class="text-sm text-neutral-600 dark:text-neutral-400">Filtra las alertas según tus criterios</p>
+          <h3 class="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">Filtros de Búsqueda</h3>
+          <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">Filtra las alertas según tus criterios</p>
         </div>
       </div>
-      <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
+      <button id="btn-limpiar-filtros" class="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
         <span class="material-symbols-outlined text-sm">restart_alt</span>
-        <span class="text-sm font-medium">Limpiar filtros</span>
+        <span class="text-xs sm:text-sm font-medium hidden sm:inline">Limpiar filtros</span>
       </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <!-- Filtro por Estado -->
       <div>
         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -107,11 +116,20 @@
     </div>
 
     <!-- Resumen de Filtros Activos -->
-    <div id="filtros-activos" class="mt-4 hidden">
+    <div id="filtros-activos" class="mt-3 sm:mt-4 hidden">
       <div class="flex items-center gap-2 flex-wrap">
-        <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filtros activos:</span>
+        <span class="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">Filtros activos:</span>
         <div id="filtros-activos-chips" class="flex items-center gap-2 flex-wrap"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Resumen de filtros activos fuera del panel -->
+  <div id="filtros-activos-resumen" class="hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">info</span>
+      <span class="text-xs sm:text-sm font-medium text-blue-900 dark:text-blue-200">Filtros aplicados:</span>
+      <div id="filtros-activos-chips-resumen" class="flex items-center gap-2 flex-wrap"></div>
     </div>
   </div>
 

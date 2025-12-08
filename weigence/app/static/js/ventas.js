@@ -30,9 +30,24 @@ const Ventas = {
     this.bindEvents();
     this.conectarBotonesHeaderFiltros(); // Conectar botones del header
     this.bindFiltros();
+    this.initToggleFiltros();
     // Aplicar paginación inicial
     this.applyPagination();
-    console.info("✅ Ventas: paginación inicializada correctamente");
+  },
+
+  initToggleFiltros() {
+    const toggleBtn = document.getElementById('toggleFiltrosBtn');
+    const panelFiltros = document.getElementById('panelFiltros');
+    const chevron = document.getElementById('filtrosChevron');
+    
+    if (toggleBtn && panelFiltros && chevron) {
+      toggleBtn.addEventListener('click', () => {
+        panelFiltros.classList.toggle('hidden');
+        chevron.style.transform = panelFiltros.classList.contains('hidden') 
+          ? 'rotate(0deg)' 
+          : 'rotate(180deg)';
+      });
+    }
   },
 
   cacheDOM() {
@@ -61,7 +76,6 @@ const Ventas = {
   cargarDatosIniciales() {
     // Cargar detalles de ventas desde atributos data en las filas
     const rows = document.querySelectorAll('.venta-row');
-    console.log(`🔍 DEBUG: Cargando datos de ${rows.length} ventas`);
     
     rows.forEach(row => {
       const idVenta = row.dataset.idventa;
@@ -78,18 +92,16 @@ const Ventas = {
             vendedorNombre: row.dataset.vendedorNombre,
             total: parseFloat(row.dataset.total)
           };
-          console.log(`✅ Detalles cargados para venta #${idVenta}:`, this.state.detallesVentas[idVenta]);
         } catch (e) {
-          console.error(`❌ Error al parsear detalles de venta #${idVenta}:`, e);
+          // Error al parsear detalles
         }
       }
       
       if (productosJson && !Object.keys(this.state.productosDict).length) {
         try {
           this.state.productosDict = JSON.parse(productosJson);
-          console.log('✅ Diccionario de productos cargado:', this.state.productosDict);
         } catch (e) {
-          console.error('❌ Error al parsear productos:', e);
+          // Error al parsear productos
         }
       }
     });
@@ -149,19 +161,13 @@ const Ventas = {
   conectarBotonesHeaderFiltros() {
     const botonesHeader = document.querySelectorAll('.filtro-fecha-btn');
     
-    console.log('🔍 Buscando botones de filtro del header:', botonesHeader.length, 'encontrados');
-    
     if (!botonesHeader.length) {
-      console.warn('⚠️ No se encontraron botones de filtro de fecha en el header');
       return;
     }
     
     botonesHeader.forEach(btn => {
-      console.log('✅ Conectando botón:', btn.dataset.rango);
-      
       // Evitar listeners duplicados
       if (btn.dataset.listenerAdded === 'true') {
-        console.log('⚠️ Ya tiene listener:', btn.dataset.rango);
         return;
       }
       btn.dataset.listenerAdded = 'true';
@@ -171,7 +177,6 @@ const Ventas = {
         e.stopPropagation();
         
         const rango = btn.getAttribute('data-rango');
-        console.log('🎯 Click en filtro del header:', rango);
         
         // Remover clase activa de todos los botones
         botonesHeader.forEach(b => {
@@ -183,19 +188,14 @@ const Ventas = {
         
         // Ejecutar filtro correspondiente
         if (rango === 'hoy') {
-          console.log('📅 Ejecutando filtrarHoy()');
           this.filtrarHoy();
         } else if (rango === 'semana') {
-          console.log('📅 Ejecutando filtrarSemana()');
           this.filtrarSemana();
         } else if (rango === 'mes') {
-          console.log('📅 Ejecutando filtrarMes()');
           this.filtrarMes();
         }
       });
     });
-    
-    console.log('✅ Botones de filtro del header conectados correctamente');
   },
 
   filtrarHoy() {
@@ -234,8 +234,6 @@ const Ventas = {
   },
 
   aplicarFiltroTemporalPorRango(fechaInicio, fechaFin, textoRango) {
-    console.log('📅 Aplicando filtro temporal:', textoRango, 'Desde:', fechaInicio);
-    
     // Filtrar filas por rango de fecha
     this.state.filteredRows = this.state.rows.filter(row => {
       const fechaTexto = row.dataset.fecha;
@@ -255,8 +253,6 @@ const Ventas = {
       
       return true;
     });
-
-    console.log(`✅ Filtro temporal aplicado: ${this.state.filteredRows.length} de ${this.state.rows.length} ventas`);
     
     // Actualizar KPIs con datos filtrados
     this.actualizarKPIsConFiltro();
@@ -277,7 +273,6 @@ const Ventas = {
     const tableHeader = document.querySelector('#ventasTable').closest('.bg-\\[var\\(--card-bg-light\\)\\]').querySelector('.px-6.py-4.border-b');
     
     if (!tableHeader) {
-      console.warn('⚠️ No se encontró el header de la tabla para agregar el widget');
       return;
     }
     
@@ -308,13 +303,9 @@ const Ventas = {
     if (counterContainer) {
       counterContainer.appendChild(widget);
     }
-    
-    console.log('✅ Widget de filtro activo agregado');
   },
 
   limpiarFiltroTemporal() {
-    console.log('🧹 Limpiando filtro temporal del header');
-    
     this.state.filtroTemporalActivo = false;
     this.state.rangoTemporal = null;
     
@@ -399,13 +390,6 @@ const Ventas = {
     this.actualizarKPI('promedio-ventas', `$${this.formatearNumero(promedioVentas)}`);
     this.actualizarKPI('num-transacciones', ventasFiltradas.length);
     this.actualizarKPI('top-producto', topProductoNombre);
-    
-    console.log('📊 KPIs actualizados con filtro:', {
-      total: totalVentas,
-      promedio: promedioVentas,
-      transacciones: ventasFiltradas.length,
-      topProducto: topProductoNombre
-    });
   },
 
   restaurarKPIsOriginales() {
@@ -460,8 +444,6 @@ const Ventas = {
     this.actualizarKPI('promedio-ventas', `$${this.formatearNumero(promedioVentas)}`);
     this.actualizarKPI('num-transacciones', todasLasVentas.length);
     this.actualizarKPI('top-producto', topProductoNombre);
-    
-    console.log('📊 KPIs restaurados a valores originales');
   },
 
   actualizarKPI(tipo, valor) {
@@ -488,8 +470,6 @@ const Ventas = {
     // Reutilizar la función global si existe
     if (typeof mostrarNotificacion === 'function') {
       mostrarNotificacion(mensaje, tipo);
-    } else {
-      console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
     }
   },
 
@@ -531,8 +511,6 @@ const Ventas = {
       totalMin: this.filtroTotalMin?.value || '',
       totalMax: this.filtroTotalMax?.value || ''
     };
-
-    console.log('🔍 Aplicando filtros:', this.state.filtrosActivos);
 
     // Filtrar filas
     this.state.filteredRows = this.state.rows.filter(row => {
@@ -598,8 +576,6 @@ const Ventas = {
     // Resetear a primera página
     this.state.page = 1;
     this.applyPagination();
-
-    console.log(`✅ Filtros aplicados: ${this.state.filteredRows.length} de ${this.state.rows.length} ventas`);
   },
 
   limpiarFiltros() {
@@ -635,8 +611,6 @@ const Ventas = {
     // Resetear a primera página
     this.state.page = 1;
     this.applyPagination();
-
-    console.log('🧹 Filtros limpiados');
   },
 
   mostrarFiltrosActivos() {
@@ -735,7 +709,6 @@ const Ventas = {
     this.state.rows = Array.from(document.querySelectorAll('.venta-row'));
     this.state.filteredRows = [...this.state.rows];
     this.actualizarContadorVentas();
-    console.log(`📊 Total de ventas cargadas: ${this.state.rows.length}`);
   },
 
   applyPagination() {
@@ -811,17 +784,12 @@ const Ventas = {
       this.pageNext.style.opacity = (this.state.page >= pages || total === 0) ? '0.5' : '1';
       this.pageNext.style.cursor = (this.state.page >= pages || total === 0) ? 'not-allowed' : 'pointer';
     }
-
-    console.log(`📄 Página ${this.state.page}/${pages} - Mostrando ${total > 0 ? start + 1 : 0} a ${end} de ${total}`);
   },
 
   mostrarDetalleVenta(idVenta) {
-    console.log(`🔍 DEBUG: Mostrando detalles de venta #${idVenta}`);
-    
     const ventaData = this.state.detallesVentas[idVenta];
     
     if (!ventaData || !ventaData.items || ventaData.items.length === 0) {
-      console.warn(`⚠️ No se encontraron detalles para venta #${idVenta}`);
       this.modalContent.innerHTML = `
         <div class="text-center py-8">
           <span class="material-symbols-outlined text-6xl text-neutral-400">inbox</span>
@@ -831,8 +799,6 @@ const Ventas = {
       this.modal.classList.remove('hidden');
       return;
     }
-
-    console.log(`✅ DEBUG: Detalles encontrados:`, ventaData);
 
     const detalles = ventaData.items;
     const totalProductos = detalles.length;
@@ -975,13 +941,11 @@ const Ventas = {
     `;
 
     this.modal.classList.remove('hidden');
-    console.log('✅ Modal abierto correctamente');
   },
 
   cerrarModal() {
     if (this.modal) {
       this.modal.classList.add('hidden');
-      console.log('🔒 Modal cerrado');
     }
   }
 };
@@ -996,7 +960,6 @@ const NuevaVenta = {
   init() {
     this.cacheDOM();
     this.bindEvents();
-    console.info("✅ Modal Nueva Venta inicializado");
   },
 
   cacheDOM() {
@@ -1064,13 +1027,10 @@ const NuevaVenta = {
             ${p.nombre} - Stock: ${p.stock} - $${p.precio_unitario.toLocaleString('es-CL')}
           </option>
         `).join('');
-      
-      console.log('✅ Productos cargados:', productos.length);
     } catch (error) {
       if (window.errorLogger) {
         window.errorLogger.critical('Error al cargar productos', 'ventas', '', error);
       }
-      console.error('❌ Error al cargar productos:', error);
     }
   },
 
@@ -1126,7 +1086,6 @@ const NuevaVenta = {
     cantidadInput.value = '1';
 
     this.renderProductos();
-    console.log('✅ Producto agregado:', { idproducto, nombre, cantidad });
   },
 
   renderProductos() {
@@ -1215,7 +1174,6 @@ const NuevaVenta = {
       if (window.errorLogger) {
         window.errorLogger.critical('Error al guardar venta', 'ventas', '', error);
       }
-      console.error('❌ Error al guardar venta:', error);
       alert('Error al guardar la venta. Por favor, intente nuevamente.');
     } finally {
       btnSubmit.disabled = false;
@@ -1243,8 +1201,6 @@ function initBotonesAccion() {
       exportarReporteVentas();
     });
   }
-
-  console.log('✅ Botones de acción inicializados correctamente');
 }
 
 async function exportarReporteVentas() {
@@ -1299,13 +1255,11 @@ async function exportarReporteVentas() {
     window.URL.revokeObjectURL(url);
 
     mostrarNotificacion(`✅ Reporte de ventas exportado: ${ventas.length} registros`, 'success');
-    console.log('✅ Reporte exportado:', ventas.length, 'ventas');
     
   } catch (error) {
     if (window.errorLogger) {
       window.errorLogger.error('Error al exportar reporte', 'ventas', '', error);
     }
-    console.error('❌ Error al exportar reporte:', error);
     mostrarNotificacion('Error al exportar el reporte. Intente nuevamente.', 'error');
   }
 }

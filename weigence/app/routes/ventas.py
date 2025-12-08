@@ -120,7 +120,6 @@ def api_ventas_por_producto():
         })
 
     except Exception as e:
-        print(f"❌ Error en api_ventas_por_producto: {e}")
         return jsonify({"productos": [], "crecimiento": 0})
 
 
@@ -150,7 +149,6 @@ def calcular_crecimiento_producto_simple(registros):
 def crear_nueva_venta():
     try:
         datos = request.json
-        print("📦 Datos recibidos para nueva venta:", datos)
         
         # Validar datos requeridos
         if not datos.get("productos") or len(datos["productos"]) == 0:
@@ -179,7 +177,6 @@ def crear_nueva_venta():
             return jsonify({"success": False, "error": "Error al crear la venta"}), 500
         
         id_venta = venta_response.data[0]["idventa"]
-        print(f"✅ Venta creada con ID: {id_venta}")
         
         # Registrar evento de venta en auditoría
         from app.utils.eventohumano import registrar_evento_humano
@@ -195,13 +192,10 @@ def crear_nueva_venta():
             cantidad = producto["cantidad"]
             precio_unitario = producto["precio_unitario"]
             
-            print(f"📦 Procesando producto ID {idproducto}: {cantidad} unidades a ${precio_unitario}")
-            
             # Obtener información del producto (incluyendo peso en GRAMOS)
             producto_info = supabase.table("productos").select("id_estante, stock, peso").eq("idproducto", idproducto).execute()
             
             if not producto_info.data:
-                print(f"⚠️ Producto ID {idproducto} no encontrado")
                 continue
             
             stock_actual = producto_info.data[0].get("stock", 0)
@@ -224,7 +218,6 @@ def crear_nueva_venta():
                 "precio_unitario": precio_unitario
             }
             detalles_venta.append(detalle)
-            print(f"✅ Detalle agregado: {detalle}")
             
             # Movimiento de inventario (Retiro) - incluir peso
             peso_total = cantidad * peso_kg  # Peso total en kg
@@ -240,7 +233,6 @@ def crear_nueva_venta():
                 "observacion": f"Venta #{id_venta} - Retiro automático por venta"
             }
             movimientos_inventario.append(movimiento)
-            print(f"✅ Movimiento agregado: {movimiento} (Peso: {peso_kg:.3f} kg/u, Total: {peso_total:.3f} kg)")
             
             # Actualizar stock del producto
             nuevo_stock = stock_actual - cantidad
@@ -249,33 +241,22 @@ def crear_nueva_venta():
                 "fecha_modificacion": datetime.now().isoformat(),
                 "modificado_por": rut_usuario
             }).eq("idproducto", idproducto).execute()
-            
-            print(f"✅ Stock actualizado para producto {idproducto}: {stock_actual} → {nuevo_stock}")
         
         # 3. Insertar detalles de venta
         if detalles_venta:
             try:
-                print(f"📝 Insertando {len(detalles_venta)} detalles de venta...")
                 detalle_response = supabase.table("detalle_ventas").insert(detalles_venta).execute()
                 if not detalle_response.data:
-                    print(f"❌ Error: La respuesta de detalles está vacía")
                     return jsonify({"success": False, "error": "Error al registrar detalles de venta"}), 500
-                print(f"✅ {len(detalle_response.data)} detalles de venta insertados correctamente")
             except Exception as e:
-                print(f"❌ Excepción al insertar detalles: {e}")
                 return jsonify({"success": False, "error": f"Error al insertar detalles: {str(e)}"}), 500
         
         # 4. Insertar movimientos de inventario
         if movimientos_inventario:
             try:
-                print(f"📦 Insertando {len(movimientos_inventario)} movimientos de inventario...")
                 movimiento_response = supabase.table("movimientos_inventario").insert(movimientos_inventario).execute()
-                if not movimiento_response.data:
-                    print(f"⚠️ Advertencia: No se pudieron registrar los movimientos de inventario")
-                else:
-                    print(f"✅ {len(movimiento_response.data)} movimientos de inventario registrados correctamente")
             except Exception as e:
-                print(f"⚠️ Error al insertar movimientos (no crítico): {e}")
+                pass  # No crítico
         
         return jsonify({
             "success": True,
@@ -285,9 +266,7 @@ def crear_nueva_venta():
         })
         
     except Exception as e:
-        print(f"❌ Error al crear venta: {e}")
         import traceback
-        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -298,7 +277,6 @@ def productos_disponibles():
         productos = supabase.table("productos").select("idproducto, nombre, stock, precio_unitario").gt("stock", 0).execute()
         return jsonify(productos.data)
     except Exception as e:
-        print(f"❌ Error al obtener productos: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -341,7 +319,6 @@ def api_promedio_consumo():
 
         return jsonify({"promedio_total": round(promedio_total, 2), "promedio_por_producto": promedio_por_producto})
     except Exception as e:
-        print(f"❌ Error en api_promedio_consumo: {e}")
         return jsonify({"promedio_total": 0, "promedio_por_producto": []})
 
 
@@ -361,15 +338,11 @@ def exportar_ventas_excel():
     logger = logging.getLogger(__name__)
     
     try:
-        print("🔵 [BACKEND] Iniciando exportación de ventas...")
-        
         # Obtener filtros del request
         data = request.get_json() or {}
         filtros = data.get('filtros', {})
-        print(f"🔵 [BACKEND] Filtros recibidos: {filtros}")
         
         # Obtener ventas desde la base de datos
-        print("🔵 [BACKEND] Consultando ventas...")
         query = supabase.table("ventas").select("*").order("fecha_venta", desc=True)
         
         # Aplicar filtros de fecha si existen
@@ -381,35 +354,21 @@ def exportar_ventas_excel():
         # Ejecutar query
         response = query.execute()
         ventas = response.data or []
-        print(f"🔵 [BACKEND] Ventas obtenidas: {len(ventas)}")
         
         if len(ventas) == 0:
-            print("⚠️ [BACKEND] No hay ventas para exportar")
             return jsonify({
                 'success': False,
                 'message': 'No hay ventas registradas para exportar'
             }), 404
         
         # Obtener usuarios (vendedores)
-        print("🔵 [BACKEND] Obteniendo información de vendedores...")
         usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
         usuarios_dict = {u["rut_usuario"]: u["nombre"] for u in usuarios}
-        print(f"🔵 [BACKEND] Vendedores encontrados: {len(usuarios_dict)}")
-        
-        # Debug: Imprimir estructura de la primera venta
-        if ventas and len(ventas) > 0:
-            print(f"🔵 [BACKEND] Estructura de venta ejemplo: {list(ventas[0].keys())}")
-            print(f"🔵 [BACKEND] Primera venta completa: {ventas[0]}")
-            print(f"🔵 [BACKEND] Usuarios disponibles: {list(usuarios_dict.keys())[:5]}")
         
         # Enriquecer datos de ventas
-        print("🔵 [BACKEND] Enriqueciendo datos de ventas...")
         ventas_enriquecidas = []
         
         for idx, venta in enumerate(ventas, 1):
-            if idx % 10 == 0:
-                print(f"🔵 [BACKEND] Procesando venta {idx}/{len(ventas)}...")
-            
             # Obtener ID de venta (puede ser 'id_venta' o 'idventa')
             id_venta = venta.get('id_venta') or venta.get('idventa')
             
@@ -421,11 +380,6 @@ def exportar_ventas_excel():
                            venta.get('rut') or 
                            venta.get('vendedor_rut'))
             
-            if idx == 1:
-                print(f"🔵 [BACKEND] Debug venta 1 - Campos disponibles: {list(venta.keys())}")
-                print(f"🔵 [BACKEND] Debug venta 1 - RUT Usuario: '{venta.get('rut_usuario')}'")
-                print(f"🔵 [BACKEND] Debug venta 1 - RUT encontrado: '{rut_vendedor}'")
-            
             # Obtener detalles de esta venta específica
             total_productos = 0
             total_unidades = 0
@@ -436,7 +390,6 @@ def exportar_ventas_excel():
                 detalles = detalle_response.data or []
                 
                 if detalles:
-                    print(f"🔵 [BACKEND] Venta {id_venta}: {len(detalles)} detalles encontrados")
                     productos_unicos = {}
                     for d in detalles:
                         id_producto = d.get('idproducto')
@@ -445,10 +398,8 @@ def exportar_ventas_excel():
                         total_unidades += d.get('cantidad', 0)
                     total_productos = len(productos_unicos)
                     productos_nombres = list(productos_unicos.values())
-                else:
-                    print(f"⚠️ [BACKEND] Venta {id_venta}: Sin detalles encontrados")
             except Exception as e:
-                print(f"⚠️ [BACKEND] Error obteniendo detalles de venta {id_venta}: {e}")
+                pass
             
             # Buscar el nombre del vendedor
             vendedor_nombre = usuarios_dict.get(rut_vendedor, None)
@@ -479,18 +430,10 @@ def exportar_ventas_excel():
                 'total_unidades': total_unidades,
                 'productos': ', '.join(productos_nombres[:3]) + ('...' if len(productos_nombres) > 3 else '')
             })
-            
-            if idx == 1:
-                print(f"🔵 [BACKEND] Ejemplo de venta enriquecida: {ventas_enriquecidas[0]}")
-                print(f"🔵 [BACKEND] RUT final: '{rut_vendedor}', Nombre: '{vendedor_nombre}'")
-        
-        print(f"🔵 [BACKEND] Ventas enriquecidas: {len(ventas_enriquecidas)} registros")
         
         # Generar Excel
-        print("🔵 [BACKEND] Generando archivo Excel...")
         exporter = ExcelExporter()
         excel_file = exporter.exportar_ventas(ventas_enriquecidas, filtros)
-        print(f"✅ [BACKEND] Excel generado exitosamente")
         
         # Generar nombre de archivo
         fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -498,7 +441,6 @@ def exportar_ventas_excel():
         
         logger.info(f"Exportación Excel generada: {filename} ({len(ventas)} ventas)")
         
-        print(f"🔵 [BACKEND] Enviando archivo: {filename}")
         return send_file(
             excel_file,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -507,11 +449,6 @@ def exportar_ventas_excel():
         )
         
     except Exception as e:
-        print(f"❌ [BACKEND] Error al exportar ventas:")
-        print(f"❌ [BACKEND] {type(e).__name__}: {str(e)}")
-        print(f"❌ [BACKEND] Traceback:")
-        traceback.print_exc()
-        
         logger.error(f"Error al exportar ventas a Excel: {e}", exc_info=True)
         return jsonify({
             'success': False,

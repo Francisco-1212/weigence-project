@@ -22,8 +22,25 @@ const Alertas = {
     this.refreshRows();
     this.bindEvents();
     this.bindFiltros();
+    this.initToggleFiltros();
     this.applyPagination();
     console.info("✅ Alertas: Sistema inicializado correctamente");
+  },
+
+  initToggleFiltros() {
+    const toggleBtn = document.getElementById('toggleFiltrosBtn');
+    const panelFiltros = document.getElementById('panelFiltros');
+    const chevron = document.getElementById('filtrosChevron');
+    
+    if (toggleBtn && panelFiltros && chevron) {
+      toggleBtn.addEventListener('click', () => {
+        panelFiltros.classList.toggle('hidden');
+        chevron.style.transform = panelFiltros.classList.contains('hidden') 
+          ? 'rotate(0deg)' 
+          : 'rotate(180deg)';
+      });
+      console.info("✅ Alertas: Toggle de filtros inicializado");
+    }
   },
 
   cacheDOM() {
