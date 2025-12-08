@@ -179,7 +179,9 @@ const Alertas = {
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-gestionar-alerta');
       if (btn) {
+        e.preventDefault();
         const alertaId = btn.dataset.alertaId;
+        console.log('🔵 Click en gestionar, ID:', alertaId);
         this.abrirModal(alertaId);
       }
     });
@@ -228,10 +230,28 @@ const Alertas = {
         }
       }
 
-      // Filtro por tipo
+      // Filtro por tipo (normalizar valores antiguos y detectar por título)
       if (this.state.filtrosActivos.tipo) {
-        const tipo = row.dataset.tipo;
-        if (tipo !== this.state.filtrosActivos.tipo) {
+        let tipo = row.dataset.tipo;
+        let tipoBuscado = this.state.filtrosActivos.tipo;
+        const titulo = row.dataset.titulo?.toLowerCase() || '';
+        
+        // Normalizar valores antiguos:
+        // - amarilla (antiguo) -> naranja (nuevo) para vencimiento próximo
+        if (tipo === 'amarilla') tipo = 'naranja';
+        if (tipoBuscado === 'amarilla') tipoBuscado = 'naranja';
+        
+        // Detectar productos vencidos por título si tienen color rojo antiguo
+        if (titulo.includes('vencido') && tipo === 'rojo') {
+          tipo = 'negro';
+        }
+        
+        // Detectar productos próximos a vencer por título si tienen color rojo antiguo
+        if (titulo.includes('próximo a vencer') && tipo === 'rojo') {
+          tipo = 'naranja';
+        }
+        
+        if (tipo !== tipoBuscado) {
           return false;
         }
       }
@@ -454,12 +474,19 @@ const Alertas = {
   },
 
   abrirModal(alertaId) {
+    console.log('🟢 abrirModal llamado con ID:', alertaId);
+    console.log('🟢 Filas disponibles:', this.state.rows.length);
+    console.log('🟢 Modal element:', this.modal);
+    
     const row = this.state.rows.find(r => r.dataset.id == alertaId);
     if (!row) {
       console.error('❌ Alerta no encontrada:', alertaId);
+      console.error('❌ IDs disponibles:', this.state.rows.map(r => r.dataset.id));
       return;
     }
 
+    console.log('🟢 Fila encontrada:', row.dataset.titulo);
+    
     this.state.alertaActual = {
       id: alertaId,
       titulo: row.dataset.titulo,

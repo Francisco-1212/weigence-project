@@ -111,7 +111,7 @@
             Alertas y Acciones Sugeridas
           </h3>
 
-          <div id="alertas-sugeridas" class="flex flex-col gap-2">
+          <div id="alertas-sugeridas" class="flex flex-col gap-2 opacity-0 transition-opacity duration-300">
             {% for alerta in alertas_sugeridas[:3] %}
               <div class="flex items-start gap-2 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 sm:p-2.5
                           bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">

@@ -219,7 +219,7 @@
               </span>
             </td>
             <td class="px-4 py-4 text-center">
-              <button class="btn-gestionar-alerta inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-xs font-semibold transition-colors" data-alerta-id="{{ alerta.id }}">
+              <button onclick="Alertas.abrirModal('{{ alerta.id }}')" class="btn-gestionar-alerta inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-xs font-semibold transition-colors relative z-10 cursor-pointer" data-alerta-id="{{ alerta.id }}" style="pointer-events: auto;">
                 <span class="material-symbols-outlined text-sm">settings</span>
                 Gestionar
               </button>

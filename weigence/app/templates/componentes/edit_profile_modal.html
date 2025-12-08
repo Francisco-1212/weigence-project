@@ -17,8 +17,8 @@
       <div class="flex flex-col items-center space-y-3">
         <div class="relative">
           <div id="profile-preview" class="w-24 h-24 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
-            {% if session.get('usuario_foto_perfil') %}
-              <img src="{{ session.get('usuario_foto_perfil') }}" alt="" class="w-full h-full object-cover">
+            {% if session.get('usuario_foto_perfil') and session.get('usuario_foto_perfil') != '' and session.get('usuario_foto_perfil') != 'None' %}
+              <img src="{{ session.get('usuario_foto_perfil') }}" alt="Foto de perfil" class="w-full h-full object-cover">
             {% else %}
               {{ session.get('usuario_nombre', 'U')[0].upper() }}
             {% endif %}

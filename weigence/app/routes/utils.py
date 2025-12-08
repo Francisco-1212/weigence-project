@@ -114,7 +114,13 @@ def obtener_notificaciones(usuario_id=None):
         
         for a in alertas_raw:
             id_prod = a.get("idproducto")
+            id_estante = a.get("id_estante")
             titulo = a.get("titulo", "")
+            
+            # Alertas de estantes (sin idproducto) siempre pasan
+            if id_estante and not id_prod:
+                alertas.append(a)
+                continue
             
             # Si la alerta tiene idproducto, verificar que el producto existe
             if id_prod:
@@ -127,18 +133,20 @@ def obtener_notificaciones(usuario_id=None):
             # Si el título menciona un producto específico, verificar que existe
             titulo_lower = titulo.lower()
             if any(palabra in titulo_lower for palabra in ["vencer", "vencido", "stock", "agotado"]):
-                # Extraer nombre del producto del título
-                encontrado = False
-                for nombre in nombres_activos:
-                    if nombre in titulo_lower:
-                        encontrado = True
-                        break
-                
-                if not encontrado and id_prod:
-                    # El producto mencionado no existe
-                    alertas_a_resolver.append(a["id"])
-                    print(f"[FILTRO] Alerta descartada (nombre no encontrado): {titulo}")
-                    continue
+                # Solo filtrar si tiene idproducto
+                if id_prod:
+                    # Extraer nombre del producto del título
+                    encontrado = False
+                    for nombre in nombres_activos:
+                        if nombre in titulo_lower:
+                            encontrado = True
+                            break
+                    
+                    if not encontrado:
+                        # El producto mencionado no existe
+                        alertas_a_resolver.append(a["id"])
+                        print(f"[FILTRO] Alerta descartada (nombre no encontrado): {titulo}")
+                        continue
             
             # Alerta válida
             alertas.append(a)
@@ -171,6 +179,8 @@ def obtener_notificaciones(usuario_id=None):
         sin_pesaje = [p for p in prods if p["idproducto"] not in ids_con_pesaje]
 
         if sin_pesaje:
+            # Fecha antigua para que aparezca al final (hace 30 días)
+            fecha_antigua = (hoy - timedelta(days=30)).isoformat()
             alerta_sint = {
                 "id": "__no_pesaje_7d__",
                 "tipo_color": "amarillo",
@@ -179,18 +189,24 @@ def obtener_notificaciones(usuario_id=None):
                 "descripcion": f"No se han pesado {len(sin_pesaje)} producto(s) en los últimos 7 días.",
                 "detalle": "Sugerencia: planificar control de estantes y calibración si aplica.",
                 "enlace": "/movimientos",
-                "fecha_creacion": hoy.isoformat(),
+                "fecha_creacion": fecha_antigua,  # Fecha antigua para que aparezca al final
             }
             if not any(a.get("id") == alerta_sint["id"] for a in alertas):
-                # Agregar al final en lugar de al principio para que las alertas críticas aparezcan primero
+                # Agregar al final - el ordenamiento por fecha la colocará al final automáticamente
                 alertas.append(alerta_sint)
 
         # === 6) Ordenar alertas por fecha (más recientes primero) ===
         def obtener_timestamp(alerta):
             try:
-                fecha = alerta.get("fecha_creacion") or hoy.isoformat()
-                return datetime.fromisoformat(str(fecha).split(".")[0]).timestamp()
-            except:
+                # Obtener fecha_creacion o timestamp
+                fecha = alerta.get("fecha_creacion") or alerta.get("timestamp") or hoy.isoformat()
+                # Limpiar microsegundos y zona horaria si existen
+                fecha_str = str(fecha).split(".")[0].replace("Z", "").replace("+00:00", "")
+                # Convertir a timestamp
+                dt = datetime.fromisoformat(fecha_str)
+                return dt.timestamp()
+            except Exception as e:
+                print(f"[WARN] Error parseando fecha {alerta.get('titulo')}: {e}")
                 return 0
         
         # Ordenar por fecha descendente (más recientes primero)

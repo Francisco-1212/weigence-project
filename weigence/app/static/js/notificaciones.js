@@ -120,19 +120,67 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.error('Error actualizando badge:', err));
   };
   
-  // Función para recargar el panel de notificaciones
+  // Función para recargar el contenido del panel sin recargar toda la página
   window.recargarPanelNotificaciones = function() {
-    // Recargar la página solo si el panel está abierto
     const panel = document.getElementById('notification-panel');
-    if (panel && !panel.classList.contains('translate-x-full')) {
-      // Panel abierto - recargar solo el contenido
-      location.reload();
-    } else {
-      // Panel cerrado - solo actualizar badge
-      actualizarBadgeNotificaciones();
+    const panelAbierto = panel && !panel.classList.contains('translate-x-full');
+    
+    // Actualizar badge siempre
+    actualizarBadgeNotificaciones();
+    
+    // SOLO recargar contenido si el panel está ABIERTO (para evitar parpadeos)
+    if (!panelAbierto) return;
+    
+    // Si el panel está abierto, recargar su contenido
+    if (panelAbierto) {
+      fetch('/api/notificaciones', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          // Buscar el contenedor de notificaciones
+          const container = document.querySelector('.space-y-2');
+          if (!container) return;
+          
+          // Si no hay notificaciones
+          if (!data || data.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-gray-500"><p>No hay notificaciones</p></div>';
+            return;
+          }
+          
+          // Recrear notificaciones
+          const htmlNotifs = data.map(notif => {
+            const colorMap = {
+              'rojo': 'bg-red-100 border-red-300 text-red-800',
+              'amarillo': 'bg-yellow-100 border-yellow-300 text-yellow-800',
+              'verde': 'bg-green-100 border-green-300 text-green-800',
+              'azul': 'bg-blue-100 border-blue-300 text-blue-800'
+            };
+            const colorClass = colorMap[notif.tipo_color] || 'bg-gray-100 border-gray-300 text-gray-800';
+            
+            let html = `<div class="notif-item border-l-4 p-3 rounded ${colorClass} cursor-pointer hover:shadow-md transition" data-id="${notif.id}">`;
+            html += `<div class="flex items-start gap-2">`;
+            html += `<span class="text-lg">⚠️</span>`;
+            html += `<div class="flex-1"><div class="font-semibold">${notif.titulo}</div>`;
+            if (notif.descripcion) html += `<div class="text-sm mt-1">${notif.descripcion}</div>`;
+            if (notif.fecha_formateada) html += `<div class="text-xs opacity-75 mt-1">${notif.fecha_formateada}</div>`;
+            html += `</div><button class="notif-discard text-red-500 hover:text-red-700 font-bold" aria-label="Descartar">✕</button></div>`;
+            if (notif.detalle) {
+              html += `<div class="notif-detalle hidden mt-2 text-sm border-t pt-2">${notif.detalle}`;
+              if (notif.enlace) html += `<a href="${notif.enlace}" class="text-blue-600 hover:underline ml-2">Ver más</a>`;
+              html += `</div>`;
+            }
+            html += `</div>`;
+            return html;
+          }).join('');
+          
+          container.innerHTML = htmlNotifs;
+        })
+        .catch(err => console.error('Error recargando panel:', err));
     }
   };
   
   // Actualizar badge cada 15 segundos
   setInterval(actualizarBadgeNotificaciones, 15000);
+  
+  // Recargar panel cada 30 segundos
+  setInterval(recargarPanelNotificaciones, 30000);
 });

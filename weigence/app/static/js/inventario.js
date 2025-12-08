@@ -609,10 +609,6 @@ validarFechas(fechaElab, fechaVenc) {
             <input type="number" name="precio_unitario" min="0" step="0.01" required class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Estante</label>
-            <input type="text" name="d_estante" placeholder="Ej: A1, B2" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
-          </div>
-          <div>
             <label class="block text-sm font-medium mb-1">Fecha de Elaboración</label>
             <input type="date" name="fecha_elaboracion" id="fecha_elaboracion" class="w-full bg-[var(--card-bg-dark)] border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
           </div>
@@ -1111,6 +1107,7 @@ const WeigenceMonitor = {
       if (currentIds === newIds) return; // No hay cambios
       
       cont.innerHTML = "";
+      cont.classList.remove("opacity-0"); // Mostrar contenedor
 
       data.slice(0, 3).forEach(a => {
         const color =
@@ -1773,6 +1770,7 @@ async function cargarAlertas() {
     if (!cont) return;
 
     cont.innerHTML = "";
+    cont.classList.remove("opacity-0"); // Mostrar contenedor
 
     const maxAlertas = 3;
     alertas.slice(0, maxAlertas).forEach(a => {

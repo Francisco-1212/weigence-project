@@ -127,8 +127,8 @@
       <!-- Contenido principal -->
       <div class="bg-[var(--bg-light)] dark:bg-[var(--theme-bg-dark)] text-[var(--text-light)] flex flex-col items-center text-center px-3 py-5 rounded-xl shadow-sm">
         <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mb-3 overflow-hidden shadow-lg">
-          {% if session.get('usuario_foto_perfil') %}
-            <img src="{{ session.get('usuario_foto_perfil') }}" alt="" class="w-full h-full object-cover">
+          {% if session.get('usuario_foto_perfil') and session.get('usuario_foto_perfil') != '' and session.get('usuario_foto_perfil') != 'None' %}
+            <img src="{{ session.get('usuario_foto_perfil') }}" alt="Foto de perfil" class="w-full h-full object-cover">
           {% else %}
             <span class="text-3xl font-bold text-white">{{ session["usuario_nombre"][0].upper() }}</span>
           {% endif %}
@@ -170,8 +170,8 @@
   <div class="px-2 lg:px-3 py-2 lg:py-3">
     <div id="profile-trigger" class="flex items-center gap-3 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3 py-2 rounded-lg transition-colors duration-200 w-full" tabindex="0">
       <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center overflow-hidden flex-shrink-0">
-        {% if session.get('usuario_foto_perfil') %}
-          <img src="{{ session.get('usuario_foto_perfil') }}" alt="" class="w-full h-full object-cover">
+        {% if session.get('usuario_foto_perfil') and session.get('usuario_foto_perfil') != '' and session.get('usuario_foto_perfil') != 'None' %}
+          <img src="{{ session.get('usuario_foto_perfil') }}" alt="Foto de perfil" class="w-full h-full object-cover">
         {% else %}
           <span class="text-lg font-bold text-white">{{ session["usuario_nombre"][0].upper() }}</span>
         {% endif %}

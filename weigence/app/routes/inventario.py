@@ -209,7 +209,7 @@ def inventario():
                     titulo = f"Producto vencido: {nombre}"
                     descripcion = f"Venció hace {abs(dias)} día(s)."
                     icono = "warning"
-                    color = "rojo"
+                    color = "negro"
                 elif dias == 0:
                     titulo = f"Producto vence hoy: {nombre}"
                     descripcion = "El producto vence hoy. Acción inmediata requerida."
@@ -219,7 +219,7 @@ def inventario():
                     titulo = f"Próximo a vencer: {nombre}"
                     descripcion = f"Vence en {dias} día(s). Revisar inventario."
                     icono = "schedule"
-                    color = "amarilla"
+                    color = "naranja"
                 
                 if titulo.lower() not in titulos_existentes:
                     alertas_nuevas.append({
