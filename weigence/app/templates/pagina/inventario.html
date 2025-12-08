@@ -145,24 +145,79 @@
     </div>
 
       <!-- Filtros y acciones -->
-      <div id="tabla-productos" class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 scroll-mt-4">
-        <div id="filtroEstado" class="flex gap-2 items-center flex-wrap">
-        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--primary-color)] text-white filtro-btn" data-status="todos">Todos</button>
-        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="agotado">Sin Stock</button>
-        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="bajo">Bajo Stock</button>
-        <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="normal">Normal</button>
-      </div>
+      <div id="tabla-productos" class="flex flex-col gap-3 scroll-mt-4">
+        <!-- Barra superior con botón de filtros y acciones -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <button id="toggleFiltrosBtn" class="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 transition-colors w-fit">
+            <span class="material-symbols-outlined text-base">filter_list</span>
+            <span>Filtros</span>
+            <span id="filtrosChevron" class="material-symbols-outlined text-base transition-transform">expand_more</span>
+          </button>
 
-        <div class="flex gap-2 sm:gap-3">
-          <button id="addProductBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 bg-[var(--primary-color)] text-white gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold px-3 sm:px-4 hover:bg-[var(--primary-600)] transition-colors flex-1 sm:flex-initial">
-            <span class="material-symbols-outlined text-base">add</span>
-            <span class="hidden sm:inline">Agregar Producto</span>
-            <span class="sm:hidden">Agregar</span>
-          </button>
-          <button id="exportBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 transition-colors">
-            <span class="material-symbols-outlined text-base">file_download</span>
-            <span class="hidden sm:inline">Exportar</span>
-          </button>
+          <div class="flex gap-2 sm:gap-3">
+            <button id="addProductBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 bg-[var(--primary-color)] text-white gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold px-3 sm:px-4 hover:bg-[var(--primary-600)] transition-colors flex-1 sm:flex-initial">
+              <span class="material-symbols-outlined text-base">add</span>
+              <span class="hidden sm:inline">Agregar Producto</span>
+              <span class="sm:hidden">Agregar</span>
+            </button>
+            <button id="exportBtn" class="flex items-center justify-center rounded-lg h-9 sm:h-10 border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 transition-colors">
+              <span class="material-symbols-outlined text-base">file_download</span>
+              <span class="hidden sm:inline">Exportar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel de filtros desplegable -->
+        <div id="panelFiltros" class="hidden bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-gray-300 dark:border-neutral-700 rounded-lg p-3 sm:p-4 space-y-3">
+          <!-- Filtro por Estado -->
+          <div>
+            <label class="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Estado de Stock</label>
+            <div id="filtroEstado" class="flex gap-2 items-center flex-wrap">
+              <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--primary-color)] text-white filtro-btn" data-status="todos">Todos</button>
+              <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="agotado">Sin Stock</button>
+              <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="bajo">Bajo Stock</button>
+              <button class="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 hover:bg-[var(--primary-color)]/10 filtro-btn" data-status="normal">Normal</button>
+            </div>
+          </div>
+
+          <!-- Filtros por Estante, Categoría y Ordenamiento -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Estante</label>
+              <select id="filtroEstante" class="w-full h-8 sm:h-9 px-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                <option value="">Todos los estantes</option>
+                {% for estante_id in estantes_validos %}
+                <option value="{{ estante_codigos[estante_id] }}">{{ estante_codigos[estante_id] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Categoria</label>
+              <select id="filtroCategoria" class="w-full h-8 sm:h-9 px-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                <option value="">Todas las categorias</option>
+                {% for cat in categorias %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Ordenar por Vencimiento</label>
+              <select id="ordenVencimiento" class="w-full h-8 sm:h-9 px-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                <option value="">Sin ordenar</option>
+                <option value="asc">Mas cercano primero</option>
+                <option value="desc">Mas lejano primero</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botón para limpiar filtros -->
+          <div class="flex justify-end pt-1">
+            <button id="limpiarFiltrosBtn" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-gray-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              Limpiar Filtros
+            </button>
+          </div>
         </div>
       </div>
 

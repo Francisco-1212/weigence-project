@@ -131,6 +131,13 @@ def inventario():
             producto["data_stock"] = stock
             precio = producto.get("precio_unitario", 0)
             nombre = producto.get("nombre", "Producto sin nombre")
+            
+            # Agregar codigo de estante formateado
+            id_estante = producto.get("id_estante")
+            if id_estante:
+                producto["codigo_estante"] = estantes_catalogo.get(id_estante, str(id_estante))
+            else:
+                producto["codigo_estante"] = ""
 
             if stock == 0:
                 producto["status"] = "agotado"

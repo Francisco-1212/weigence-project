@@ -6,7 +6,14 @@ const Inventario = {
   state: {
     current: null,
     editMode: false,
-    filters: { category: '', status: '', dateStart: '', dateEnd: '' },
+    filters: { 
+      category: '', 
+      status: '', 
+      dateStart: '', 
+      dateEnd: '',
+      estante: '',
+      ordenVencimiento: ''
+    },
     page: 1,
     pageSize: 10,
     rows: [],
@@ -89,6 +96,13 @@ const Inventario = {
     this.pageStats = document.getElementById('pageStats');
     this.table = document.getElementById('productTable');
     this.rows = Array.from(document.querySelectorAll('.product-row'));
+    this.toggleFiltrosBtn = document.getElementById('toggleFiltrosBtn');
+    this.panelFiltros = document.getElementById('panelFiltros');
+    this.filtrosChevron = document.getElementById('filtrosChevron');
+    this.filtroEstante = document.getElementById('filtroEstante');
+    this.filtroCategoria = document.getElementById('filtroCategoria');
+    this.ordenVencimiento = document.getElementById('ordenVencimiento');
+    this.limpiarFiltrosBtn = document.getElementById('limpiarFiltrosBtn');
   },
 
   bindEvents() {
@@ -172,6 +186,40 @@ const Inventario = {
       if (this.state.page < pages) { this.state.page++; this.applyPagination(); }
     });
 
+    // Toggle panel de filtros
+    this.toggleFiltrosBtn?.addEventListener('click', () => {
+      const isHidden = this.panelFiltros.classList.contains('hidden');
+      if (isHidden) {
+        this.panelFiltros.classList.remove('hidden');
+        this.filtrosChevron.style.transform = 'rotate(180deg)';
+      } else {
+        this.panelFiltros.classList.add('hidden');
+        this.filtrosChevron.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    // Filtros por estante y categoria
+    this.filtroEstante?.addEventListener('change', () => {
+      this.state.filters.estante = this.filtroEstante.value;
+      this.aplicarFiltrosCompletos();
+    });
+
+    this.filtroCategoria?.addEventListener('change', () => {
+      this.state.filters.category = this.filtroCategoria.value;
+      this.aplicarFiltrosCompletos();
+    });
+
+    // Ordenamiento por vencimiento
+    this.ordenVencimiento?.addEventListener('change', () => {
+      this.state.filters.ordenVencimiento = this.ordenVencimiento.value;
+      this.aplicarFiltrosCompletos();
+    });
+
+    // Limpiar filtros
+    this.limpiarFiltrosBtn?.addEventListener('click', () => {
+      this.limpiarFiltros();
+    });
+
     // Filtros de fecha (Hoy/Semana/Mes)
     const filtroFechaBtns = document.querySelectorAll('.filtro-fecha-btn');
     if (filtroFechaBtns.length > 0) {
@@ -237,28 +285,49 @@ const Inventario = {
   // -------------------- Filtrado y Paginación --------------------
 
 filterByStatus(status) {
-  const productRows = document.querySelectorAll('.product-row');
-  console.log(`Estado seleccionado: ${status}`);
+  this.state.filters.status = status;
+  this.aplicarFiltrosCompletos();
+},
 
-  // Limpiar cualquier filtro previo de paginación
+aplicarFiltrosCompletos() {
+  const productRows = document.querySelectorAll('.product-row');
   this.state.filteredRows = [];
 
-  productRows.forEach(row => {
+  let rowsArray = Array.from(productRows);
+
+  // Aplicar filtros
+  rowsArray.forEach(row => {
     const stock = parseInt(row.getAttribute('data-stock'), 10);
+    const category = row.getAttribute('data-category') || '';
+    const estante = row.getAttribute('data-estante') || '';
+    
+    let shouldShow = true;
 
-    let shouldShow = false;
-
-    if (status === 'todos') {
-      shouldShow = true;
-    } else if (status === 'agotado' && stock === 0) {
-      shouldShow = true;
-    } else if (status === 'bajo' && stock > 0 && stock < 10) {
-      shouldShow = true;
-    } else if (status === 'normal' && stock >= 10) {
-      shouldShow = true;
+    // Filtro por estado de stock
+    if (this.state.filters.status && this.state.filters.status !== 'todos') {
+      if (this.state.filters.status === 'agotado' && stock !== 0) {
+        shouldShow = false;
+      } else if (this.state.filters.status === 'bajo' && (stock === 0 || stock >= 10)) {
+        shouldShow = false;
+      } else if (this.state.filters.status === 'normal' && stock < 10) {
+        shouldShow = false;
+      }
     }
 
-    // Aplicar visibilidad usando classList en lugar de style.display
+    // Filtro por categoria
+    if (shouldShow && this.state.filters.category) {
+      if (category.toLowerCase() !== this.state.filters.category.toLowerCase()) {
+        shouldShow = false;
+      }
+    }
+
+    // Filtro por estante
+    if (shouldShow && this.state.filters.estante) {
+      if (estante !== this.state.filters.estante) {
+        shouldShow = false;
+      }
+    }
+
     if (shouldShow) {
       row.classList.remove('hidden');
       this.state.filteredRows.push(row);
@@ -267,9 +336,77 @@ filterByStatus(status) {
     }
   });
 
+  // Ordenar por vencimiento si esta seleccionado
+  if (this.state.filters.ordenVencimiento) {
+    this.ordenarPorVencimiento(this.state.filteredRows, this.state.filters.ordenVencimiento);
+  }
+
   // Actualizar la paginación
   this.state.page = 1;
   this.applyPagination();
+},
+
+ordenarPorVencimiento(rows, orden) {
+  const tbody = this.table.querySelector('tbody');
+  if (!tbody) return;
+
+  // Ordenar las filas
+  rows.sort((a, b) => {
+    const fechaA = a.getAttribute('data-fecha-venc');
+    const fechaB = b.getAttribute('data-fecha-venc');
+
+    // Manejar productos sin fecha de vencimiento (se colocan al final)
+    if (!fechaA && !fechaB) return 0;
+    if (!fechaA) return 1;
+    if (!fechaB) return -1;
+
+    const dateA = new Date(fechaA);
+    const dateB = new Date(fechaB);
+
+    if (orden === 'asc') {
+      return dateA - dateB;
+    } else {
+      return dateB - dateA;
+    }
+  });
+
+  // Reordenar en el DOM
+  rows.forEach(row => {
+    tbody.appendChild(row);
+  });
+},
+
+limpiarFiltros() {
+  // Resetear filtros en el estado
+  this.state.filters = {
+    category: '',
+    status: 'todos',
+    dateStart: '',
+    dateEnd: '',
+    estante: '',
+    ordenVencimiento: ''
+  };
+
+  // Resetear UI
+  if (this.filtroEstante) this.filtroEstante.value = '';
+  if (this.filtroCategoria) this.filtroCategoria.value = '';
+  if (this.ordenVencimiento) this.ordenVencimiento.value = '';
+
+  // Resetear botones de estado
+  const filtroBtns = document.querySelectorAll('.filtro-btn');
+  filtroBtns.forEach(btn => {
+    const status = btn.getAttribute('data-status');
+    if (status === 'todos') {
+      btn.classList.remove('bg-[var(--card-bg-light)]', 'dark:bg-[var(--card-bg-dark)]', 'text-neutral-900', 'dark:text-neutral-100');
+      btn.classList.add('bg-[var(--primary-color)]', 'text-white');
+    } else {
+      btn.classList.remove('bg-[var(--primary-color)]', 'text-white');
+      btn.classList.add('bg-[var(--card-bg-light)]', 'dark:bg-[var(--card-bg-dark)]', 'text-neutral-900', 'dark:text-neutral-100');
+    }
+  });
+
+  // Aplicar filtros (mostrara todos)
+  this.aplicarFiltrosCompletos();
 },
 
 filterByVencimiento(vencimiento) {

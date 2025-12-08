@@ -50,6 +50,9 @@ const Alertas = {
     this.modalTitulo = document.getElementById('modal-titulo');
     this.modalDescripcion = document.getElementById('modal-descripcion');
     this.modalProducto = document.getElementById('modal-producto');
+    this.modalProductoContainer = document.getElementById('modal-producto-container');
+    this.modalEstante = document.getElementById('modal-estante');
+    this.modalEstanteContainer = document.getElementById('modal-estante-container');
     this.modalUsuario = document.getElementById('modal-usuario');
     this.modalFecha = document.getElementById('modal-fecha');
     this.modalTipo = document.getElementById('modal-tipo');
@@ -495,13 +498,30 @@ const Alertas = {
       estado: row.dataset.estado,
       fecha: row.dataset.fecha,
       producto: row.dataset.producto,
+      estante: row.dataset.estante || '',
       usuario: row.dataset.usuario
     };
 
     // Llenar modal
     this.modalTitulo.textContent = this.state.alertaActual.titulo;
     this.modalDescripcion.textContent = this.state.alertaActual.descripcion;
-    this.modalProducto.textContent = this.state.alertaActual.producto;
+    
+    // Mostrar producto si existe
+    if (this.state.alertaActual.producto && this.state.alertaActual.producto !== "Sin producto") {
+      this.modalProducto.textContent = this.state.alertaActual.producto;
+      this.modalProductoContainer.style.display = 'flex';
+    } else {
+      this.modalProductoContainer.style.display = 'none';
+    }
+    
+    // Mostrar estante si existe
+    if (this.state.alertaActual.estante && this.state.alertaActual.estante !== '') {
+      this.modalEstante.textContent = this.state.alertaActual.estante;
+      this.modalEstanteContainer.style.display = 'flex';
+    } else {
+      this.modalEstanteContainer.style.display = 'none';
+    }
+    
     this.modalUsuario.textContent = this.state.alertaActual.usuario;
     
     // Formatear fecha

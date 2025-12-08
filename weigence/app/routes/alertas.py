@@ -20,6 +20,9 @@ def alertas():
         session["last_page"] = "alertas"
 
     try:
+        # Generar alertas automáticamente al cargar la página
+        generar_alertas_basicas()
+        generar_alertas_peso_estantes()
         alertas = (
             supabase.table("alertas")
             .select("*")
@@ -31,13 +34,16 @@ def alertas():
 
         productos = supabase.table("productos").select("idproducto, nombre").execute().data or []
         usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
+        estantes = supabase.table("estantes").select("id_estante, nombre").execute().data or []
 
         productos_dict = {p["idproducto"]: p["nombre"] for p in productos}
         usuarios_dict = {u["rut_usuario"]: u["nombre"] for u in usuarios}
+        estantes_dict = {e["id_estante"]: e["nombre"] for e in estantes}
 
         for alerta in alertas:
             alerta["nombre_producto"] = productos_dict.get(alerta.get("idproducto"), "Sin producto")
             alerta["nombre_usuario"] = usuarios_dict.get(alerta.get("idusuario"), "Sistema")
+            alerta["nombre_estante"] = estantes_dict.get(alerta.get("id_estante"), None)
 
             fecha_valor = alerta.get("fecha_creacion")
             if fecha_valor:
@@ -290,9 +296,101 @@ def actualizar_alerta(alerta_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+def generar_alertas_peso_estantes():
+    """
+    Crea o actualiza alertas cuando el peso_actual de un estante difiere del peso_objetivo.
+    - Crea alerta si hay diferencia significativa (>5% o >5kg)
+    - Marca como resuelto si el peso vuelve a estar dentro del rango aceptable
+    """
+    try:
+        nuevas = []
+        
+        # Obtener alertas existentes de estantes
+        existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
+        alertas_estantes_activas = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "pendiente" and a.get("id_estante")}
+        alertas_estantes_resueltas = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "resuelto" and a.get("id_estante")}
+        
+        # Obtener todos los estantes con peso_actual y peso_objetivo
+        estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
+        
+        for estante in estantes:
+            id_estante = estante.get("id_estante")
+            nombre = estante.get("nombre", f"Estante {id_estante}")
+            peso_actual = float(estante.get("peso_actual", 0))
+            peso_objetivo = float(estante.get("peso_objetivo", 0))
+            
+            # Calcular diferencia
+            diferencia = abs(peso_actual - peso_objetivo)
+            porcentaje_diferencia = (diferencia / peso_objetivo * 100) if peso_objetivo > 0 else 0
+            
+            # Definir umbral: 5% o 5kg, lo que sea mayor
+            umbral_kg = max(5, peso_objetivo * 0.05)
+            
+            titulo_discrepancia = f"Discrepancia de peso en {nombre}".lower()
+            
+            # Si la diferencia es significativa
+            if diferencia > umbral_kg and peso_objetivo > 0:
+                if peso_actual > peso_objetivo:
+                    tipo_discrepancia = "exceso"
+                    descripcion = f"El estante tiene {diferencia:.2f}kg más de lo esperado. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
+                    icono = "trending_up"
+                    tipo_color = "naranja"
+                else:
+                    tipo_discrepancia = "faltante"
+                    descripcion = f"Al estante le faltan {diferencia:.2f}kg. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
+                    icono = "trending_down"
+                    tipo_color = "amarilla"
+                
+                # Crear o reactivar alerta
+                if titulo_discrepancia not in alertas_estantes_activas:
+                    if titulo_discrepancia in alertas_estantes_resueltas:
+                        # Reactivar alerta resuelta
+                        supabase.table("alertas").update({
+                            "estado": "pendiente",
+                            "descripcion": descripcion,
+                            "fecha_modificacion": datetime.now().isoformat()
+                        }).eq("id", alertas_estantes_resueltas[titulo_discrepancia]).execute()
+                    else:
+                        # Crear nueva alerta
+                        nuevas.append({
+                            "titulo": f"Discrepancia de peso en {nombre}",
+                            "descripcion": descripcion,
+                            "icono": icono,
+                            "tipo_color": tipo_color,
+                            "estado": "pendiente",
+                            "idproducto": None,
+                            "idusuario": None,
+                            "id_estante": id_estante,
+                            "fecha_creacion": datetime.now().isoformat(),
+                        })
+            else:
+                # Si el peso está dentro del rango aceptable, resolver alertas activas
+                if titulo_discrepancia in alertas_estantes_activas:
+                    supabase.table("alertas").update({
+                        "estado": "resuelto",
+                        "fecha_modificacion": datetime.now().isoformat()
+                    }).eq("id", alertas_estantes_activas[titulo_discrepancia]).execute()
+                    print(f"[ALERTA] Resuelta discrepancia de peso en {nombre}")
+        
+        # Insertar nuevas alertas
+        if nuevas:
+            supabase.table("alertas").insert(nuevas).execute()
+            print(f"[ALERTA] {len(nuevas)} nuevas alertas de peso de estantes creadas.")
+        
+        return True
+    
+    except Exception as e:
+        print(f"Error generando alertas de peso de estantes: {e}")
+        return False
+
+
 @bp.route("/api/generar_alertas_basicas")
 def generar_alertas_basicas_api():
-    resultado = generar_alertas_basicas()
-    if resultado:
+    resultado_productos = generar_alertas_basicas()
+    resultado_estantes = generar_alertas_peso_estantes()
+    
+    if resultado_productos and resultado_estantes:
         return jsonify({"success": True, "mensaje": "Alertas generadas correctamente"})
+    elif resultado_productos or resultado_estantes:
+        return jsonify({"success": True, "mensaje": "Alertas generadas parcialmente"})
     return jsonify({"success": False, "mensaje": "Error al generar alertas"}), 500
