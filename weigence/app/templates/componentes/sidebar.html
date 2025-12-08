@@ -1,11 +1,10 @@
 <aside id="sidebar" class="fixed left-0 top-0 w-72 sm:w-64 h-screen bg-[var(--sbar)] dark:bg-[var(--card-bg-dark)] border-r border-neutral-300 dark:border-neutral-700 flex flex-col shadow-lg z-50 -translate-x-full lg:translate-x-0 transition-transform duration-300">
 
   <!-- Logo -->
-  <div class="flex items-center justify-between h-16 lg:h-20 px-4 lg:px-6 border-b border-neutral-300 dark:border-neutral-700">
-    <div class="flex items-center gap-3">
-      <svg class="text-primary-600 dark:text-primary-400 h-6 w-6 lg:h-8 lg:w-8"></svg>
-      <h1 class="text-lg lg:text-xl font-bold text-neutral-900 dark:text-neutral-100">Weigence</h1>
-    </div>
+  <div class="flex items-center justify-between h-28 lg:h-32 px-4 lg:px-6 border-b border-neutral-300 dark:border-neutral-700">
+    <a href="{{ url_for('main.dashboard') }}" class="flex items-center justify-center flex-1 py-2">
+      <img src="{{ url_for('static', filename='img/marca_de_agua.png') }}" alt="Weigence Logo" class="h-24 lg:h-28 w-auto object-contain brightness-0 dark:brightness-100">
+    </a>
     <button id="sidebar-close-btn" class="lg:hidden p-2 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors">
       <span class="material-symbols-outlined text-neutral-700 dark:text-neutral-300">close</span>
     </button>

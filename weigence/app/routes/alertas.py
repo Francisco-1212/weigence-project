@@ -20,10 +20,6 @@ def alertas():
         session["last_page"] = "alertas"
 
     try:
-        # Generar alertas automáticamente al cargar la página
-        generar_alertas_basicas()
-        generar_alertas_peso_estantes()
-        
         # Obtener todas las alertas y ordenar: pendientes primero, luego por fecha
         alertas = (
             supabase.table("alertas")

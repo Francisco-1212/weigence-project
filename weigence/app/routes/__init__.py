@@ -16,5 +16,6 @@ from . import (
     recomendaciones_ai,
     usuarios,
     chat_ui,
-    test_routes
+    test_routes,
+    legal
 )

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Política de Privacidad - Weigence{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="max-w-4xl mx-auto">
+  <!-- Encabezado -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-[var(--text-light)] dark:text-white mb-2">Política de Privacidad</h1>
+    <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+      Última actualización: 8 de diciembre de 2025
+    </p>
+  </div>
+
+  <!-- Contenido -->
+  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg shadow-lg p-8 space-y-6">
+    
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">1. Introducción</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        En Weigence, nos comprometemos a proteger la privacidad y seguridad de los datos personales de nuestros usuarios. 
+        Esta Política de Privacidad describe cómo recopilamos, utilizamos, almacenamos y protegemos su información personal 
+        cuando utiliza nuestro sistema de gestión de inventario inteligente.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">2. Información que Recopilamos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Recopilamos la siguiente información cuando utiliza nuestros servicios:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li><strong>Datos de registro:</strong> Nombre, correo electrónico, RUT, teléfono, rol empresarial</li>
+        <li><strong>Datos operativos:</strong> Información de inventario, transacciones, movimientos de productos</li>
+        <li><strong>Datos de uso:</strong> Registros de actividad, interacciones con el sistema, preferencias</li>
+        <li><strong>Datos técnicos:</strong> Dirección IP, tipo de navegador, sistema operativo, cookies</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">3. Uso de la Información</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Utilizamos su información para:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li>Proporcionar y mantener nuestros servicios de gestión de inventario</li>
+        <li>Procesar transacciones y gestionar su cuenta de usuario</li>
+        <li>Generar análisis predictivos mediante IA para optimizar su inventario</li>
+        <li>Enviar notificaciones y alertas relacionadas con su operación</li>
+        <li>Mejorar la experiencia del usuario y desarrollar nuevas funcionalidades</li>
+        <li>Cumplir con obligaciones legales y regulatorias</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">4. Protección de Datos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Implementamos medidas de seguridad técnicas y organizativas apropiadas para proteger sus datos personales, incluyendo:
+        cifrado de datos en tránsito y en reposo, autenticación segura, controles de acceso basados en roles, 
+        auditorías de seguridad regulares y copias de seguridad automatizadas.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">5. Compartir Información</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        No vendemos ni alquilamos sus datos personales a terceros. Podemos compartir información únicamente con:
+        proveedores de servicios que nos ayudan a operar la plataforma (servicios en la nube, análisis),
+        autoridades cuando sea requerido por ley, y en caso de fusión o adquisición empresarial.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">6. Sus Derechos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Usted tiene derecho a:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li>Acceder a sus datos personales almacenados en nuestro sistema</li>
+        <li>Rectificar información inexacta o incompleta</li>
+        <li>Solicitar la eliminación de sus datos personales</li>
+        <li>Oponerse al procesamiento de sus datos personales</li>
+        <li>Solicitar la portabilidad de sus datos</li>
+        <li>Retirar el consentimiento en cualquier momento</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">7. Retención de Datos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Conservamos sus datos personales durante el tiempo necesario para cumplir con los fines descritos en esta política,
+        a menos que la ley requiera o permita un período de retención más prolongado.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">8. Contacto</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Para ejercer sus derechos o realizar consultas sobre esta política, contáctenos en:
+        <a href="mailto:weigence65@gmail.com" class="text-[var(--primary-500)] hover:underline">weigence65@gmail.com</a>
+      </p>
+    </section>
+
+    <!-- Botón de regreso -->
+    <div class="pt-6 border-t border-[var(--border-light)] dark:border-[var(--border-dark)]">
+      <a href="{{ url_for('main.dashboard') }}" 
+         class="inline-flex items-center px-4 py-2 bg-[var(--primary-500)] hover:bg-[var(--primary-600)] text-white rounded-lg transition-colors duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver al Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

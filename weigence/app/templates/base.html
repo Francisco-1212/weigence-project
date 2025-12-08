@@ -152,7 +152,7 @@
 </head>
 
 <body class="!bg-[var(--bg-light)] dark:!bg-[var(--theme-bg-dark)] text-[var(--text-light)] font-[Inter,'Noto Sans',sans-serif]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <div class="flex min-h-screen w-full">
     <!-- Sidebar -->
     {% block sidebar %}{% endblock %}
 
@@ -163,10 +163,15 @@
         {% block top %}{% endblock %}
       </header>
 
-      <!-- Contenido -->
-      <main class="flex-1 px-2 sm:px-4 py-4 sm:py-8 overflow-y-auto overflow-x-hidden relative z-10">
-        {% block contenido %}{% endblock %}
-      </main>
+      <!-- Contenido con espacio para footer -->
+      <div class="flex-1 flex flex-col">
+        <main class="flex-1 px-2 sm:px-4 py-4 sm:py-8 overflow-x-hidden relative z-10">
+          {% block contenido %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        {% include "componentes/footer.html" %}
+      </div>
     </div>
   </div>
 

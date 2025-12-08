@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Términos y Condiciones - Weigence{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="max-w-4xl mx-auto">
+  <!-- Encabezado -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-[var(--text-light)] dark:text-white mb-2">Términos y Condiciones</h1>
+    <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+      Última actualización: 8 de diciembre de 2025
+    </p>
+  </div>
+
+  <!-- Contenido -->
+  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg shadow-lg p-8 space-y-6">
+    
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">1. Aceptación de los Términos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Al acceder y utilizar Weigence, usted acepta estar sujeto a estos Términos y Condiciones. 
+        Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestro servicio.
+        El uso continuado de la plataforma constituye la aceptación de cualquier modificación a estos términos.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">2. Descripción del Servicio</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Weigence es un sistema de gestión de inventario inteligente basado en peso que proporciona:
+        control en tiempo real de inventario, análisis predictivo con inteligencia artificial,
+        gestión de movimientos y transacciones, alertas automáticas de stock crítico,
+        auditoría completa de operaciones y reportes analíticos avanzados.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">3. Registro y Cuenta de Usuario</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Para utilizar Weigence, debe:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li>Proporcionar información precisa, completa y actualizada durante el registro</li>
+        <li>Mantener la seguridad y confidencialidad de sus credenciales de acceso</li>
+        <li>Notificar inmediatamente cualquier uso no autorizado de su cuenta</li>
+        <li>Ser responsable de todas las actividades que ocurran bajo su cuenta</li>
+        <li>Tener al menos 18 años de edad o contar con autorización de un tutor legal</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">4. Uso Aceptable</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Usted se compromete a NO:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li>Utilizar el servicio para fines ilegales o no autorizados</li>
+        <li>Intentar acceder a áreas no autorizadas del sistema</li>
+        <li>Interferir con el funcionamiento normal de la plataforma</li>
+        <li>Transmitir virus, malware o código malicioso</li>
+        <li>Realizar ingeniería inversa o intentar extraer código fuente</li>
+        <li>Utilizar el servicio para dañar, acosar o perjudicar a otros usuarios</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">5. Propiedad Intelectual</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Todo el contenido, diseño, código, funcionalidad y características de Weigence son propiedad exclusiva 
+        de Weigence y están protegidos por leyes de propiedad intelectual. Los datos ingresados por el usuario 
+        permanecen como propiedad del usuario, quien otorga a Weigence una licencia para procesarlos y proporcionar el servicio.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">6. Disponibilidad del Servicio</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Nos esforzamos por mantener el servicio disponible 24/7, sin embargo, no garantizamos disponibilidad ininterrumpida.
+        Podemos realizar mantenimientos programados, actualizaciones o enfrentar interrupciones imprevistas.
+        No seremos responsables por pérdidas resultantes de la indisponibilidad temporal del servicio.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">7. Limitación de Responsabilidad</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Weigence se proporciona "tal cual" sin garantías de ningún tipo. No nos hacemos responsables de:
+        pérdidas de datos, daños indirectos o consecuenciales, decisiones comerciales basadas en análisis del sistema,
+        errores en predicciones de IA o análisis, o interrupciones del servicio por causas fuera de nuestro control.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">8. Modificaciones del Servicio</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Nos reservamos el derecho de modificar, suspender o descontinuar cualquier aspecto del servicio en cualquier momento.
+        Las modificaciones sustanciales serán notificadas con anticipación razonable.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">9. Terminación</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Podemos suspender o terminar su acceso al servicio inmediatamente, sin previo aviso, si consideramos que 
+        ha violado estos términos. Usted puede cancelar su cuenta en cualquier momento contactándonos.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">10. Ley Aplicable</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Estos términos se rigen por las leyes de Chile. Cualquier disputa se resolverá en los tribunales competentes de Santiago, Chile.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">11. Contacto</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Para consultas sobre estos Términos y Condiciones, contáctenos en:
+        <a href="mailto:weigence65@gmail.com" class="text-[var(--primary-500)] hover:underline">weigence65@gmail.com</a>
+      </p>
+    </section>
+
+    <!-- Botón de regreso -->
+    <div class="pt-6 border-t border-[var(--border-light)] dark:border-[var(--border-dark)]">
+      <a href="{{ url_for('main.dashboard') }}" 
+         class="inline-flex items-center px-4 py-2 bg-[var(--primary-500)] hover:bg-[var(--primary-600)] text-white rounded-lg transition-colors duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver al Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

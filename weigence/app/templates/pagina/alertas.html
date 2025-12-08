@@ -169,7 +169,7 @@
         </thead>
         <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)]">
           {% for alerta in alertas %}
-          <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-all duration-200 alerta-row"
+          <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-all duration-200 alerta-row" style="display: none;"
               data-id="{{ alerta.id }}"
               data-titulo="{{ alerta.titulo }}"
               data-descripcion="{{ alerta.descripcion }}"
@@ -415,6 +415,24 @@ function convertirGramosAKilogramos() {
 // Ejecutar conversión cuando la página cargue
 document.addEventListener('DOMContentLoaded', () => {
   convertirGramosAKilogramos();
+  
+  // Generar alertas en segundo plano sin bloquear la UI (solo una vez)
+  const alertasGeneradas = sessionStorage.getItem('alertas_generadas');
+  if (!alertasGeneradas) {
+    fetch('{{ url_for("main.generar_alertas_basicas_api") }}')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('✅ Alertas actualizadas en segundo plano');
+          sessionStorage.setItem('alertas_generadas', 'true');
+          // NO recargar automáticamente, dejar que el usuario vea la actualización natural
+          console.log('🔄 Nuevas alertas generadas. Recarga la página para verlas.');
+        }
+      })
+      .catch(error => {
+        console.error('Error al generar alertas:', error);
+      });
+  }
 });
 
 // También convertir cuando se abra el modal

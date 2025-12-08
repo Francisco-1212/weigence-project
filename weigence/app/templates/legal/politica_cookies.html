@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Política de Cookies - Weigence{% endblock %}
+
+{% block sidebar %}
+  {% include "componentes/sidebar.html" %}
+{% endblock %}
+
+{% block top %}
+  {% include "componentes/header.html" %}
+{% endblock %}
+
+{% block contenido %}
+<div class="max-w-4xl mx-auto">
+  <!-- Encabezado -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-[var(--text-light)] dark:text-white mb-2">Política de Cookies</h1>
+    <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+      Última actualización: 8 de diciembre de 2025
+    </p>
+  </div>
+
+  <!-- Contenido -->
+  <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg shadow-lg p-8 space-y-6">
+    
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">1. ¿Qué son las Cookies?</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Las cookies son pequeños archivos de texto que se almacenan en su dispositivo cuando visita un sitio web.
+        Estos archivos permiten al sitio web recordar sus acciones y preferencias durante un período de tiempo,
+        mejorando su experiencia de navegación y permitiendo funcionalidades específicas del sistema.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">2. Cookies que Utilizamos</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-4">
+        Weigence utiliza los siguientes tipos de cookies:
+      </p>
+
+      <div class="space-y-4">
+        <div class="bg-[var(--bg-light)] dark:bg-[var(--card-sub-bg-dark)] p-4 rounded-lg">
+          <h3 class="font-semibold text-[var(--text-light)] dark:text-white mb-2">Cookies Esenciales (Necesarias)</h3>
+          <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+            Estas cookies son fundamentales para el funcionamiento del sitio web y no pueden desactivarse.
+            Incluyen: cookies de sesión de usuario, tokens de autenticación (CSRF), preferencias de idioma,
+            y cookies de seguridad para proteger su cuenta.
+          </p>
+        </div>
+
+        <div class="bg-[var(--bg-light)] dark:bg-[var(--card-sub-bg-dark)] p-4 rounded-lg">
+          <h3 class="font-semibold text-[var(--text-light)] dark:text-white mb-2">Cookies de Preferencias</h3>
+          <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+            Permiten recordar sus configuraciones personalizadas como: tema de color (modo claro/oscuro),
+            configuración de visualización de tablas y gráficos, preferencias de notificaciones,
+            y configuración de zona horaria.
+          </p>
+        </div>
+
+        <div class="bg-[var(--bg-light)] dark:bg-[var(--card-sub-bg-dark)] p-4 rounded-lg">
+          <h3 class="font-semibold text-[var(--text-light)] dark:text-white mb-2">Cookies de Funcionalidad</h3>
+          <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+            Habilitan funcionalidades mejoradas como: recordar sus últimos filtros aplicados,
+            mantener el estado de paneles expandidos/colapsados, guardar configuraciones de vistas personalizadas,
+            y preferencias del chat de soporte.
+          </p>
+        </div>
+
+        <div class="bg-[var(--bg-light)] dark:bg-[var(--card-sub-bg-dark)] p-4 rounded-lg">
+          <h3 class="font-semibold text-[var(--text-light)] dark:text-white mb-2">Cookies de Análisis</h3>
+          <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] text-sm">
+            Nos ayudan a entender cómo los usuarios interactúan con el sistema para mejorarlo continuamente.
+            Incluyen: análisis de páginas visitadas, tiempo de permanencia, funcionalidades más utilizadas,
+            y patrones de navegación (datos anónimos y agregados).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">3. Cookies de Terceros</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Weigence puede utilizar servicios de terceros que establecen sus propias cookies, incluyendo:
+        servicios de almacenamiento en la nube (para respaldo de datos), proveedores de CDN (para mejorar rendimiento),
+        y servicios de análisis web (para estadísticas anónimas). Estos terceros tienen sus propias políticas de cookies.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">4. Duración de las Cookies</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Utilizamos dos tipos de cookies según su duración:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li><strong>Cookies de Sesión:</strong> Se eliminan automáticamente cuando cierra su navegador. Usadas para mantener su sesión activa y segura.</li>
+        <li><strong>Cookies Persistentes:</strong> Permanecen en su dispositivo durante un período específico (generalmente hasta 12 meses). Usadas para recordar sus preferencias entre sesiones.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">5. Control y Gestión de Cookies</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mb-3">
+        Usted puede controlar y administrar las cookies de varias maneras:
+      </p>
+      <ul class="list-disc list-inside space-y-2 text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] ml-4">
+        <li><strong>Configuración del navegador:</strong> La mayoría de los navegadores permiten ver, eliminar y bloquear cookies a través de su configuración de privacidad.</li>
+        <li><strong>Herramientas de terceros:</strong> Puede utilizar herramientas de gestión de cookies disponibles en línea.</li>
+        <li><strong>Modo incógnito:</strong> Los navegadores en modo privado no almacenan cookies persistentes.</li>
+      </ul>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mt-3">
+        <strong>Importante:</strong> Tenga en cuenta que bloquear o eliminar ciertas cookies puede afectar 
+        la funcionalidad de Weigence y su experiencia de usuario. Las cookies esenciales son necesarias 
+        para el funcionamiento básico del sistema.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">6. Actualización de esta Política</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Podemos actualizar esta Política de Cookies ocasionalmente para reflejar cambios en nuestras prácticas
+        o por razones legales y regulatorias. Le notificaremos sobre cambios significativos mediante un aviso
+        en la plataforma o por correo electrónico.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold text-[var(--text-light)] dark:text-white mb-3">7. Más Información</h2>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed">
+        Para obtener más información sobre cómo usamos cookies o si tiene preguntas sobre esta política,
+        puede contactarnos en: 
+        <a href="mailto:weigence65@gmail.com" class="text-[var(--primary-500)] hover:underline">weigence65@gmail.com</a>
+      </p>
+      <p class="text-[var(--text-muted-light)] dark:text-[var(--text-dark-secondary)] leading-relaxed mt-3">
+        También puede consultar nuestra 
+        <a href="{{ url_for('main.politica_privacidad') }}" class="text-[var(--primary-500)] hover:underline">Política de Privacidad</a>
+        para información sobre cómo manejamos sus datos personales.
+      </p>
+    </section>
+
+    <!-- Botón de regreso -->
+    <div class="pt-6 border-t border-[var(--border-light)] dark:border-[var(--border-dark)]">
+      <a href="{{ url_for('main.dashboard') }}" 
+         class="inline-flex items-center px-4 py-2 bg-[var(--primary-500)] hover:bg-[var(--primary-600)] text-white rounded-lg transition-colors duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver al Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
