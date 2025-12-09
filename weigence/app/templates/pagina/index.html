@@ -14,23 +14,23 @@
   <h2 class="text-3xl font-bold mb-6 text-left">Panel de Control</h2>
   <!-- Tarjetas resumen -->
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
       <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Stock Total</p>
       <p id="stockTotal" class="text-3xl font-bold text-blue-500">{{ productos | sum(attribute='stock') }}</p>
     </div>
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
       <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Artículos vendidos</p>
       <p id="articulosVendidos" class="text-3xl font-bold text-neutral-700 dark:text-neutral-200">{{ articulos_vendidos }}</p>
     </div>
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
       <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Producto más vendido</p>
       <p id="productoMasVendido" class="text-2xl font-bold text-neutral-700 dark:text-neutral-200">"{{ producto_mas_vendido }}" </p>
     </div>
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
       <p class="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Productos Agotados</p>
       <p id="productosAgotados" class="text-3xl font-bold text-red-500">{{ productos_agotados }}</p>
     </div>
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
       <p class="text-sm font-medium text-green-600 mb-1">Ventas Totales</p>
       <p id="ventasTotales" class="text-3xl font-bold text-green-500">${{ ventas_totales|int }}</p>
     </div>
@@ -38,15 +38,15 @@
   <!-- Grid principal: 2 columnas en desktop -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Sección Ventas por Producto -->
-    <div class="lg:col-span-2 p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg  border border-gray-300 dark:border-neutral-700">
+    <div class="lg:col-span-2 p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-lg border border-gray-300 dark:border-neutral-700 card-elevada">
       <h3 class="text-lg font-semibold">Ventas Totales</h3>
       <div class="flex items-baseline gap-2 mt-1">
         <p id="totalSales" class="text-3xl font-bold">$0</p>
         <p id="growthPercentage" class="text-sm font-medium text-success-light dark:text-success-dark">0%</p>
       </div>
       <!-- Contenedor gráfico tipo columnas -->
-      <div class="h-64 mt-4">
-        <div id="chartContainer" class="grid h-full grid-flow-col auto-cols-fr gap-4 items-end justify-items-center"></div>
+      <div class="h-64 mt-4 flex flex-col justify-end">
+        <div id="chartContainer" class="flex w-full gap-4 items-end justify-center" style="height:70%; min-height:180px; align-items:flex-end;"></div>
       </div>
       <!-- Nombres de productos -->
       <div id="chartLabels" class="grid grid-flow-col auto-cols-fr gap-4 text-center text-sm font-medium mt-1 justify-items-center"></div>
@@ -82,7 +82,7 @@
           </div>
         </div>
       </a>
-      <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow">
+      <div class="p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-md border border-gray-300 dark:border-neutral-700 card-elevada">
         <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Acciones rápidas</h3>
         <div class="mt-4 space-y-3">
           <button id="btn-exportar-dashboard"
@@ -103,7 +103,7 @@
   </div>
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
     <!-- Top 5 Productos Más Vendidos -->
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-md overflow-hidden">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 card-elevada overflow-hidden">
       <div class="p-4 border-b border-neutral-300 dark:border-neutral-700">
         <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-200">Top 5 Productos Más Vendidos</h3>
       </div>
@@ -120,7 +120,7 @@
     </div>
     
     <!-- Top 5 Productos Menos Vendidos -->
-    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-md overflow-hidden">
+    <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 card-elevada overflow-hidden">
       <div class="p-4 border-b border-neutral-300 dark:border-neutral-700">
         <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-200">Top 5 Productos Menos Vendidos</h3>
       </div>

@@ -203,19 +203,29 @@ function generarBarras(productos) {
 
     const maxVentas = Math.max(...productos.map(p => (p.ventas || p.sales || 0)));
     productos.forEach(p => {
-        const value = p.ventas || p.sales || 0;
-        let altura = maxVentas > 0 ? (value / maxVentas) * 100 : 0;
-        if (!isFinite(altura) || altura <= 0) altura = 10;
-        const barra = document.createElement('div');
-        barra.className = `w-full bg-blue-600 rounded-t-lg transition-all duration-500 hover:bg-blue-700 cursor-pointer`;
-        barra.style.height = `${altura}%`;
-        barra.title = `${p.nombre || p.name}: $${(value).toFixed ? value.toFixed(0) : value}`;
-        chartContainer.appendChild(barra);
+      const value = p.ventas || p.sales || 0;
+      let altura = maxVentas > 0 ? (value / maxVentas) * 100 : 0;
+      if (!isFinite(altura) || altura <= 0) altura = 10;
 
-        const label = document.createElement('div');
-        label.textContent = p.nombre || p.name;
-        label.className = 'text-center text-sm font-medium mt-1 truncate';
-        chartLabels.appendChild(label);
+      // Contenedor para alinear la barra abajo y agregar margen superior
+      const barraWrapper = document.createElement('div');
+      barraWrapper.className = 'flex items-end h-full w-full';
+      barraWrapper.style.height = '100%';
+      barraWrapper.style.alignItems = 'flex-end';
+      barraWrapper.style.marginTop = '0';
+
+      const barra = document.createElement('div');
+      barra.className = `w-full bg-blue-600 rounded-t-lg transition-all duration-500 hover:bg-blue-700 cursor-pointer`;
+      barra.style.height = `${altura}%`;
+      barra.title = `${p.nombre || p.name}: $${(value).toFixed ? value.toFixed(0) : value}`;
+
+      barraWrapper.appendChild(barra);
+      chartContainer.appendChild(barraWrapper);
+
+      const label = document.createElement('div');
+      label.textContent = p.nombre || p.name;
+      label.className = 'text-center text-sm font-medium mt-16 truncate'; // mt-16 para que los títulos comiencen más abajo
+      chartLabels.appendChild(label);
     });
 }
 
