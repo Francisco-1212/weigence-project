@@ -127,14 +127,16 @@ class IARepository:
         )
 
     def obtener_alertas_desde(self, desde: datetime) -> List[Dict[str, Any]]:
-        """Lista las alertas activas desde la fecha de referencia."""
+        """Lista las alertas activas/pendientes desde la fecha de referencia."""
 
-        return self._fetch_since(
-            table="alertas",
-            columns="id,tipo_color,titulo,estado,fecha_creacion",
-            date_field="fecha_creacion",
-            desde=desde,
+        query = (
+            self._client.table("alertas")
+            .select("id,tipo_color,titulo,estado,fecha_creacion")
+            .gte("fecha_creacion", desde.isoformat())
+            .in_("estado", ["pendiente", "activo"])
+            .order("fecha_creacion", desc=True)
         )
+        return self._execute(query, table="alertas", operation="select")
 
     def obtener_movimientos_desde(self, desde: datetime) -> List[Dict[str, Any]]:
         """Entrega los movimientos de inventario ordenados por timestamp."""

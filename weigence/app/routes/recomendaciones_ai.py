@@ -74,10 +74,12 @@ def api_recomendacion_header():
         import inspect, sys
 
         page = request.args.get('page', 'dashboard')
+        print(f"[HEADER API] 🔄 Generando recomendación para página: {page}")
         body_data = request.get_json(silent=True)
         data = _parse_payload(body_data if isinstance(body_data, dict) else {})
 
         recomendaciones = generar_recomendacion(contexto=page, data=data, modo="header")
+        print(f"[HEADER API] ✅ Recomendación generada para {page}")
         
         # Si es un array (nuevo formato), devolverlo directamente
         if isinstance(recomendaciones, list):

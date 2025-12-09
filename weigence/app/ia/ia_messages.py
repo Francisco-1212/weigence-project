@@ -3,112 +3,104 @@ from typing import Dict, Any, List
 from app.ia.config import templates_v2
 import random
 
-# --- Mensajes cortos (HEADER) que resumen el hallazgo ML correspondiente ---
+def _formato_tiempo_inactividad(horas: float) -> str:
+    """Formatea el tiempo de inactividad en un mensaje legible."""
+    if horas < 1:
+        minutos = int(horas * 60)
+        if minutos == 0:
+            return "Movimiento registrado hace instantes"
+        return f"Sin movimientos hace {minutos} minuto{'s' if minutos != 1 else ''}"
+    elif horas < 24:
+        horas_int = int(horas)
+        return f"Sin movimientos hace {horas_int} hora{'s' if horas_int != 1 else ''}"
+    else:
+        dias = int(horas / 24)
+        return f"⚠️ Sin movimientos hace {dias} día{'s' if dias != 1 else ''}"
+
+# --- Mensajes cortos (HEADER) con métricas del sistema ---
 def get_header_message(page: str, context: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
     """
-    Genera lista de mensajes del header según pantalla actual y hallazgos ML.
-    Retorna múltiples mensajes para rotación automática.
+    Genera lista de mensajes del header con métricas operacionales del sistema.
+    Retorna exactamente 2 mensajes por módulo con información accionable.
     
     LÓGICA:
-    - Si hay hallazgos ML (problemas): Mostrar SOLO esos hallazgos
-    - Si NO hay hallazgos ML: Mostrar mensajes positivos/estadísticas
+    - Siempre muestra métricas reales del sistema (stock, alertas, ventas, etc.)
+    - 2 mensajes por pantalla con información esencial y accionable
     """
     ctx = context or {}
-    messages = []
-    
-    # Obtener todos los hallazgos ML de la página actual
-    ml_insights_cards = ctx.get('ml_insights_cards', [])
-    current_module_findings = [
-        card for card in ml_insights_cards 
-        if card.get('modulo') == page
-    ]
-    
-    # Agregar hallazgos ML encontrados (orden cronológico - más recientes primero)
-    for card in current_module_findings:
-        titulo = card.get('titulo', '')
-        descripcion = card.get('descripcion', '')
-        emoji = card.get('emoji', '')
-        severidad = card.get('ml_severity', 'info')
-        
-        # Combinar emoji + título de forma concisa
-        if descripcion:
-            first_sentence = descripcion.split('.')[0].strip()
-            titulo_sin_prefijo = titulo.split(':', 1)[-1].strip() if ':' in titulo else titulo
-            mensaje_texto = f"{emoji} {titulo_sin_prefijo}. {first_sentence}."
-        else:
-            mensaje_texto = f"{emoji} {titulo}"
-        
-        messages.append({
-            "mensaje": mensaje_texto,
-            "severidad": severidad,
-            "detalle": descripcion
-        })
-    
-    # SOLO agregar mensajes positivos si NO hay hallazgos ML (problemas)
-    if not messages:
-        positive_messages = _get_positive_messages(page, ctx)
-        messages.extend(positive_messages)
+    messages = _get_positive_messages(page, ctx)
     
     # Asegurar que siempre haya al menos 1 mensaje
     if not messages:
         messages = [{
-            "mensaje": "✅ Sistema funcionando correctamente.",
-            "severidad": "info",
-            "detalle": "No se detectaron anomalías en este módulo"
+            "mensaje": "📊 Sistema operativo",
+            "severidad": "info"
         }]
     
     return messages
 
 def _get_positive_messages(page: str, context: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     """
-    Genera mensajes positivos y estadísticas cuando no hay anomalías.
-    Retorna múltiples mensajes enriquecidos con métricas reales del snapshot.
+    Genera mensajes accionables y específicos con métricas reales del sistema.
+    Siempre incluye información útil, no solo mensajes positivos genéricos.
     """
     ctx = context or {}
     snapshot = ctx.get('snapshot', {})
     
     # Extraer métricas reales del snapshot
     total_productos = snapshot.get('total_productos', 0)
-    alertas_criticas = snapshot.get('critical_alerts', 0)
-    alertas_warning = snapshot.get('warning_alerts', 0)
+    productos_sin_stock = snapshot.get('productos_sin_stock', 0)
+    
+    # Extraer alertas del summary
+    alerts_summary = snapshot.get('alerts_summary', {})
+    alertas_criticas = alerts_summary.get('critical', 0)
+    alertas_warning = alerts_summary.get('warning', 0)
+    alertas_info = alerts_summary.get('info', 0)
+    alertas_pendientes = alertas_criticas + alertas_warning + alertas_info
     eventos_auditoria = snapshot.get('audit_events_count', 0)
     movimientos_hora = snapshot.get('movements_per_hour', 0)
+    ventas_24h = snapshot.get('ventas_ultimas_24h', 0)
+    movimientos_no_justificados = snapshot.get('movimientos_no_justificados', 0)
+    usuarios_actividad_sospechosa = snapshot.get('usuarios_sospechosos', 0)
+    
+    # Extraer métricas adicionales
+    estantes_sobrecargados = snapshot.get('estantes_sobrecargados', 0)
+    productos_no_encontrados = snapshot.get('productos_no_encontrados_movimientos', 0)
+    
+    print(f"[DEBUG MESSAGES] ========================================")
+    print(f"[DEBUG MESSAGES] Page: {page}")
+    print(f"[DEBUG MESSAGES] Alertas - Críticas: {alertas_criticas}, Advertencias: {alertas_warning}, Total pendientes: {alertas_pendientes}")
+    print(f"[DEBUG MESSAGES] productos_no_encontrados_movimientos: {productos_no_encontrados}")
+    print(f"[DEBUG MESSAGES] estantes_sobrecargados: {estantes_sobrecargados}")
+    print(f"[DEBUG MESSAGES] ========================================")
     
     messages_by_page = {
         "dashboard": [
-            {"mensaje": f"📊 Sistema operando normalmente. {total_productos} productos activos, {alertas_criticas + alertas_warning} alertas resueltas hoy.", "severidad": "info"},
-            {"mensaje": f"✅ Rendimiento estable. Todos los módulos funcionando correctamente.", "severidad": "success"},
-            {"mensaje": f"🎯 Operación óptima. Monitoreo de {total_productos} productos activo.", "severidad": "info"},
+            {"mensaje": f"📊 Stock estable: {total_productos} productos en inventario{f', {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ''}", "severidad": "info" if productos_sin_stock == 0 else "warning"},
+            {"mensaje": f"🔔 {alertas_pendientes} alertas {'pendientes' if alertas_pendientes > 0 else 'resueltas'} ({alertas_criticas} críticas, {alertas_warning} advertencias)", "severidad": "warning" if alertas_pendientes > 0 else "success"},
         ],
         "inventario": [
-            {"mensaje": f"📦 Stock estable con {total_productos} productos monitoreados. Sin alertas críticas.", "severidad": "info"},
-            {"mensaje": f"✅ Niveles de inventario balanceados. Sensores operando normalmente.", "severidad": "success"},
-            {"mensaje": f"🎯 Gestión eficiente. {total_productos} productos bajo control.", "severidad": "info"},
+            {"mensaje": f"📦 {total_productos} productos en inventario{f' - {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ' - Stock completo'}", "severidad": "warning" if productos_sin_stock > 0 else "success"},
+            {"mensaje": f"⚖️ {estantes_sobrecargados} estantes sobrecargados{' - Redistribuir carga' if estantes_sobrecargados > 0 else ' - Capacidad normal'}", "severidad": "warning" if estantes_sobrecargados > 0 else "info"},
         ],
         "ventas": [
-            {"mensaje": f"💰 Desempeño comercial dentro del rango esperado.", "severidad": "info"},
-            {"mensaje": f"✅ Flujo de ventas consistente. Sin variaciones anómalas detectadas.", "severidad": "success"},
-            {"mensaje": f"📈 Tendencia estable. Operación normalizada.", "severidad": "info"},
+            {"mensaje": f"💰 Ventas {'estables' if ventas_24h >= 30 else 'bajas'}: {ventas_24h} ventas en las últimas 24h", "severidad": "info" if ventas_24h >= 30 else "warning"},
         ],
         "movimientos": [
-            {"mensaje": f"🔄 Flujo operativo regular. {int(movimientos_hora)} movimientos/hora promedio.", "severidad": "info"},
-            {"mensaje": f"✅ Trazabilidad completa. Todos los movimientos registrados.", "severidad": "success"},
-            {"mensaje": f"📊 Actividad normalizada. Sin patrones inusuales.", "severidad": "info"},
+            {"mensaje": f"❓ {productos_no_encontrados} movimientos de productos no encontrados{' - Revisar registros' if productos_no_encontrados > 0 else ''}", "severidad": "warning" if productos_no_encontrados > 0 else "success"},
         ],
         "alertas": [
-            {"mensaje": f"🔔 Sistema bajo control. {alertas_criticas} alertas críticas, {alertas_warning} advertencias.", "severidad": "info"},
-            {"mensaje": f"✅ Monitoreo activo. Sistema en estado óptimo.", "severidad": "success"},
-            {"mensaje": f"🛡️ Protección preventiva funcionando. {total_productos} productos vigilados.", "severidad": "info"},
+            {"mensaje": f"🔔 {alertas_pendientes} alertas pendientes - {'Atención urgente' if alertas_criticas > 0 else 'Revisar cuando sea posible'}", "severidad": "critical" if alertas_criticas > 0 else "warning" if alertas_pendientes > 0 else "success"},
+            {"mensaje": f"⚠️ {alertas_criticas} críticas, {alertas_warning} advertencias{' - Priorizar críticas' if alertas_criticas > 0 else ''}", "severidad": "warning" if alertas_pendientes > 0 else "info"},
         ],
         "auditoria": [
-            {"mensaje": f"🕵️ Registros coherentes. {eventos_auditoria} eventos registrados, 0 inconsistencias.", "severidad": "info"},
-            {"mensaje": f"✅ Integridad de datos verificada. Auditoría sin observaciones.", "severidad": "success"},
-            {"mensaje": f"📋 Trazabilidad completa. {eventos_auditoria} acciones documentadas.", "severidad": "info"},
+            {"mensaje": f"🕵️ {usuarios_actividad_sospechosa} usuarios con actividad sospechosa{' - Revisar logs' if usuarios_actividad_sospechosa > 0 else ''}", "severidad": "warning" if usuarios_actividad_sospechosa > 0 else "success"},
+            {"mensaje": f"📋 {eventos_auditoria} eventos registrados - {'Revisar inconsistencias' if movimientos_no_justificados > 0 else 'Registros coherentes'}", "severidad": "warning" if movimientos_no_justificados > 0 else "info"},
         ],
     }
     
     return messages_by_page.get(page, [
-        {"mensaje": "✅ Sistema funcionando correctamente.", "severidad": "info"}
+        {"mensaje": f"📊 Sistema operativo - {total_productos} productos monitoreados", "severidad": "info"}
     ])
 
 # --- Mensajes largos (AUDITORÍA u otros bloques extensos) ---

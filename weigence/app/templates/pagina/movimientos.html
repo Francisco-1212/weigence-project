@@ -81,7 +81,7 @@
 
         {% set lista = movimientos[-5:] if movimientos|length > 5 else movimientos %}
         {% for m in lista %}
-        {% set color = 'green' if m.tipo_evento == 'Añadir' else 'red' if m.tipo_evento == 'Retirar' else 'blue' %}
+        {% set color = 'gray' if m.producto == 'Producto no encontrado' else 'green' if m.tipo_evento == 'Añadir' else 'red' if m.tipo_evento == 'Retirar' else 'blue' %}
 
         <!-- Item -->
         <div class="timeline-item relative mb-3 cursor-pointer group" draggable="true"
@@ -103,7 +103,9 @@
                       shadow-sm hover:shadow-md transition-all duration-200">
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                {% if m.tipo_evento == 'Añadir' %}
+                {% if m.producto == 'Producto no encontrado' %}
+                <span class="material-symbols-outlined text-gray-500 text-base flex-shrink-0">help_outline</span>
+                {% elif m.tipo_evento == 'Añadir' %}
                 <span class="material-symbols-outlined text-success-500 text-base flex-shrink-0">arrow_upward</span>
                 {% elif m.tipo_evento == 'Retirar' %}
                 <span class="material-symbols-outlined text-danger-500 text-base flex-shrink-0">arrow_downward</span>
@@ -116,7 +118,8 @@
               </div>
               <div class="text-right flex-shrink-0">
                 <p class="text-sm font-bold 
-                          {% if m.tipo_evento == 'Añadir' %}text-success-500
+                          {% if m.producto == 'Producto no encontrado' %}text-gray-500
+                          {% elif m.tipo_evento == 'Añadir' %}text-success-500
                           {% elif m.tipo_evento == 'Retirar' %}text-danger-500
                           {% else %}text-primary-500{% endif %}">
                   {{ "+" if m.tipo_evento=="Añadir" else "-" if m.tipo_evento=="Retirar" else "" }}{{ (m.peso_total or 0)|round(2) }}kg

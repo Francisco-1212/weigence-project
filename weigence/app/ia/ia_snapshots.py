@@ -91,6 +91,17 @@ class IASnapshot:
     inactivity_hours: float = 0.0
     pattern_flags: List[str] = field(default_factory=list)
     signal_strength: float = 0.0
+    
+    # Métricas adicionales para mensajes accionables
+    total_productos: int = 0
+    productos_sin_stock: int = 0
+    ventas_ultimas_24h: int = 0
+    movimientos_no_justificados: int = 0
+    usuarios_sospechosos: int = 0
+    audit_events_count: int = 0
+    estantes_sobrecargados: int = 0
+    productos_no_encontrados_movimientos: int = 0
+    tiempo_ultimo_movimiento: float = 0.0  # Horas desde el último movimiento
 
     def __post_init__(self) -> None:
         self.alerts_summary = {
@@ -154,6 +165,18 @@ class IASnapshot:
         snapshot.inactivity_hours = _coerce_float(data.get("inactivity_hours"))
         snapshot.pattern_flags = _coerce_patterns(data.get("pattern_flags"))
         snapshot.signal_strength = _coerce_float(data.get("signal_strength"))
+        
+        # Métricas adicionales para mensajes accionables
+        snapshot.total_productos = _coerce_int(data.get("total_productos", 0))
+        snapshot.productos_sin_stock = _coerce_int(data.get("productos_sin_stock", 0))
+        snapshot.ventas_ultimas_24h = _coerce_int(data.get("ventas_ultimas_24h", 0))
+        snapshot.movimientos_no_justificados = _coerce_int(data.get("movimientos_no_justificados", 0))
+        snapshot.usuarios_sospechosos = _coerce_int(data.get("usuarios_sospechosos", 0))
+        snapshot.audit_events_count = _coerce_int(data.get("audit_events_count", 0))
+        snapshot.estantes_sobrecargados = _coerce_int(data.get("estantes_sobrecargados", 0))
+        snapshot.productos_no_encontrados_movimientos = _coerce_int(data.get("productos_no_encontrados_movimientos", 0))
+        snapshot.tiempo_ultimo_movimiento = _coerce_float(data.get("tiempo_ultimo_movimiento", 0.0))
+        
         return snapshot
 
     def merge(self, extra: Dict[str, Any] | None) -> "IASnapshot":
@@ -177,8 +200,9 @@ class SnapshotBuilder:
     def build(self, contexto: str | None = None) -> IASnapshot:
         ahora = datetime.utcnow()
         sales_window = 48 if contexto != "inventario" else 72
-        weight_window = 72
-        movement_window = 48
+        weight_window = 24
+        movement_window = 24
+        print(f"[DEBUG BUILD] Construyendo snapshot para contexto: {contexto}, ventana movimientos: {movement_window}h")
 
         ventas = self._repo.obtener_ventas_desde(ahora - timedelta(hours=sales_window))
         detalles = self._repo.obtener_detalle_ventas_desde(ahora - timedelta(hours=sales_window))
@@ -197,9 +221,136 @@ class SnapshotBuilder:
         self._enriquecer_pesajes(snapshot, pesajes)
         self._enriquecer_alertas(snapshot, alertas)
         self._enriquecer_movimientos(snapshot, movimientos)
+        self._enriquecer_metricas_adicionales(snapshot, ventas, pesajes, alertas, movimientos, detalles)
         self._inferir_patrones(snapshot, detalles)
 
         return snapshot
+    
+    def _enriquecer_metricas_adicionales(
+        self,
+        snapshot: IASnapshot,
+        ventas: List[Dict[str, object]],
+        pesajes: List[Dict[str, object]],
+        alertas: List[Dict[str, object]],
+        movimientos: List[Dict[str, object]],
+        detalles: List[Dict[str, object]]
+    ) -> None:
+        """Calcula métricas adicionales para mensajes accionables del header."""
+        # Total de productos únicos
+        productos_unicos = set()
+        for pesaje in pesajes:
+            if pesaje.get('idproducto'):
+                productos_unicos.add(pesaje.get('idproducto'))
+        for detalle in detalles:
+            if detalle.get('idproducto'):
+                productos_unicos.add(detalle.get('idproducto'))
+        snapshot.total_productos = len(productos_unicos) if productos_unicos else 0
+        
+        # Productos sin stock (peso = 0 o stock = 0)
+        productos_sin_stock = sum(
+            1 for pesaje in pesajes 
+            if float(pesaje.get('peso_unitario', 0)) == 0 or int(pesaje.get('stock', 0)) == 0
+        )
+        snapshot.productos_sin_stock = productos_sin_stock
+        
+        # Ventas en las últimas 24 horas
+        ahora = datetime.utcnow()
+        hace_24h = ahora - timedelta(hours=24)
+        ventas_24h = [
+            v for v in ventas 
+            if self._parse_fecha_venta(v.get('fecha_venta', ahora)) >= hace_24h
+        ]
+        snapshot.ventas_ultimas_24h = len(ventas_24h)
+        
+        # Eventos de auditoría (aproximado por movimientos + alertas)
+        snapshot.audit_events_count = len(movimientos) + len(alertas)
+        
+        # Usuarios con actividad sospechosa (múltiples ajustes manuales en poco tiempo)
+        # Por ahora lo dejamos en 0, se puede calcular con datos de auditoría
+        snapshot.usuarios_sospechosos = 0
+        
+        # Calcular estantes sobrecargados
+        try:
+            from api.conexion_supabase import supabase
+            estantes_response = supabase.table('estantes').select('id_estante, peso_actual, peso_maximo').execute()
+            if estantes_response.data:
+                estantes_sobrecargados = sum(
+                    1 for est in estantes_response.data
+                    if est.get('peso_actual', 0) > est.get('peso_maximo', float('inf'))
+                )
+                snapshot.estantes_sobrecargados = estantes_sobrecargados
+            else:
+                snapshot.estantes_sobrecargados = 0
+        except Exception:
+            snapshot.estantes_sobrecargados = 0
+        
+        # Contar productos no encontrados y calcular tiempo desde último movimiento
+        print(f"[DEBUG] 🔍 Iniciando cálculo de productos no encontrados y tiempo último movimiento...")
+        try:
+            from api.conexion_supabase import supabase
+            # Obtener todos los movimientos recientes para analizar
+            mov_response = supabase.table('movimientos_inventario') \
+                .select('id_movimiento, idproducto, tipo_evento, timestamp, productos(nombre)') \
+                .order('timestamp', desc=True) \
+                .limit(100) \
+                .execute()
+            
+            print(f"[DEBUG] 📦 Movimientos obtenidos: {len(mov_response.data) if mov_response.data else 0}")
+            
+            if mov_response.data:
+                # Contar movimientos donde el producto no existe (JOIN falla)
+                productos_no_encontrados = 0
+                for mov in mov_response.data:
+                    if mov.get('productos') is None:
+                        productos_no_encontrados += 1
+                        print(f"[DEBUG] Producto no encontrado - ID mov: {mov.get('id_movimiento')}, idproducto: {mov.get('idproducto')}, tipo_evento: {mov.get('tipo_evento')}")
+                
+                snapshot.productos_no_encontrados_movimientos = productos_no_encontrados
+                print(f"[DEBUG] ✅ Total productos no encontrados: {productos_no_encontrados}")
+                
+                # Calcular tiempo desde el último movimiento
+                ultimo_movimiento = mov_response.data[0]  # Ya está ordenado desc
+                timestamp_str = ultimo_movimiento.get('timestamp')
+                if timestamp_str:
+                    try:
+                        from datetime import timezone
+                        # Parsear el timestamp de Supabase
+                        timestamp_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                        # Usar UTC para ambos
+                        ahora_utc = datetime.now(timezone.utc)
+                        tiempo_transcurrido = (ahora_utc - timestamp_dt).total_seconds() / 3600.0
+                        snapshot.tiempo_ultimo_movimiento = tiempo_transcurrido
+                        print(f"[DEBUG] ⏱️ Último movimiento: {timestamp_str}")
+                        print(f"[DEBUG] ⏱️ Ahora UTC: {ahora_utc.isoformat()}")
+                        print(f"[DEBUG] ⏱️ Diferencia: {tiempo_transcurrido:.2f} horas ({tiempo_transcurrido * 60:.1f} minutos)")
+                    except Exception as e:
+                        print(f"[ERROR] Error al parsear timestamp: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        snapshot.tiempo_ultimo_movimiento = 0.0
+                else:
+                    snapshot.tiempo_ultimo_movimiento = 0.0
+            else:
+                snapshot.productos_no_encontrados_movimientos = 0
+                snapshot.tiempo_ultimo_movimiento = 999.0  # Sin movimientos
+                print(f"[DEBUG] ⚠️ No hay datos de movimientos")
+        except Exception as e:
+            print(f"[ERROR] ❌ Al contar productos no encontrados: {e}")
+            import traceback
+            traceback.print_exc()
+            snapshot.productos_no_encontrados_movimientos = 0
+            snapshot.tiempo_ultimo_movimiento = 0.0
+    
+    def _parse_fecha_venta(self, fecha: Any) -> datetime:
+        """Parse fecha de venta a datetime."""
+        if isinstance(fecha, datetime):
+            return fecha
+        if isinstance(fecha, str):
+            try:
+                return datetime.fromisoformat(fecha.replace("Z", "+00:00"))
+            except ValueError:
+                return datetime.utcnow()
+        return datetime.utcnow()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -266,16 +417,19 @@ class SnapshotBuilder:
             clave = (alerta.get("tipo_color") or "").lower()
             if "rojo" in clave or "crit" in clave:
                 resumen["critical"] += 1
-            elif "amar" in clave or "warn" in clave:
+            elif "amar" in clave or "warn" in clave or "amarill" in clave:
                 resumen["warning"] += 1
             else:
                 resumen["info"] += 1
+        
         snapshot.alerts_summary = resumen
+        print(f"[DEBUG ALERTAS] Total alertas pendientes: {len(alertas)}, Críticas: {resumen['critical']}, Advertencias: {resumen['warning']}, Info: {resumen['info']}")
 
     def _enriquecer_movimientos(self, snapshot: IASnapshot, movimientos: List[Dict[str, object]]) -> None:
         if movimientos:
             intervalo_horas = snapshot.movement_window_hours or 1
             snapshot.movements_per_hour = len(movimientos) / intervalo_horas
+            print(f"[DEBUG MOVIMIENTOS] Total movimientos: {len(movimientos)}, Intervalo: {intervalo_horas}h, Por hora: {snapshot.movements_per_hour}")
             ordenadas = self._ordenar_por_fecha(movimientos, "timestamp")
             ultimo = ordenadas[-1]
             ultima_fecha = ultimo.get("timestamp")
@@ -292,9 +446,23 @@ class SnapshotBuilder:
                 0.0,
                 (snapshot.generated_at - ultima_fecha_dt).total_seconds() / 3600.0,
             )
+            
+            # Contar movimientos sin justificación (ajustes manuales sin motivo)
+            movimientos_no_justificados = sum(
+                1 for mov in movimientos 
+                if mov.get('tipo') == 'ajuste_manual' and not mov.get('motivo')
+            )
+            snapshot.movimientos_no_justificados = movimientos_no_justificados
+            
+            # Contar movimientos de productos no encontrados
+            # Nota: Se necesita hacer JOIN con productos para detectar esto
+            # Por ahora lo dejamos en 0 y se calculará en _enriquecer_metricas_adicionales
+            snapshot.productos_no_encontrados_movimientos = 0
         else:
             snapshot.movements_per_hour = 0.0
             snapshot.inactivity_hours = float(snapshot.movement_window_hours)
+            snapshot.movimientos_no_justificados = 0
+            print(f"[DEBUG MOVIMIENTOS] No hay movimientos en la ventana de tiempo")
 
     def _inferir_patrones(
         self,
