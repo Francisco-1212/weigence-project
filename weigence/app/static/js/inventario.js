@@ -1898,8 +1898,19 @@ WeigenceMonitor.mostrarDetalleEstante = function (estante) {
   });
   document.body.appendChild(modal);
 };
+// Debounce helper to prevent duplicate alert generation
+let alertasDebounceTimer = null;
+let isLoadingAlertas = false;
+
 async function cargarAlertas() {
+  // Prevent concurrent calls
+  if (isLoadingAlertas) {
+    console.log("⏳ cargarAlertas ya está en ejecución, omitiendo...");
+    return;
+  }
+  
   try {
+    isLoadingAlertas = true;
     await fetch("/api/generar_alertas_basicas");
     const res = await fetch("/api/alertas_activas");
     const alertas = await res.json();
@@ -1961,6 +1972,8 @@ async function cargarAlertas() {
     });
   } catch (err) {
     console.error("Error cargando alertas:", err);
+  } finally {
+    isLoadingAlertas = false;
   }
 }
 // --- Sincroniza el mapa SVG con el modo claro/oscuro dinámicamente ---
