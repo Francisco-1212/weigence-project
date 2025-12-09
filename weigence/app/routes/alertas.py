@@ -1,3 +1,39 @@
+# Endpoint para exportar alertas en formato CSV
+from flask import request, send_file
+import io
+import csv
+
+def exportar_alertas_csv():
+    filtros = (request.get_json(silent=True) or {}).get('filtros', {})
+    # Obtener alertas desde la base de datos
+    alertas = supabase.table("alertas").select("*").execute().data or []
+    # Filtrar si es necesario (puedes mejorar esto según tus filtros)
+    # ...
+    output = io.StringIO()
+    writer = csv.writer(output)
+    headers = ["ID", "Título", "Descripción", "Estado", "Producto", "Usuario", "Estante", "Fecha"]
+    writer.writerow(headers)
+    for alerta in alertas:
+        writer.writerow([
+            alerta.get("id"),
+            alerta.get("titulo"),
+            alerta.get("descripcion"),
+            alerta.get("estado"),
+            alerta.get("idproducto"),
+            alerta.get("idusuario"),
+            alerta.get("id_estante"),
+            alerta.get("fecha_creacion"),
+        ])
+    output.seek(0)
+    bytes_buffer = io.BytesIO(output.getvalue().encode('utf-8'))
+    from datetime import datetime
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return send_file(
+        bytes_buffer,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'alertas-{stamp}.csv'
+    )
 from datetime import datetime, timedelta
 
 from flask import flash, jsonify, redirect, render_template, request, session, url_for
@@ -464,108 +500,3 @@ def generar_alertas_basicas_api():
     elif resultado_productos or resultado_estantes:
         return jsonify({"success": True, "mensaje": "Alertas generadas parcialmente"})
     return jsonify({"success": False, "mensaje": "Error al generar alertas"}), 500
-
-
-def exportar_alertas_excel():
-    """Exporta alertas pendientes a Excel con formato profesional"""
-    from flask import send_file
-    from app.utils.excel_exporter import ExcelExporter
-    import logging
-    import traceback
-    
-    logger = logging.getLogger(__name__)
-    
-    try:
-        print("🔵 [BACKEND] Iniciando exportación de alertas...")
-        
-        # Obtener filtros del request
-        data = request.get_json() or {}
-        filtros = data.get('filtros', {})
-        print(f"🔵 [BACKEND] Filtros recibidos: {filtros}")
-        
-        # Obtener alertas pendientes desde la base de datos
-        print("🔵 [BACKEND] Consultando alertas pendientes...")
-        query = supabase.table("alertas").select("*")
-        
-        # Filtrar solo alertas pendientes
-        query = query.eq('estado', 'pendiente')
-        
-        # Aplicar filtros adicionales si existen
-        if filtros.get('tipo'):
-            query = query.eq('tipo_color', filtros['tipo'])
-        
-        # Ejecutar query y ordenar por fecha descendente
-        response = query.order('fecha_creacion', desc=True).execute()
-        alertas = response.data or []
-        print(f"🔵 [BACKEND] Alertas obtenidas: {len(alertas)}")
-        
-        # Enriquecer alertas con nombres de productos y usuarios
-        productos = supabase.table("productos").select("idproducto, nombre").execute().data or []
-        usuarios = supabase.table("usuarios").select("rut_usuario, nombre").execute().data or []
-        
-        productos_dict = {p["idproducto"]: p["nombre"] for p in productos}
-        usuarios_dict = {u["rut_usuario"]: u["nombre"] for u in usuarios}
-        
-        for alerta in alertas:
-            alerta["nombre_producto"] = productos_dict.get(alerta.get("idproducto"), "Sin producto")
-            alerta["nombre_usuario"] = usuarios_dict.get(alerta.get("idusuario"), "Sistema")
-        
-        # Aplicar filtro de fecha si existe
-        if filtros.get('fecha_desde') or filtros.get('fecha_hasta'):
-            alertas_filtradas = []
-            for alerta in alertas:
-                fecha_alerta = alerta.get('fecha_creacion')
-                if fecha_alerta:
-                    try:
-                        fecha_dt = datetime.fromisoformat(str(fecha_alerta).replace("Z", "+00:00"))
-                        
-                        if filtros.get('fecha_desde'):
-                            fecha_desde = datetime.fromisoformat(filtros['fecha_desde'])
-                            if fecha_dt < fecha_desde:
-                                continue
-                        
-                        if filtros.get('fecha_hasta'):
-                            fecha_hasta = datetime.fromisoformat(filtros['fecha_hasta'])
-                            if fecha_dt > fecha_hasta:
-                                continue
-                        
-                        alertas_filtradas.append(alerta)
-                    except:
-                        alertas_filtradas.append(alerta)
-                else:
-                    alertas_filtradas.append(alerta)
-            
-            alertas = alertas_filtradas
-            print(f"🔵 [BACKEND] Alertas después de filtrar por fecha: {len(alertas)}")
-        
-        # Generar Excel
-        print("🔵 [BACKEND] Generando archivo Excel...")
-        exporter = ExcelExporter()
-        excel_file = exporter.exportar_alertas(alertas, filtros)
-        print(f"✅ [BACKEND] Excel generado exitosamente")
-        
-        # Generar nombre de archivo
-        fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'Weigence_Alertas_Pendientes_{fecha_actual}.xlsx'
-        
-        logger.info(f"Exportación Excel generada: {filename} ({len(alertas)} alertas)")
-        
-        print(f"🔵 [BACKEND] Enviando archivo: {filename}")
-        return send_file(
-            excel_file,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=filename
-        )
-        
-    except Exception as e:
-        print(f"❌ [BACKEND] Error al exportar alertas:")
-        print(f"❌ [BACKEND] {type(e).__name__}: {str(e)}")
-        print(f"❌ [BACKEND] Traceback:")
-        traceback.print_exc()
-        
-        logger.error(f"Error al exportar alertas a Excel: {e}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'message': f'Error al generar el archivo Excel: {str(e)}'
-        }), 500

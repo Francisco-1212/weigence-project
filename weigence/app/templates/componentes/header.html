@@ -222,12 +222,13 @@
     <div id="system-status" class="flex items-center gap-1" role="group" aria-label="Estado del sistema">
       <span id="status-icon" class="material-symbols-outlined text-green-500" aria-hidden="true" style="font-size: 1em;">check_circle</span>
       <span id="status-text" class="text-green-500">Sistema en línea</span>
+      <!-- Spinner minimalista -->
+      <span id="minimal-spinner" class="ml-2 hidden">
+        <span class="inline-block w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></span>
+      </span>
     </div>
 
-    <div id="activity-indicator" class="flex items-center gap-1 hidden" role="status" aria-live="assertive">
-      <span class="material-symbols-outlined animate-spin text-primary-600" aria-hidden="true">sync</span>
-      <span class="text-primary-600">Sincronizando...</span>
-    </div>
+    <!-- Eliminado activity-indicator, ahora se usa minimal-spinner -->
   </div>
 
   <!-- Botones acciones  -->

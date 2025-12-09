@@ -55,17 +55,27 @@
     <div class="flex flex-col gap-6 lg:col-span-1">
       <!-- Alertas -->
       <a href="{{ url_for('main.alertas') }}" class="inline-block w-full">
-        <div class="bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] p-6 rounded-md border border-gray-300 dark:border-neutral-700 transition-shadow">
-          <h3 class="font-semibold mb-4">Alertas Críticas</h3>
+        <div class="p-6 rounded-md border border-red-200 dark:border-red-500/40 transition-all group
+          bg-red-50/60 dark:bg-neutral-900/80
+          hover:bg-red-100/80 dark:hover:bg-[rgba(239,68,68,0.10)]
+          hover:shadow-md hover-light-shadow focus:ring-2 focus:ring-red-400">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-red-600 dark:text-red-300">warning</span>
+            <h3 class="font-semibold text-red-700 dark:text-red-200 group-hover:underline">Alertas Críticas</h3>
+          </div>
           <div class="space-y-4">
             {% for alerta in alertas_criticas %}
-            <div class="flex items-start gap-4 p-3 rounded-lg alert-item">
-              <div class="rounded-full p-2" style="background-color: {% if alerta.tipo_color == 'rojo' %}rgba(239,68,68,0.2){% elif alerta.tipo_color == 'amarilla' %}rgba(234,179,8,0.2){% else %}rgba(59,130,246,0.2){% endif %}; color: var(--{{ alerta.tipo_color }}-500);">
+            <div class="flex items-start gap-4 p-3 rounded-lg alert-item
+              bg-red-100/60 dark:bg-neutral-800/80
+              transition-colors
+              dark:hover:bg-[rgba(239,68,68,0.10)] hover:bg-red-200/80">
+              <div class="rounded-full p-2"
+                style="background-color: {% if alerta.tipo_color == 'rojo' %}rgba(239,68,68,0.18){% elif alerta.tipo_color == 'amarilla' %}rgba(234,179,8,0.18){% else %}rgba(59,130,246,0.18){% endif %}; color: var(--{{ alerta.tipo_color }}-500);">
                 <span class="material-symbols-outlined text-base">{{ alerta.icono }}</span>
               </div>
               <div>
-                <p class="font-medium">{{ alerta.titulo }}</p>
-                <p class="text-sm text-neutral-400">{{ alerta.descripcion }}</p>
+                <p class="font-medium text-neutral-900 dark:text-neutral-100">{{ alerta.titulo }}</p>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ alerta.descripcion }}</p>
               </div>
             </div>
             {% endfor %}
@@ -79,7 +89,7 @@
             class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-all text-neutral-900 dark:text-neutral-100 hover:bg-primary-100/30 dark:hover:bg-primary-400/20 hover:shadow-md hover-light-shadow focus:ring-2 focus:ring-primary-400"
             type="button">
             <span class="material-symbols-outlined">file_download</span>
-            Exportar reporte (PDF/Excel)
+            Exportar reporte
           </button>
           <button id="btn-detalle-dashboard"
             class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-700 transition-all text-neutral-900 dark:text-neutral-100 hover:bg-primary-100/30 dark:hover:bg-primary-400/20 hover:shadow-md hover-light-shadow focus:ring-2 focus:ring-primary-400"
