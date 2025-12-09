@@ -6,56 +6,56 @@
 <div class="container mx-auto px-4 py-8">
   <div class="max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-6 text-neutral-800 dark:text-neutral-100">
-      🧪 Prueba de Registro de Errores
+      Prueba de Registro de Errores
     </h1>
 
     <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
       <p class="text-sm text-yellow-800 dark:text-yellow-200">
-        ⚠️ Esta página es solo para pruebas. Los errores generados se registrarán en la consola de auditoría.
+        Esta página es solo para pruebas. Los errores generados se registrarán en la consola de auditoría.
       </p>
     </div>
 
     <!-- Pruebas de Frontend -->
     <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-6">
       <h2 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100">
-        🌐 Errores de Frontend (JavaScript)
+        Errores de Frontend (JavaScript)
       </h2>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Error Normal -->
         <button onclick="generarErrorNormal()" 
           class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          🟠 Error Normal
+          Error Normal
         </button>
 
         <!-- Error Warning -->
         <button onclick="generarWarning()" 
           class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          🟡 Warning
+          Warning
         </button>
 
         <!-- Error Crítico -->
         <button onclick="generarErrorCritico()" 
           class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          🔴 Error Crítico
+          Error Crítico
         </button>
 
         <!-- Error con Exception -->
         <button onclick="generarErrorConException()" 
           class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          💜 Error con Exception
+          Error con Exception
         </button>
 
         <!-- Simular Error de Ventas -->
         <button onclick="simularErrorVentas()" 
           class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          🛒 Error de Ventas
+          Error de Ventas
         </button>
 
         <!-- Simular Error de Usuarios -->
         <button onclick="simularErrorUsuarios()" 
           class="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          👥 Error de Usuarios
+          Error de Usuarios
         </button>
       </div>
     </div>
@@ -63,20 +63,20 @@
     <!-- Pruebas de Backend -->
     <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-6">
       <h2 class="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100">
-        🐍 Errores de Backend (Python)
+        Errores de Backend (Python)
       </h2>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Error de Backend -->
         <button onclick="generarErrorBackend()" 
           class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          🔧 Error de Backend
+          Error de Backend
         </button>
 
         <!-- Error Crítico Backend -->
         <button onclick="generarErrorCriticoBackend()" 
           class="bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-          💥 Error Crítico Backend
+          Error Crítico Backend
         </button>
       </div>
     </div>
@@ -84,7 +84,7 @@
     <!-- Instrucciones -->
     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
       <h3 class="text-lg font-semibold mb-3 text-blue-800 dark:text-blue-200">
-        📋 Cómo verificar que funciona:
+        Cómo verificar que funciona:
       </h3>
       <ol class="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
         <li>Haz clic en cualquiera de los botones arriba para generar un error</li>
@@ -99,7 +99,7 @@
     <!-- Log de Resultados -->
     <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mt-6">
       <h3 class="text-lg font-semibold mb-3 text-neutral-800 dark:text-neutral-100">
-        📝 Log de Resultados:
+        Log de Resultados:
       </h3>
       <div id="log-resultados" class="bg-neutral-100 dark:bg-neutral-900 rounded p-4 font-mono text-sm max-h-64 overflow-y-auto">
         <p class="text-neutral-500 dark:text-neutral-400">Esperando pruebas...</p>

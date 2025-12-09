@@ -172,10 +172,16 @@ document.addEventListener('DOMContentLoaded', function() {
               </span>
             </td>
             <td class="px-3 sm:px-6 py-3 sm:py-4 text-right">
-              <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-200 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-xs font-medium rounded-lg transition-colors">
-                <span class="material-symbols-outlined text-sm">edit</span>
-                <span class="hidden sm:inline">Editar</span>
-              </button>
+              <div class="flex justify-end gap-2">
+                <button onclick="editarUsuario('${usuario.rut_usuario}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 text-xs font-medium rounded-lg transition-colors">
+                  <span class="material-symbols-outlined text-sm">edit</span>
+                  <span class="hidden sm:inline">Editar</span>
+                </button>
+                <button onclick="eliminarUsuario('${usuario.rut_usuario}', '${usuario.nombre}')" class="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-orange-100 dark:bg-orange-900 border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-800 text-xs font-medium rounded-lg transition-colors" title="Desactivar usuario (se oculta pero mantiene todo su historial)">
+                  <span class="material-symbols-outlined text-sm">block</span>
+                  <span class="hidden sm:inline">Desactivar</span>
+                </button>
+              </div>
             </td>
           </tr>
           `;
@@ -281,33 +287,33 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   };
   
-  // Función: Eliminar usuario (DESHABILITADA - botón eliminado de la interfaz)
-  // window.eliminarUsuario = function(rut, nombre) {
-  //   if (!confirm(`¿Estás seguro de que deseas eliminar a ${nombre}?`)) {
-  //     return;
-  //   }
-  //   
-  //   console.log('[USUARIOS] Eliminando usuario:', rut);
-  //   
-  //   fetch(`/api/usuarios/${rut}`, {
-  //     method: 'DELETE',
-  //     headers: { 'Content-Type': 'application/json' }
-  //   })
-  //     .then(response => response.json())
-  //     .then(data => {
-  //       if (data.success) {
-  //         console.log('[USUARIOS] Usuario eliminado');
-  //         alert('✅ Usuario eliminado correctamente');
-  //         cargarUsuarios();
-  //       } else {
-  //         alert('❌ Error: ' + data.error);
-  //       }
-  //     })
-  //     .catch(error => {
-  //       console.error('[USUARIOS] Error:', error);
-  //       alert('❌ Error al eliminar usuario');
-  //     });
-  // };
+  // Función: Desactivar usuario (soft delete)
+  window.eliminarUsuario = function(rut, nombre) {
+    if (!confirm(`¿Estás seguro de que deseas desactivar a ${nombre}?\n\nEl usuario dejará de aparecer en el sistema pero su historial completo se mantendrá.`)) {
+      return;
+    }
+    
+    console.log('[USUARIOS] Desactivando usuario:', rut);
+    
+    fetch(`/api/usuarios/${rut}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('[USUARIOS] Usuario desactivado');
+          alert('✅ ' + data.message);
+          cargarUsuarios();
+        } else {
+          alert('❌ Error: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('[USUARIOS] Error:', error);
+        alert('❌ Error al desactivar usuario');
+      });
+  };
   
   // Función: Guardar usuario (crear o editar)
   function guardarUsuario(e) {

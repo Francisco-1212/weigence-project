@@ -385,8 +385,8 @@ document.addEventListener("DOMContentLoaded", () => {
     exportBtn.addEventListener("click", () => {
       // Modal simple para seleccionar qué exportar
       const opciones = [
-        { text: '📊 Inventario (Excel)', action: async () => await exportarArchivo('/api/inventario/exportar-excel', 'Inventario') },
-        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') }
+        { text: 'Inventario (Excel)', action: async () => await exportarArchivo('/api/inventario/exportar-excel', 'Inventario') },
+        { text: 'Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') }
       ];
       
       const modal = document.createElement('div');

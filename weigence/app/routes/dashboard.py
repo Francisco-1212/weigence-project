@@ -80,7 +80,7 @@ def dashboard():
 
 
 @bp.route('/api/dashboard_filtrado')
-@requiere_rol('farmaceutico', 'bodeguera', 'supervisor', 'jefe', 'administrador')
+@requiere_rol('operador', 'supervisor', 'administrador')
 def api_dashboard_filtrado():
     rango = request.args.get('rango', 'hoy')
     mes = request.args.get('mes', type=int)

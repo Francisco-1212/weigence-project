@@ -45,7 +45,7 @@
                 resultsDiv.innerHTML += `<p class="success">🔍 Errores del sistema: ${erroresSistema.length}</p>`;
 
                 if (erroresSistema.length > 0) {
-                    resultsDiv.innerHTML += '<h2 class="success">📋 Errores del Sistema Encontrados:</h2>';
+                    resultsDiv.innerHTML += '<h2 class="success">Errores del Sistema Encontrados:</h2>';
                     erroresSistema.slice(0, 10).forEach((error, i) => {
                         resultsDiv.innerHTML += `
                             <div style="margin: 10px 0; border: 1px solid #00ff00; padding: 10px; border-radius: 5px;">
@@ -66,7 +66,7 @@
                         tipos[log.tipo_evento] = (tipos[log.tipo_evento] || 0) + 1;
                     });
 
-                    resultsDiv.innerHTML += '<h3>📊 Tipos de Eventos Presentes:</h3><pre>';
+                    resultsDiv.innerHTML += '<h3>Tipos de Eventos Presentes:</h3><pre>';
                     Object.entries(tipos)
                         .sort((a, b) => b[1] - a[1])
                         .forEach(([tipo, count]) => {
@@ -76,7 +76,7 @@
                 }
 
                 // Mostrar JSON completo de primeros 3 logs
-                resultsDiv.innerHTML += '<h3>📄 Primeros 3 Logs (JSON):</h3>';
+                resultsDiv.innerHTML += '<h3>Primeros 3 Logs (JSON):</h3>';
                 resultsDiv.innerHTML += '<pre>' + JSON.stringify(logs.slice(0, 3), null, 2) + '</pre>';
 
             } catch (error) {
