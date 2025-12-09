@@ -1,3 +1,39 @@
+# Endpoint para exportar alertas en formato CSV
+from flask import request, send_file
+import io
+import csv
+
+def exportar_alertas_csv():
+    filtros = (request.get_json(silent=True) or {}).get('filtros', {})
+    # Obtener alertas desde la base de datos
+    alertas = supabase.table("alertas").select("*").execute().data or []
+    # Filtrar si es necesario (puedes mejorar esto según tus filtros)
+    # ...
+    output = io.StringIO()
+    writer = csv.writer(output)
+    headers = ["ID", "Título", "Descripción", "Estado", "Producto", "Usuario", "Estante", "Fecha"]
+    writer.writerow(headers)
+    for alerta in alertas:
+        writer.writerow([
+            alerta.get("id"),
+            alerta.get("titulo"),
+            alerta.get("descripcion"),
+            alerta.get("estado"),
+            alerta.get("idproducto"),
+            alerta.get("idusuario"),
+            alerta.get("id_estante"),
+            alerta.get("fecha_creacion"),
+        ])
+    output.seek(0)
+    bytes_buffer = io.BytesIO(output.getvalue().encode('utf-8'))
+    from datetime import datetime
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return send_file(
+        bytes_buffer,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'alertas-{stamp}.csv'
+    )
 from datetime import datetime, timedelta
 
 from flask import flash, jsonify, redirect, render_template, request, session, url_for
@@ -464,3 +500,30 @@ def generar_alertas_basicas_api():
     elif resultado_productos or resultado_estantes:
         return jsonify({"success": True, "mensaje": "Alertas generadas parcialmente"})
     return jsonify({"success": False, "mensaje": "Error al generar alertas"}), 500
+
+
+## El endpoint /api/alertas/exportar-excel se registra en __init__.py para evitar duplicidad
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet('Alertas')
+    headers = ["ID", "Título", "Descripción", "Estado", "Producto", "Usuario", "Estante", "Fecha"]
+    worksheet.write_row(0, 0, headers)
+    for idx, alerta in enumerate(alertas, 1):
+        worksheet.write(idx, 0, alerta.get("id"))
+        worksheet.write(idx, 1, alerta.get("titulo"))
+        worksheet.write(idx, 2, alerta.get("descripcion"))
+        worksheet.write(idx, 3, alerta.get("estado"))
+        worksheet.write(idx, 4, alerta.get("idproducto"))
+        worksheet.write(idx, 5, alerta.get("idusuario"))
+        worksheet.write(idx, 6, alerta.get("id_estante"))
+        worksheet.write(idx, 7, alerta.get("fecha_creacion"))
+    workbook.close()
+    output.seek(0)
+    from datetime import datetime
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f'alertas-{stamp}.xlsx'
+    )

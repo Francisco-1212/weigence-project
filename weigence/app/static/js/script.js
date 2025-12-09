@@ -315,13 +315,13 @@ async function exportarArchivo(url, nombre) {
       throw new Error(`Error ${response.status}: ${errorText}`);
     }
 
-    // Verificar si es un blob (archivo)
+    // Verificar si es un archivo válido (Excel o CSV)
     const contentType = response.headers.get('Content-Type');
     console.log(`📄 [EXPORT] Content-Type:`, contentType);
     
-    if (!contentType || !contentType.includes('spreadsheet') && !contentType.includes('excel')) {
+    if (!contentType || (!contentType.includes('spreadsheet') && !contentType.includes('excel') && !contentType.includes('csv'))) {
       const text = await response.text();
-      console.error(`❌ [EXPORT] Respuesta no es un archivo Excel:`, text);
+      console.error(`❌ [EXPORT] Respuesta no es un archivo válido:`, text);
       throw new Error('La respuesta del servidor no es un archivo válido');
     }
 
@@ -331,7 +331,10 @@ async function exportarArchivo(url, nombre) {
     
     // Obtener el nombre del archivo del header o usar uno por defecto
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = `${nombre}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    // Usar extensión según tipo de archivo
+    let extension = '.xlsx';
+    if (contentType && contentType.includes('csv')) extension = '.csv';
+    let filename = `${nombre}_${new Date().toISOString().split('T')[0]}${extension}`;
     
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -386,7 +389,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Modal simple para seleccionar qué exportar
       const opciones = [
         { text: '📊 Inventario (Excel)', action: async () => await exportarArchivo('/api/inventario/exportar-excel', 'Inventario') },
-        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') }
+        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') },
+        { text: '🚨 Alertas Críticas (Excel)', action: async () => await exportarArchivo('/api/alertas/exportar-excel', 'Alertas_Criticas') },
+          { text: '📝 Logs de Auditoría (CSV)', action: async () => await exportarArchivo('/api/auditoria/export', 'Logs_Auditoria') }
       ];
       
       const modal = document.createElement('div');

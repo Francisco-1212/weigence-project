@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusIconEl = document.getElementById('status-icon');
   const statusTextEl = document.getElementById('status-text');
   const systemStatusEl = document.getElementById('system-status');
-  const activityIndicatorEl = document.getElementById('activity-indicator');
+  const minimalSpinnerEl = document.getElementById('minimal-spinner');
   const btnRefresh = document.getElementById('btn-refresh');
   const btnShowHistory = document.getElementById('btn-show-history');
   const historyModal = document.getElementById('history-modal');
@@ -36,17 +36,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = states[stateKey];
     if (!state) return;
     
-    statusIconEl.textContent = state.icon;
-    statusIconEl.className = `material-symbols-outlined ${state.colorClass}`;
-    statusTextEl.textContent = state.text;
-    statusTextEl.className = state.colorClass;
+    // El mensaje y color de 'Sistema en línea' siempre se mantienen igual
+    statusIconEl.textContent = stateKey === 'syncing' ? 'check_circle' : state.icon;
+    statusIconEl.className = 'material-symbols-outlined text-green-500';
+    statusTextEl.textContent = 'Sistema en línea';
+    statusTextEl.className = 'text-green-500';
     statusTextEl.setAttribute('aria-live', 'polite');
     statusTextEl.setAttribute('title', state.aria);
 
     // Actualiza ARIA del área de estado
     systemStatusEl.setAttribute('aria-label', state.aria);
     systemStatusEl.classList.remove('hidden');
-    activityIndicatorEl.classList.toggle('hidden', stateKey !== 'syncing');
+    // Spinner minimalista
+    if (minimalSpinnerEl) {
+      if (stateKey === 'syncing') {
+        minimalSpinnerEl.classList.remove('hidden');
+      } else {
+        minimalSpinnerEl.classList.add('hidden');
+      }
+    }
   }  // Guarda timestamp y actualiza el texto de última actualización
   function setLastUpdate(timestamp) {
     lastUpdate = new Date(timestamp);
@@ -130,7 +138,13 @@ function updateTimestampText() {
       if (!res.ok) throw new Error('Error refrescando');
       await fetchSystemStatus();
     } catch (err) {
-      updateStatus('offline');
+      // Mantiene el texto "Sistema en línea" y solo muestra el spinner
+      if (minimalSpinnerEl) minimalSpinnerEl.classList.remove('hidden');
+      statusIconEl.textContent = 'check_circle';
+      statusIconEl.className = 'material-symbols-outlined text-green-500';
+      statusTextEl.textContent = 'Sistema en línea';
+      statusTextEl.className = 'text-green-500';
+      systemStatusEl.setAttribute('aria-label', 'Sincronizando datos; espere por favor.');
       console.error(err);
     }
   }  // Animación de apertura/cierre del modal historial
@@ -142,9 +156,11 @@ function updateTimestampText() {
     setTimeout(() => {
       historyModal.style.transition = 'opacity 0.3s';
       historyModal.style.opacity = 1;
+        if (minimalSpinnerEl) minimalSpinnerEl.classList.add('hidden');
     }, 10);
     // Open requested tab
     if (tab === 'errors') {
+        if (minimalSpinnerEl) minimalSpinnerEl.classList.add('hidden');
       activateTab('errors');
     } else {
       activateTab('movements');
