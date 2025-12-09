@@ -71,7 +71,7 @@ class ExcelExporter:
         
         # Fila 1: Logo/Marca en columna K
         cell_marca = self.ws['K1']
-        cell_marca.value = f"🏢 SISTEMA WEIGENCE - 📅 {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        cell_marca.value = f"SISTEMA WEIGENCE - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
         cell_marca.font = Font(name='Calibri', size=9, bold=True, color="FFFFFF")
         cell_marca.fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
         cell_marca.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -90,7 +90,7 @@ class ExcelExporter:
         # Fila 3: Información del total de registros en columna K
         row += 1
         total_cell = self.ws['K3']
-        total_cell.value = f"📊 Total de registros: {total_registros}"
+        total_cell.value = f"Total de registros: {total_registros}"
         total_cell.font = Font(name='Calibri', size=10, bold=True, color="FFFFFF")
         total_cell.fill = PatternFill(start_color="3B82F6", end_color="3B82F6", fill_type="solid")
         total_cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -102,7 +102,7 @@ class ExcelExporter:
             if filtros_text:
                 row += 1
                 filtro_cell = self.ws[f'K{row}']
-                filtro_cell.value = f"🔍 Filtros: {filtros_text}"
+                filtro_cell.value = f"Filtros: {filtros_text}"
                 filtro_cell.font = Font(name='Calibri', size=9, italic=True, color="FFFFFF")
                 filtro_cell.fill = PatternFill(start_color="F59E0B", end_color="F59E0B", fill_type="solid")
                 filtro_cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -124,7 +124,7 @@ class ExcelExporter:
         row += 1
         self.ws.merge_cells(f'A{row}:{get_column_letter(col_count)}{row}')
         footer_cell = self.ws[f'A{row}']
-        footer_cell.value = "💼 Sistema Weigence - Gestión Inteligente de Inventario | 📄 Generado automáticamente"
+        footer_cell.value = "Sistema Weigence - Gestión Inteligente de Inventario | Generado automáticamente"
         footer_cell.font = Font(name='Calibri', size=9, italic=True, color="6B7280", bold=True)
         footer_cell.alignment = Alignment(horizontal='center', vertical='center')
         footer_cell.fill = PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid")
@@ -305,7 +305,7 @@ class ExcelExporter:
         row += 2
         self.ws.merge_cells(f'A{row}:B{row}')
         resumen_cell = self.ws[f'A{row}']
-        resumen_cell.value = "📊 RESUMEN ESTADÍSTICO"
+        resumen_cell.value = "RESUMEN ESTADÍSTICO"
         resumen_cell.font = Font(name='Calibri', size=13, bold=True, color="FFFFFF")
         resumen_cell.fill = PatternFill(start_color=self.COLOR_HEADER, end_color=self.COLOR_HEADER, fill_type="solid")
         resumen_cell.alignment = Alignment(horizontal='center', vertical='center')
@@ -329,11 +329,11 @@ class ExcelExporter:
                                 0 <= VencimientoHelper.calcular_dias_hasta_vencimiento(p['fecha_vencimiento']) <= 7)
         
         estadisticas = [
-            ('📦 Total de productos', total_productos, None),
-            ('❌ Productos sin stock', sin_stock, "DC2626" if sin_stock > 0 else None),
-            ('⚠️ Productos vencidos', productos_vencidos, "DC2626" if productos_vencidos > 0 else None),
-            ('🔔 Vencen en 7 días o menos', productos_criticos, "F59E0B" if productos_criticos > 0 else None),
-            ('⚖️ Peso total inventario (kg)', f"{peso_total:,.2f}", "10B981"),
+            ('Total de productos', total_productos, None),
+            ('Productos sin stock', sin_stock, "DC2626" if sin_stock > 0 else None),
+            ('Productos vencidos', productos_vencidos, "DC2626" if productos_vencidos > 0 else None),
+            ('Vencen en 7 días o menos', productos_criticos, "F59E0B" if productos_criticos > 0 else None),
+            ('Peso total inventario (kg)', f"{peso_total:,.2f}", "10B981"),
         ]
         
         for stat_label, stat_value, color_valor in estadisticas:
@@ -468,7 +468,7 @@ class ExcelExporter:
         row += 2
         self.ws.merge_cells(f'A{row}:B{row}')
         resumen_cell = self.ws[f'A{row}']
-        resumen_cell.value = "💰 RESUMEN ESTADÍSTICO"
+        resumen_cell.value = "RESUMEN ESTADÍSTICO"
         resumen_cell.font = Font(name='Calibri', size=13, bold=True, color="FFFFFF")
         resumen_cell.fill = PatternFill(start_color=self.COLOR_HEADER, end_color=self.COLOR_HEADER, fill_type="solid")
         resumen_cell.alignment = Alignment(horizontal='center', vertical='center')
@@ -483,11 +483,11 @@ class ExcelExporter:
         total_unidades = sum(v.get('total_unidades', 0) for v in ventas)
         
         estadisticas = [
-            ('🛒 Total de ventas', total_ventas, None),
-            ('💵 Total general', f"${total_general:,.2f}", "10B981"),
-            ('📊 Promedio por venta', f"${promedio_venta:,.2f}", "3B82F6"),
-            ('📦 Total productos vendidos', total_productos, None),
-            ('🔢 Total unidades vendidas', total_unidades, "F59E0B"),
+            ('Total de ventas', total_ventas, None),
+            ('Total general', f"${total_general:,.2f}", "10B981"),
+            ('Promedio por venta', f"${promedio_venta:,.2f}", "3B82F6"),
+            ('Total productos vendidos', total_productos, None),
+            ('Total unidades vendidas', total_unidades, "F59E0B"),
         ]
         
         for stat_label, stat_value, color_valor in estadisticas:
@@ -624,7 +624,7 @@ class ExcelExporter:
         row += 2
         self.ws.merge_cells(f'A{row}:B{row}')
         resumen_cell = self.ws[f'A{row}']
-        resumen_cell.value = "🚨 RESUMEN ESTADÍSTICO"
+        resumen_cell.value = "RESUMEN ESTADÍSTICO"
         resumen_cell.font = Font(name='Calibri', size=13, bold=True, color="FFFFFF")
         resumen_cell.fill = PatternFill(start_color=self.COLOR_HEADER, end_color=self.COLOR_HEADER, fill_type="solid")
         resumen_cell.alignment = Alignment(horizontal='center', vertical='center')
@@ -640,12 +640,12 @@ class ExcelExporter:
         alertas_resueltas = sum(1 for a in alertas if a.get('estado') == 'resuelto')
         
         estadisticas = [
-            ('🚨 Total de alertas', total_alertas, None),
-            ('🔴 Alertas críticas', alertas_criticas, "DC2626" if alertas_criticas > 0 else None),
-            ('📅 Alertas de vencimiento', alertas_vencimiento, "EA580C" if alertas_vencimiento > 0 else None),
-            ('⚠️ Advertencias', alertas_advertencia, "F59E0B" if alertas_advertencia > 0 else None),
-            ('⏳ Pendientes', alertas_pendientes, "F59E0B" if alertas_pendientes > 0 else None),
-            ('✅ Resueltas', alertas_resueltas, "10B981" if alertas_resueltas > 0 else None),
+            ('Total de alertas', total_alertas, None),
+            ('Alertas críticas', alertas_criticas, "DC2626" if alertas_criticas > 0 else None),
+            ('Alertas de vencimiento', alertas_vencimiento, "EA580C" if alertas_vencimiento > 0 else None),
+            ('Advertencias', alertas_advertencia, "F59E0B" if alertas_advertencia > 0 else None),
+            ('Pendientes', alertas_pendientes, "F59E0B" if alertas_pendientes > 0 else None),
+            ('Resueltas', alertas_resueltas, "10B981" if alertas_resueltas > 0 else None),
         ]
         
         for stat_label, stat_value, color_valor in estadisticas:

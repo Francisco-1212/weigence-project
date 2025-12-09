@@ -24,7 +24,6 @@ const Alertas = {
     this.bindFiltros();
     this.initToggleFiltros();
     this.applyPagination();
-    console.info("✅ Alertas: Sistema inicializado correctamente");
   },
 
   initToggleFiltros() {
@@ -39,7 +38,6 @@ const Alertas = {
           ? 'rotate(0deg)' 
           : 'rotate(180deg)';
       });
-      console.info("✅ Alertas: Toggle de filtros inicializado");
     }
   },
 
@@ -201,7 +199,6 @@ const Alertas = {
       if (btn) {
         e.preventDefault();
         const alertaId = btn.dataset.alertaId;
-        console.log('🔵 Click en gestionar, ID:', alertaId);
         this.abrirModal(alertaId);
       }
     });
@@ -494,18 +491,10 @@ const Alertas = {
   },
 
   abrirModal(alertaId) {
-    console.log('🟢 abrirModal llamado con ID:', alertaId);
-    console.log('🟢 Filas disponibles:', this.state.rows.length);
-    console.log('🟢 Modal element:', this.modal);
-    
     const row = this.state.rows.find(r => r.dataset.id == alertaId);
     if (!row) {
-      console.error('❌ Alerta no encontrada:', alertaId);
-      console.error('❌ IDs disponibles:', this.state.rows.map(r => r.dataset.id));
       return;
     }
-
-    console.log('🟢 Fila encontrada:', row.dataset.titulo);
     
     this.state.alertaActual = {
       id: alertaId,
@@ -617,15 +606,12 @@ const Alertas = {
         mostrarNotificacion(data.error || 'Error al actualizar la alerta', 'error');
       }
     } catch (error) {
-      console.error('❌ Error al guardar cambios:', error);
       mostrarNotificacion('Error de conexión al actualizar la alerta', 'error');
     }
   },
 
   async exportarAlertas() {
     try {
-      console.log('🔵 [ALERTAS] Iniciando exportación a Excel...');
-      
       // Obtener filtros activos
       const filtros = {};
       if (this.state.filtrosActivos.estado) {
@@ -640,9 +626,6 @@ const Alertas = {
       if (this.state.filtrosActivos.fechaHasta) {
         filtros.fecha_hasta = this.state.filtrosActivos.fechaHasta;
       }
-
-      console.log('🔵 [ALERTAS] Filtros aplicados:', filtros);
-      console.log('🔵 [ALERTAS] Llamando a /api/alertas/exportar-excel...');
 
       const response = await fetch('/api/alertas/exportar-excel', {
         method: 'POST',
@@ -679,11 +662,9 @@ const Alertas = {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      console.log('✅ [ALERTAS] Excel exportado exitosamente:', filename);
       mostrarNotificacion('Reporte Excel exportado exitosamente', 'success');
 
     } catch (error) {
-      console.error('❌ [ALERTAS] Error al exportar reporte:', error);
       mostrarNotificacion('Error al exportar el reporte: ' + error.message, 'error');
     }
   }
@@ -742,6 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     Alertas.init();
   } catch (error) {
-    console.error('❌ Error al inicializar Alertas:', error);
+    // Error al inicializar
   }
 });

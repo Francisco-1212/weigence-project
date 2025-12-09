@@ -111,7 +111,6 @@ def alertas():
         )
 
     except Exception as e:
-        print(f"Error en ruta alertas: {e}")
         flash("Error al cargar las alertas", "error")
         return redirect(url_for("main.dashboard"))
 
@@ -150,7 +149,6 @@ def generar_alertas_basicas():
             id_prod = alerta.get("idproducto")
             if id_prod and id_prod not in ids_productos_activos and alerta.get("estado") in ["pendiente", "activo"]:
                 supabase.table("alertas").update({"estado": "resuelto"}).eq("id", alerta["id"]).execute()
-                print(f"[ALERTA] Resuelta alerta de producto inexistente/inactivo: {alerta.get('titulo')}")
 
         for p in productos:
             nombre = p.get("nombre", "Producto sin nombre")
@@ -293,16 +291,14 @@ def generar_alertas_basicas():
                                 )
 
                 except Exception as e:
-                    print(f"Error procesando fecha de vencimiento para {nombre}: {e}")
+                    pass
 
         if nuevas:
             supabase.table("alertas").insert(nuevas).execute()
-            print(f"{len(nuevas)} nuevas alertas creadas.")
 
         return True
 
     except Exception as e:
-        print(f"Error generando alertas: {e}")
         return False
 
 
@@ -312,7 +308,6 @@ def descartar_alerta(alerta_id):
         supabase.table("alertas").update({"estado": "descartada"}).eq("id", alerta_id).execute()
         return jsonify({"success": True})
     except Exception as e:
-        print(f"Error al descartar alerta {alerta_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -328,10 +323,8 @@ def actualizar_alerta(alerta_id):
 
         supabase.table("alertas").update({"estado": nuevo_estado}).eq("id", alerta_id).execute()
 
-        print(f"Alerta #{alerta_id} actualizada a estado: {nuevo_estado}")
         return jsonify({"success": True, "mensaje": "Alerta actualizada correctamente"})
     except Exception as e:
-        print(f"Error al actualizar alerta {alerta_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -346,13 +339,8 @@ def generar_alertas_peso_estantes():
         ejecucion_id = random.randint(1000, 9999)
         nuevas = []
         
-        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== INICIANDO ====================")
-        print(f"[ALERTAS PESO #{ejecucion_id}] Verificacion de peso de estantes...")
-        
         # Obtener alertas existentes de estantes
         existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
-        
-        print(f"[ALERTAS PESO #{ejecucion_id}] Total de alertas en BD: {len(existentes)}")
         
         # Filtrar alertas de estantes
         alertas_estantes_activas = {}
@@ -363,19 +351,11 @@ def generar_alertas_peso_estantes():
                 titulo_lower = a["titulo"].lower()
                 if a.get("estado") == "pendiente":
                     alertas_estantes_activas[titulo_lower] = a["id"]
-                    print(f"[ALERTAS PESO #{ejecucion_id}] Alerta ACTIVA: '{a['titulo']}' (ID: {a['id']}, Estado: {a['estado']})")
                 elif a.get("estado") == "resuelto":
                     alertas_estantes_resueltas[titulo_lower] = a["id"]
-                    print(f"[ALERTAS PESO #{ejecucion_id}] Alerta RESUELTA: '{a['titulo']}' (ID: {a['id']}, Estado: {a['estado']})")
-        
-        print(f"[ALERTAS PESO #{ejecucion_id}] Activas: {len(alertas_estantes_activas)}, Resueltas: {len(alertas_estantes_resueltas)}")
-        print(f"[ALERTAS PESO #{ejecucion_id}] Diccionario activas: {list(alertas_estantes_activas.keys())}")
-        print(f"[ALERTAS PESO #{ejecucion_id}] Diccionario resueltas: {list(alertas_estantes_resueltas.keys())}")
         
         # Obtener todos los estantes con peso_actual y peso_objetivo
         estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
-        
-        print(f"[ALERTAS PESO #{ejecucion_id}] Procesando {len(estantes)} estantes...")
         
         for estante in estantes:
             id_estante = estante.get("id_estante")
@@ -383,11 +363,8 @@ def generar_alertas_peso_estantes():
             peso_actual = float(estante.get("peso_actual", 0))
             peso_objetivo = float(estante.get("peso_objetivo", 0))
             
-            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Actual={peso_actual}kg, Objetivo={peso_objetivo}kg")
-            
             # Si el peso_objetivo es 0, saltar este estante
             if peso_objetivo <= 0:
-                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Peso objetivo es 0, omitiendo...")
                 continue
             
             # Calcular diferencia
@@ -397,20 +374,12 @@ def generar_alertas_peso_estantes():
             # Definir umbral más sensible: 1kg o 2%, lo que sea mayor
             umbral_kg = max(1, peso_objetivo * 0.02)
             
-            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Diferencia={diferencia:.2f}kg ({porcentaje_diferencia:.1f}%), Umbral={umbral_kg:.2f}kg")
-            
             # Título normalizado para comparación
             titulo_discrepancia = f"Discrepancia de peso en {nombre}"
             titulo_lower = titulo_discrepancia.lower()
             
-            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: Buscando='{titulo_lower}'")
-            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: En activas? {titulo_lower in alertas_estantes_activas} -> {alertas_estantes_activas.get(titulo_lower, 'N/A')}")
-            print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: En resueltas? {titulo_lower in alertas_estantes_resueltas} -> {alertas_estantes_resueltas.get(titulo_lower, 'N/A')}")
-            
             # Si la diferencia es significativa
             if diferencia > umbral_kg:
-                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ⚠️ DIFERENCIA DETECTADA")
-                
                 if peso_actual > peso_objetivo:
                     tipo_discrepancia = "exceso"
                     descripcion = f"Al estante le sobran {diferencia:.2f}kg. Peso actual: {peso_actual:.2f}kg, Objetivo: {peso_objetivo:.2f}kg ({porcentaje_diferencia:.1f}% de diferencia)."
@@ -424,10 +393,8 @@ def generar_alertas_peso_estantes():
                 
                 # Crear o reactivar alerta (usar titulo_lower para comparación)
                 if titulo_lower not in alertas_estantes_activas:
-                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✅ NO existe alerta activa")
                     if titulo_lower in alertas_estantes_resueltas:
                         # Reactivar alerta resuelta
-                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: 🔄 Reactivando alerta resuelta (ID: {alertas_estantes_resueltas[titulo_lower]})")
                         supabase.table("alertas").update({
                             "estado": "pendiente",
                             "descripcion": descripcion,
@@ -435,7 +402,6 @@ def generar_alertas_peso_estantes():
                         }).eq("id", alertas_estantes_resueltas[titulo_lower]).execute()
                     else:
                         # Crear nueva alerta
-                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✨ Creando NUEVA alerta")
                         nueva_alerta = {
                             "titulo": titulo_discrepancia,
                             "descripcion": descripcion,
@@ -448,43 +414,25 @@ def generar_alertas_peso_estantes():
                             "fecha_creacion": datetime.now().isoformat(),
                         }
                         nuevas.append(nueva_alerta)
-                        print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ➕ Agregada a lista (Total: {len(nuevas)})")
-                else:
-                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ⏭️ Alerta YA EXISTE activa (ID: {alertas_estantes_activas[titulo_lower]})")
             else:
                 # Si el peso está dentro del rango aceptable, resolver alertas activas
-                print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: ✓ Peso OK")
                 if titulo_lower in alertas_estantes_activas:
-                    print(f"[ALERTAS PESO #{ejecucion_id}] {nombre}: 🔒 Resolviendo alerta (ID: {alertas_estantes_activas[titulo_lower]})")
                     supabase.table("alertas").update({
                         "estado": "resuelto",
                         "fecha_modificacion": datetime.now().isoformat()
                     }).eq("id", alertas_estantes_activas[titulo_lower]).execute()
         
         # Insertar nuevas alertas
-        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== FINALIZANDO ====================")
-        print(f"[ALERTAS PESO #{ejecucion_id}] Alertas en lista 'nuevas': {len(nuevas)}")
         if nuevas:
-            print(f"[ALERTAS PESO #{ejecucion_id}] 📝 Insertando {len(nuevas)} alertas:")
-            for idx, alerta in enumerate(nuevas, 1):
-                print(f"[ALERTAS PESO #{ejecucion_id}]   {idx}. {alerta['titulo']} (estante {alerta['id_estante']})")
-            
             try:
                 resultado = supabase.table("alertas").insert(nuevas).execute()
-                print(f"[ALERTAS PESO #{ejecucion_id}] ✅ INSERT EXITOSO: {len(nuevas)} alertas creadas")
-                print(f"[ALERTAS PESO #{ejecucion_id}] IDs creados: {[a.get('id') for a in resultado.data]}")
             except Exception as e:
-                print(f"[ALERTAS PESO #{ejecucion_id}] ❌ ERROR AL INSERTAR: {str(e)}")
                 import traceback
                 traceback.print_exc()
-        else:
-            print(f"[ALERTAS PESO #{ejecucion_id}] ℹ️ No hay alertas nuevas para insertar")
         
-        print(f"[ALERTAS PESO #{ejecucion_id}] ==================== COMPLETADO ====================")
         return True
     
     except Exception as e:
-        print(f"[ALERTAS PESO] ERROR: {e}")
         import traceback
         traceback.print_exc()
         return False

@@ -206,7 +206,7 @@ const Ventas = {
     const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
     
     this.aplicarFiltroTemporalPorRango(inicioHoy, null, 'Hoy (últimas 24h)');
-    this.mostrarNotificacion('📅 Mostrando ventas de hoy', 'info');
+    this.mostrarNotificacion('Filtro aplicado', 'info');
   },
 
   filtrarSemana() {
@@ -218,7 +218,7 @@ const Ventas = {
     inicioSemana.setDate(ahora.getDate() - 7);
     
     this.aplicarFiltroTemporalPorRango(inicioSemana, null, 'Últimos 7 días');
-    this.mostrarNotificacion('📅 Mostrando ventas de la última semana', 'info');
+    this.mostrarNotificacion('Filtro aplicado', 'info');
   },
 
   filtrarMes() {
@@ -230,7 +230,7 @@ const Ventas = {
     inicioMes.setMonth(ahora.getMonth() - 1);
     
     this.aplicarFiltroTemporalPorRango(inicioMes, null, 'Últimos 30 días');
-    this.mostrarNotificacion('📅 Mostrando ventas del último mes', 'info');
+    this.mostrarNotificacion('Filtro aplicado', 'info');
   },
 
   aplicarFiltroTemporalPorRango(fechaInicio, fechaFin, textoRango) {
@@ -332,7 +332,7 @@ const Ventas = {
     this.state.page = 1;
     this.applyPagination();
     
-    this.mostrarNotificacion('Filtro temporal eliminado', 'info');
+    this.mostrarNotificacion('Filtro eliminado', 'info');
   },
 
   actualizarKPIsConFiltro() {
@@ -1164,11 +1164,11 @@ const NuevaVenta = {
       const result = await response.json();
 
       if (result.success) {
-        alert(`✅ Venta registrada exitosamente\nID Venta: #${result.id_venta}\nTotal: $${result.total.toLocaleString('es-CL')}`);
+        alert(`Venta registrada exitosamente\nID: #${result.id_venta}\nTotal: $${result.total.toLocaleString('es-CL')}`);
         this.cerrarModal();
         window.location.reload(); // Recargar para ver la nueva venta
       } else {
-        alert(`❌ Error: ${result.error}`);
+        alert(`Error: ${result.error}`);
       }
     } catch (error) {
       if (window.errorLogger) {
@@ -1213,7 +1213,7 @@ async function exportarReporteVentas() {
     }
 
     // Mostrar notificación de carga
-    mostrarNotificacion('📊 Generando archivo Excel profesional...', 'info');
+    mostrarNotificacion('Generando archivo...', 'info');
 
     // Preparar filtros de fecha si existen
     const filtros = {
@@ -1254,13 +1254,13 @@ async function exportarReporteVentas() {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    mostrarNotificacion(`✅ Reporte de ventas exportado: ${ventas.length} registros`, 'success');
+    mostrarNotificacion(`Reporte exportado: ${ventas.length} registros`, 'success');
     
   } catch (error) {
     if (window.errorLogger) {
       window.errorLogger.error('Error al exportar reporte', 'ventas', '', error);
     }
-    mostrarNotificacion('Error al exportar el reporte. Intente nuevamente.', 'error');
+    mostrarNotificacion('Error al exportar', 'error');
   }
 }
 
