@@ -19,15 +19,15 @@
 
   <!-- Tarjetas de resumen -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm card-elevada">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Alertas</p>
       <p id="total-alertas" class="text-3xl font-bold">{{ total_alertas }}</p>
     </div>
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm card-elevada">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Pendientes</p>
       <p id="alertas-pendientes" class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{ alertas_pendientes }}</p>
     </div>
-    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm">
+    <div class="flex flex-col gap-2 rounded-xl p-6 bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-neutral-700 shadow-sm card-elevada">
       <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Alertas Resueltas</p>
       <p id="alertas-resueltas" class="text-3xl font-bold text-green-600 dark:text-green-400">{{ alertas_resueltas }}</p>
     </div>
@@ -43,7 +43,7 @@
   </div>
 
   <!-- Panel de Filtros (Colapsable) -->
-  <div id="panelFiltros" class="hidden bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm p-4 sm:p-6 mb-6 transition-all duration-300">
+  <div id="panelFiltros" class="hidden bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] rounded-xl border border-neutral-300 dark:border-neutral-700 shadow-sm p-4 sm:p-6 mb-6 transition-all duration-300 card-elevada">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">

@@ -132,7 +132,7 @@ def generar_alertas_basicas():
 
         existentes = supabase.table("alertas").select("id, titulo, estado, idproducto").execute().data or []
         titulos_activos = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "pendiente"}
-        titulos_resueltos = {a["titulo"].lower(): a["id"] for a in existentes if a.get("estado") == "resuelto"}
+        # Ya no reactivamos alertas resueltas - siempre creamos nuevas
 
         # Obtener solo productos activos
         try:
@@ -167,37 +167,33 @@ def generar_alertas_basicas():
 
             elif stock == 0:
                 if titulo_agotado not in titulos_activos:
-                    if titulo_agotado in titulos_resueltos:
-                        supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_agotado]).execute()
-                    else:
-                        nuevas.append(
-                            {
-                                "titulo": f"Stock agotado: {nombre}",
-                                "descripcion": "El producto se ha agotado completamente.",
-                                "icono": "cancel",
-                                "tipo_color": "rojo",
-                                "estado": "pendiente",
-                                "idproducto": idproducto,
-                                "fecha_creacion": datetime.now().isoformat(),
-                            }
-                        )
+                    # NO reactivar alertas viejas - siempre crear nueva
+                    nuevas.append(
+                        {
+                            "titulo": f"Stock agotado: {nombre}",
+                            "descripcion": "El producto se ha agotado completamente.",
+                            "icono": "cancel",
+                            "tipo_color": "rojo",
+                            "estado": "pendiente",
+                            "idproducto": idproducto,
+                            "fecha_creacion": datetime.now().isoformat(),
+                        }
+                    )
 
             elif 0 < stock <= 5:
                 if titulo_bajo not in titulos_activos:
-                    if titulo_bajo in titulos_resueltos:
-                        supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_bajo]).execute()
-                    else:
-                        nuevas.append(
-                            {
-                                "titulo": f"Bajo stock: {nombre}",
-                                "descripcion": f"Quedan {stock} unidades disponibles.",
-                                "icono": "inventory_2",
-                                "tipo_color": "amarilla",
-                                "estado": "pendiente",
-                                "idproducto": idproducto,
-                                "fecha_creacion": datetime.now().isoformat(),
-                            }
-                        )
+                    # NO reactivar alertas viejas - siempre crear nueva
+                    nuevas.append(
+                        {
+                            "titulo": f"Bajo stock: {nombre}",
+                            "descripcion": f"Quedan {stock} unidades disponibles.",
+                            "icono": "inventory_2",
+                            "tipo_color": "amarilla",
+                            "estado": "pendiente",
+                            "idproducto": idproducto,
+                            "fecha_creacion": datetime.now().isoformat(),
+                        }
+                    )
 
             if fecha_ingreso_str:
                 try:
@@ -224,77 +220,91 @@ def generar_alertas_basicas():
 
                     elif dias_restantes <= 0:
                         if titulo_vencido not in titulos_activos:
-                            if titulo_vencido in titulos_resueltos:
-                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vencido]).execute()
-                            else:
-                                nuevas.append(
-                                    {
-                                        "titulo": f"Producto vencido: {nombre}",
-                                        "descripcion": f"El producto ha superado su vida util de {dias_vida_util} dias. Dias vencidos: {abs(dias_restantes)}.",
-                                        "icono": "dangerous",
-                                        "tipo_color": "negro",
-                                        "estado": "pendiente",
-                                        "idproducto": idproducto,
-                                        "fecha_creacion": datetime.now().isoformat(),
-                                    }
-                                )
+                            # NO reactivar alertas viejas - siempre crear nueva
+                            nuevas.append(
+                                {
+                                    "titulo": f"Producto vencido: {nombre}",
+                                    "descripcion": f"El producto ha superado su vida util de {dias_vida_util} dias. Dias vencidos: {abs(dias_restantes)}.",
+                                    "icono": "dangerous",
+                                    "tipo_color": "negro",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat(),
+                                }
+                            )
 
                     elif 0 < dias_restantes <= 7:
                         if titulo_vence_7 not in titulos_activos:
-                            if titulo_vence_7 in titulos_resueltos:
-                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_7]).execute()
-                            else:
-                                nuevas.append(
-                                    {
-                                        "titulo": f"Vencimiento critico (7 dias): {nombre}",
-                                        "descripcion": f"El producto vencera en {dias_restantes} dias. Accion urgente requerida!",
-                                        "icono": "warning",
-                                        "tipo_color": "rojo",
-                                        "estado": "pendiente",
-                                        "idproducto": idproducto,
-                                        "fecha_creacion": datetime.now().isoformat(),
-                                    }
-                                )
+                            # NO reactivar alertas viejas - siempre crear nueva
+                            nuevas.append(
+                                {
+                                    "titulo": f"Vencimiento critico (7 dias): {nombre}",
+                                    "descripcion": f"El producto vencera en {dias_restantes} dias. Accion urgente requerida!",
+                                    "icono": "warning",
+                                    "tipo_color": "rojo",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat(),
+                                }
+                            )
 
                     elif 7 < dias_restantes <= 15:
                         if titulo_vence_15 not in titulos_activos:
-                            if titulo_vence_15 in titulos_resueltos:
-                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_15]).execute()
-                            else:
-                                nuevas.append(
-                                    {
-                                        "titulo": f"Vencimiento proximo (15 dias): {nombre}",
-                                        "descripcion": f"El producto vencera en {dias_restantes} dias. Considere priorizar su venta.",
-                                        "icono": "schedule",
-                                        "tipo_color": "naranja",
-                                        "estado": "pendiente",
-                                        "idproducto": idproducto,
-                                        "fecha_creacion": datetime.now().isoformat(),
-                                    }
-                                )
+                            # NO reactivar alertas viejas - siempre crear nueva
+                            nuevas.append(
+                                {
+                                    "titulo": f"Vencimiento proximo (15 dias): {nombre}",
+                                    "descripcion": f"El producto vencera en {dias_restantes} dias. Considere priorizar su venta.",
+                                    "icono": "schedule",
+                                    "tipo_color": "naranja",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat(),
+                                }
+                            )
 
                     elif 15 < dias_restantes <= 30:
                         if titulo_vence_30 not in titulos_activos:
-                            if titulo_vence_30 in titulos_resueltos:
-                                supabase.table("alertas").update({"estado": "pendiente"}).eq("id", titulos_resueltos[titulo_vence_30]).execute()
-                            else:
-                                nuevas.append(
-                                    {
-                                        "titulo": f"Vencimiento proximo (30 dias): {nombre}",
-                                        "descripcion": f"El producto vencera en {dias_restantes} dias. Monitoree su rotacion.",
-                                        "icono": "event",
-                                        "tipo_color": "amarilla",
-                                        "estado": "pendiente",
-                                        "idproducto": idproducto,
-                                        "fecha_creacion": datetime.now().isoformat(),
-                                    }
-                                )
+                            # NO reactivar alertas viejas - siempre crear nueva
+                            nuevas.append(
+                                {
+                                    "titulo": f"Vencimiento proximo (30 dias): {nombre}",
+                                    "descripcion": f"El producto vencera en {dias_restantes} dias. Monitoree su rotacion.",
+                                    "icono": "event",
+                                    "tipo_color": "amarilla",
+                                    "estado": "pendiente",
+                                    "idproducto": idproducto,
+                                    "fecha_creacion": datetime.now().isoformat(),
+                                }
+                            )
 
                 except Exception as e:
                     pass
 
+        # Insertar nuevas alertas con protección adicional contra duplicados
         if nuevas:
-            supabase.table("alertas").insert(nuevas).execute()
+            try:
+                # Verificar una vez más si ya existen estas alertas (protección contra race conditions)
+                alertas_a_insertar = []
+                for alerta in nuevas:
+                    titulo = alerta["titulo"]
+                    idproducto = alerta["idproducto"]
+                    
+                    # Buscar alertas pendientes con el mismo título y producto creadas recientemente (últimos 30 segundos)
+                    hace_30_seg = (datetime.now() - timedelta(seconds=30)).isoformat()
+                    duplicadas = supabase.table("alertas").select("id").eq("titulo", titulo).eq("idproducto", idproducto).eq("estado", "pendiente").gte("fecha_creacion", hace_30_seg).execute().data or []
+                    
+                    if not duplicadas:
+                        alertas_a_insertar.append(alerta)
+                    else:
+                        print(f"⚠️ Alerta duplicada detectada y omitida: {titulo}")
+                
+                if alertas_a_insertar:
+                    supabase.table("alertas").insert(alertas_a_insertar).execute()
+                    print(f"✅ Insertadas {len(alertas_a_insertar)} alertas de productos")
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
 
         return True
 
@@ -342,17 +352,13 @@ def generar_alertas_peso_estantes():
         # Obtener alertas existentes de estantes
         existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
         
-        # Filtrar alertas de estantes
+        # Filtrar alertas de estantes ACTIVAS solamente
         alertas_estantes_activas = {}
-        alertas_estantes_resueltas = {}
         
         for a in existentes:
-            if a.get("id_estante"):
+            if a.get("id_estante") and a.get("estado") == "pendiente":
                 titulo_lower = a["titulo"].lower()
-                if a.get("estado") == "pendiente":
-                    alertas_estantes_activas[titulo_lower] = a["id"]
-                elif a.get("estado") == "resuelto":
-                    alertas_estantes_resueltas[titulo_lower] = a["id"]
+                alertas_estantes_activas[titulo_lower] = a["id"]
         
         # Obtener todos los estantes con peso_actual y peso_objetivo
         estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
@@ -391,29 +397,20 @@ def generar_alertas_peso_estantes():
                     icono = "trending_down"
                     tipo_color = "rojo"
                 
-                # Crear o reactivar alerta (usar titulo_lower para comparación)
+                # Crear nueva alerta (NO reactivar alertas viejas)
                 if titulo_lower not in alertas_estantes_activas:
-                    if titulo_lower in alertas_estantes_resueltas:
-                        # Reactivar alerta resuelta
-                        supabase.table("alertas").update({
-                            "estado": "pendiente",
-                            "descripcion": descripcion,
-                            "fecha_modificacion": datetime.now().isoformat()
-                        }).eq("id", alertas_estantes_resueltas[titulo_lower]).execute()
-                    else:
-                        # Crear nueva alerta
-                        nueva_alerta = {
-                            "titulo": titulo_discrepancia,
-                            "descripcion": descripcion,
-                            "icono": icono,
-                            "tipo_color": tipo_color,
-                            "estado": "pendiente",
-                            "idproducto": None,
-                            "idusuario": None,
-                            "id_estante": id_estante,
-                            "fecha_creacion": datetime.now().isoformat(),
-                        }
-                        nuevas.append(nueva_alerta)
+                    nueva_alerta = {
+                        "titulo": titulo_discrepancia,
+                        "descripcion": descripcion,
+                        "icono": icono,
+                        "tipo_color": tipo_color,
+                        "estado": "pendiente",
+                        "idproducto": None,
+                        "idusuario": None,
+                        "id_estante": id_estante,
+                        "fecha_creacion": datetime.now().isoformat(),
+                    }
+                    nuevas.append(nueva_alerta)
             else:
                 # Si el peso está dentro del rango aceptable, resolver alertas activas
                 if titulo_lower in alertas_estantes_activas:
@@ -422,10 +419,27 @@ def generar_alertas_peso_estantes():
                         "fecha_modificacion": datetime.now().isoformat()
                     }).eq("id", alertas_estantes_activas[titulo_lower]).execute()
         
-        # Insertar nuevas alertas
+        # Insertar nuevas alertas con protección adicional contra duplicados
         if nuevas:
             try:
-                resultado = supabase.table("alertas").insert(nuevas).execute()
+                # Verificar una vez más si ya existen estas alertas (protección contra race conditions)
+                alertas_a_insertar = []
+                for alerta in nuevas:
+                    titulo = alerta["titulo"]
+                    id_estante = alerta["id_estante"]
+                    
+                    # Buscar alertas pendientes con el mismo título y estante creadas recientemente (últimos 30 segundos)
+                    hace_30_seg = (datetime.now() - timedelta(seconds=30)).isoformat()
+                    duplicadas = supabase.table("alertas").select("id").eq("titulo", titulo).eq("id_estante", id_estante).eq("estado", "pendiente").gte("fecha_creacion", hace_30_seg).execute().data or []
+                    
+                    if not duplicadas:
+                        alertas_a_insertar.append(alerta)
+                    else:
+                        print(f"⚠️ Alerta duplicada detectada y omitida: {titulo}")
+                
+                if alertas_a_insertar:
+                    resultado = supabase.table("alertas").insert(alertas_a_insertar).execute()
+                    print(f"✅ Insertadas {len(alertas_a_insertar)} alertas de peso de estantes")
             except Exception as e:
                 import traceback
                 traceback.print_exc()

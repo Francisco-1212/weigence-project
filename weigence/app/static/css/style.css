@@ -1,3 +1,20 @@
+/* Sombra personalizada para cards en modo claro y oscuro */
+.card-elevada {
+  box-shadow: 0 2px 12px 0 rgba(60, 72, 100, 0.10), 0 1.5px 6px 0 rgba(60, 72, 100, 0.08);
+  transition: box-shadow 0.2s;
+}
+.card-elevada:hover, .card-elevada:focus {
+  box-shadow: 0 6px 24px 0 rgba(60, 72, 100, 0.16), 0 3px 12px 0 rgba(60, 72, 100, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  .dark .card-elevada, html.dark .card-elevada, body.dark .card-elevada {
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.32), 0 1.5px 6px 0 rgba(0,0,0,0.22);
+  }
+  .dark .card-elevada:hover, html.dark .card-elevada:hover, body.dark .card-elevada:hover,
+  .dark .card-elevada:focus, html.dark .card-elevada:focus, body.dark .card-elevada:focus {
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.44), 0 4px 16px 0 rgba(0,0,0,0.28);
+  }
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
