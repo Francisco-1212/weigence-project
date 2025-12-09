@@ -206,16 +206,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Funcionalidad del botón "Exportar" en Alertas (header)
   const btnExportarAlertasHeader = document.getElementById('btn-exportar-alertas-header');
   if (btnExportarAlertasHeader) {
-    btnExportarAlertasHeader.addEventListener('click', () => {
-      // Buscar el botón original de exportar en la página de alertas si existe
-      const btnExportarAlertas = document.getElementById('btn-exportar-alertas');
-      if (btnExportarAlertas) {
-        btnExportarAlertas.click();
+    btnExportarAlertasHeader.addEventListener('click', async () => {
+      // Ejecutar la función de exportación si existe el objeto Alertas
+      if (typeof Alertas !== 'undefined' && typeof Alertas.exportarAlertas === 'function') {
+        await Alertas.exportarAlertas();
       } else {
-        // Si no existe el botón original, ejecutar la función directamente
-        if (typeof exportarAlertas === 'function') {
-          exportarAlertas();
-        }
+        console.error('❌ Alertas no está disponible o no tiene la función exportarAlertas');
       }
     });
   }

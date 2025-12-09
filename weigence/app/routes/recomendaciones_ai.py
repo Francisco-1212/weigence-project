@@ -123,7 +123,7 @@ def api_notificaciones():
 # === PÁGINA DE RECOMENDACIONES (GET) ===
 # ============================================================
 @bp.route('/recomendaciones', methods=['GET'])
-@requiere_rol('jefe', 'administrador')
+@requiere_rol('supervisor', 'administrador')
 def recomendaciones():
     """Página con interfaz de recomendaciones IA"""
     from flask import session

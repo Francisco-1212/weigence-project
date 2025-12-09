@@ -622,76 +622,69 @@ const Alertas = {
     }
   },
 
-  exportarAlertas() {
+  async exportarAlertas() {
     try {
-      const alertas = this.state.filteredRows;
+      console.log('🔵 [ALERTAS] Iniciando exportación a Excel...');
       
-      if (alertas.length === 0) {
-        mostrarNotificacion('No hay alertas para exportar', 'warning');
-        return;
+      // Obtener filtros activos
+      const filtros = {};
+      if (this.state.filtrosActivos.estado) {
+        filtros.estado = this.state.filtrosActivos.estado;
+      }
+      if (this.state.filtrosActivos.tipo) {
+        filtros.tipo = this.state.filtrosActivos.tipo;
+      }
+      if (this.state.filtrosActivos.fechaDesde) {
+        filtros.fecha_desde = this.state.filtrosActivos.fechaDesde;
+      }
+      if (this.state.filtrosActivos.fechaHasta) {
+        filtros.fecha_hasta = this.state.filtrosActivos.fechaHasta;
       }
 
-      // Preparar datos CSV
-      const headers = ['ID', 'Título', 'Descripción', 'Producto', 'Usuario', 'Tipo', 'Estado', 'Fecha'];
-      const rows = [];
+      console.log('🔵 [ALERTAS] Filtros aplicados:', filtros);
+      console.log('🔵 [ALERTAS] Llamando a /api/alertas/exportar-excel...');
 
-      alertas.forEach(row => {
-        const tiposMap = {
-          'rojo': 'Crítico',
-          'naranja': 'Vencimiento',
-          'amarillo': 'Advertencia',
-          'amarilla': 'Advertencia',
-          'negro': 'Vencido'
-        };
-        const tipo = tiposMap[row.dataset.tipo] || row.dataset.tipo;
-        const estado = row.dataset.estado.charAt(0).toUpperCase() + row.dataset.estado.slice(1);
-        const fecha = new Date(row.dataset.fecha).toLocaleDateString('es-CL');
-
-        rows.push([
-          row.dataset.id,
-          row.dataset.titulo,
-          row.dataset.descripcion,
-          row.dataset.producto,
-          row.dataset.usuario,
-          tipo,
-          estado,
-          fecha
-        ]);
+      const response = await fetch('/api/alertas/exportar-excel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filtros })
       });
 
-      // Generar CSV
-      let csv = headers.join(',') + '\n';
-      rows.forEach(row => {
-        csv += row.map(cell => {
-          const cellStr = String(cell);
-          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-            return '"' + cellStr.replace(/"/g, '""') + '"';
-          }
-          return cellStr;
-        }).join(',') + '\n';
-      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al exportar');
+      }
 
-      // Agregar resumen
-      const pendientes = alertas.filter(r => r.dataset.estado === 'pendiente').length;
-      const resueltas = alertas.filter(r => r.dataset.estado === 'resuelto').length;
-      csv += '\n';
-      csv += 'RESUMEN\n';
-      csv += `Total de Alertas,${rows.length}\n`;
-      csv += `Pendientes,${pendientes}\n`;
-      csv += `Resueltas,${resueltas}\n`;
+      // Descargar el archivo
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Obtener nombre del archivo desde el header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'Weigence_Alertas_Pendientes.xlsx';
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-      // Descargar archivo
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const fecha = new Date().toISOString().split('T')[0];
-      link.href = URL.createObjectURL(blob);
-      link.download = `alertas_${fecha}.csv`;
-      link.click();
+      console.log('✅ [ALERTAS] Excel exportado exitosamente:', filename);
+      mostrarNotificacion('Reporte Excel exportado exitosamente', 'success');
 
-      mostrarNotificacion(`Reporte exportado: ${rows.length} alertas`, 'success');
     } catch (error) {
-      console.error('❌ Error al exportar reporte:', error);
-      mostrarNotificacion('Error al exportar el reporte', 'error');
+      console.error('❌ [ALERTAS] Error al exportar reporte:', error);
+      mostrarNotificacion('Error al exportar el reporte: ' + error.message, 'error');
     }
   }
 };

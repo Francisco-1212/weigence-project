@@ -1,6 +1,6 @@
 """
 Rutas para gestión de usuarios (CRUD)
-Accesible solo para administrador y jefe
+Accesible solo para administrador y supervisor
 """
 from flask import render_template, request, redirect, url_for, flash, jsonify, session
 from . import bp
@@ -50,9 +50,13 @@ def usuarios():
         response = supabase.table("usuarios").select("*").execute()
         usuarios_lista = response.data if response.data else []
         
-        # Filtrar campos sensibles en la vista
+        # Filtrar solo usuarios activos y campos sensibles en la vista
         usuarios_publicos = []
         for u in usuarios_lista:
+            # Omitir usuarios desactivados
+            if u.get('activo') == False:
+                continue
+                
             usuario_publico = {
                 'rut_usuario': u.get('rut_usuario'),
                 'nombre': u.get('nombre'),
@@ -79,9 +83,13 @@ def api_obtener_usuarios():
         response = supabase.table("usuarios").select("*").execute()
         usuarios_lista = response.data if response.data else []
         
-        # Filtrar campos sensibles
+        # Filtrar solo usuarios activos y campos sensibles
         usuarios_publicos = []
         for u in usuarios_lista:
+            # Omitir usuarios desactivados
+            if u.get('activo') == False:
+                continue
+                
             usuario_publico = {
                 'rut_usuario': u.get('rut_usuario'),
                 'nombre': u.get('nombre'),
@@ -246,11 +254,9 @@ def api_crear_usuario():
             'correo': correo,
             'rol': rol,
             'numero celular': numero_celular if numero_celular else None,
-            'password_hash': password_hash,
-            'Contraseña': password_hash,  # Compatibilidad temporal
+            'Contraseña': password_hash,
             'fecha_registro': datetime.now().isoformat(),
-            'reset_token': None,
-            'reset_token_expires': None
+            'activo': True
         }
         
         logger.info(f"[API-CREAR-USUARIO] Creando usuario: {rut}")
@@ -395,20 +401,24 @@ def api_eliminar_usuario(rut):
                 'error': 'Usuario no encontrado'
             }), 404
         
-        print(f"[API-ELIMINAR-USUARIO] Eliminando usuario: {rut}")
-        response = supabase.table("usuarios").delete().eq("rut_usuario", rut).execute()
+        # Desactivar el usuario en lugar de eliminarlo (soft delete)
+        print(f"[API-DESACTIVAR-USUARIO] Desactivando usuario: {rut}")
+        response = supabase.table("usuarios").update({
+            'activo': False,
+            'fecha_desactivacion': datetime.now().isoformat()
+        }).eq("rut_usuario", rut).execute()
         
-        print(f"[API-ELIMINAR-USUARIO] ✅ Usuario eliminado: {rut}")
+        print(f"[API-DESACTIVAR-USUARIO] ✅ Usuario desactivado: {rut}")
         
         # Registrar evento de auditoría
         from app.utils.eventohumano import registrar_evento_humano
         admin_nombre = session.get('usuario_nombre', 'Administrador')
-        usuario_eliminado = existe.data[0].get('nombre', rut)
-        registrar_evento_humano("eliminar_usuario", f"{admin_nombre} eliminó usuario {usuario_eliminado} ({rut})")
+        usuario_desactivado = existe.data[0].get('nombre', rut)
+        registrar_evento_humano("desactivar_usuario", f"{admin_nombre} desactivó usuario {usuario_desactivado} ({rut})")
         
         return jsonify({
             'success': True,
-            'message': 'Usuario eliminado correctamente'
+            'message': 'Usuario desactivado correctamente. Su historial se mantiene.'
         }), 200
     
     except Exception as e:

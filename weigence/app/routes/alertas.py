@@ -500,30 +500,3 @@ def generar_alertas_basicas_api():
     elif resultado_productos or resultado_estantes:
         return jsonify({"success": True, "mensaje": "Alertas generadas parcialmente"})
     return jsonify({"success": False, "mensaje": "Error al generar alertas"}), 500
-
-
-## El endpoint /api/alertas/exportar-excel se registra en __init__.py para evitar duplicidad
-    output = io.BytesIO()
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    worksheet = workbook.add_worksheet('Alertas')
-    headers = ["ID", "Título", "Descripción", "Estado", "Producto", "Usuario", "Estante", "Fecha"]
-    worksheet.write_row(0, 0, headers)
-    for idx, alerta in enumerate(alertas, 1):
-        worksheet.write(idx, 0, alerta.get("id"))
-        worksheet.write(idx, 1, alerta.get("titulo"))
-        worksheet.write(idx, 2, alerta.get("descripcion"))
-        worksheet.write(idx, 3, alerta.get("estado"))
-        worksheet.write(idx, 4, alerta.get("idproducto"))
-        worksheet.write(idx, 5, alerta.get("idusuario"))
-        worksheet.write(idx, 6, alerta.get("id_estante"))
-        worksheet.write(idx, 7, alerta.get("fecha_creacion"))
-    workbook.close()
-    output.seek(0)
-    from datetime import datetime
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=f'alertas-{stamp}.xlsx'
-    )

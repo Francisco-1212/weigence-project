@@ -216,20 +216,6 @@ def create_app(config_name=None):
         from app.routes.ventas import exportar_ventas_excel
         return exportar_ventas_excel()
 
-    # Solo dejar la versión exenta de CSRF para exportar alertas
-    @csrf.exempt
-    @app.route("/api/alertas/exportar-csv", methods=["POST"])
-    def csrf_exempt_exportar_alertas():
-        from app.routes.alertas import exportar_alertas_csv
-        return exportar_alertas_csv()
-
-    @csrf.exempt
-    @app.route("/api/auditoria/export", methods=["POST"])
-    def csrf_exempt_exportar_auditoria():
-        from app.routes.auditoria import api_export_auditoria
-        return api_export_auditoria()
-
-
     logger.info("Rutas de recuperacion de contrasena exentas de CSRF (metodo wrapper)")
 
     # ========== SOCKETIO (CHAT TIEMPO REAL) ==========

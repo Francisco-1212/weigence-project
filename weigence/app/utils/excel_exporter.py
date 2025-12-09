@@ -523,3 +523,162 @@ class ExcelExporter:
         self.wb.save(output)
         output.seek(0)
         return output
+    
+    def exportar_alertas(self, alertas, filtros=None):
+        """Exporta alertas pendientes a Excel con formato profesional"""
+        self.ws.title = "Alertas"
+        
+        # Encabezado
+        row = self._agregar_encabezado_principal(
+            "SISTEMA WEIGENCE - REPORTE DE ALERTAS PENDIENTES",
+            len(alertas),
+            filtros
+        )
+        
+        # Encabezados de columnas
+        headers = ['ID', 'Título', 'Descripción', 'Producto', 'Usuario', 'Tipo', 'Estado', 'Fecha Creación']
+        for col_num, header in enumerate(headers, 1):
+            cell = self.ws.cell(row=row, column=col_num)
+            cell.value = header
+            self._aplicar_estilo_header(cell, self.COLOR_SUBTITLE)
+        
+        row += 1
+        
+        # Mapeo de colores según tipo de alerta
+        colores_tipo = {
+            'rojo': ('FEE2E2', 'DC2626', 'Crítico'),
+            'naranja': ('FED7AA', 'EA580C', 'Vencimiento'),
+            'amarillo': ('FEF3C7', 'F59E0B', 'Advertencia'),
+            'amarilla': ('FEF3C7', 'F59E0B', 'Advertencia'),
+            'negro': ('FCA5A5', '991B1B', 'Vencido'),
+            'verde': ('D1FAE5', '059669', 'Normal')
+        }
+        
+        # Datos de alertas
+        for idx, alerta in enumerate(alertas):
+            # Determinar color según tipo
+            tipo_color = alerta.get('tipo_color', 'amarillo').lower()
+            color_fondo, color_texto, tipo_texto = colores_tipo.get(tipo_color, (self.COLOR_ALTERNADO if idx % 2 == 0 else None, None, 'Advertencia'))
+            
+            # ID
+            cell = self.ws.cell(row=row, column=1)
+            cell.value = alerta.get('id', '')
+            self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo)
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Título
+            cell = self.ws.cell(row=row, column=2)
+            cell.value = alerta.get('titulo', '')
+            self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo, color_texto=color_texto)
+            
+            # Descripción
+            cell = self.ws.cell(row=row, column=3)
+            cell.value = alerta.get('descripcion', '')
+            self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
+            cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            
+            # Producto
+            cell = self.ws.cell(row=row, column=4)
+            cell.value = alerta.get('nombre_producto', 'Sin producto')
+            self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
+            
+            # Usuario
+            cell = self.ws.cell(row=row, column=5)
+            cell.value = alerta.get('nombre_usuario', 'Sistema')
+            self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
+            
+            # Tipo
+            cell = self.ws.cell(row=row, column=6)
+            cell.value = tipo_texto
+            self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo, color_texto=color_texto)
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Estado
+            cell = self.ws.cell(row=row, column=7)
+            estado = alerta.get('estado', 'pendiente')
+            cell.value = estado.capitalize()
+            if estado == 'pendiente':
+                estado_color = "F59E0B"
+            else:
+                estado_color = "10B981"
+            self._aplicar_estilo_celda(cell, bold=True, color_fondo=color_fondo, color_texto=estado_color)
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Fecha
+            cell = self.ws.cell(row=row, column=8)
+            fecha_valor = alerta.get('fecha_creacion', '')
+            if isinstance(fecha_valor, str) and fecha_valor:
+                try:
+                    fecha_dt = datetime.fromisoformat(fecha_valor.replace('Z', '+00:00'))
+                    cell.value = fecha_dt.strftime('%d/%m/%Y %H:%M')
+                except:
+                    cell.value = fecha_valor
+            else:
+                cell.value = str(fecha_valor) if fecha_valor else '-'
+            self._aplicar_estilo_celda(cell, color_fondo=color_fondo)
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            row += 1
+        
+        # Resumen estadístico
+        row += 2
+        self.ws.merge_cells(f'A{row}:B{row}')
+        resumen_cell = self.ws[f'A{row}']
+        resumen_cell.value = "🚨 RESUMEN ESTADÍSTICO"
+        resumen_cell.font = Font(name='Calibri', size=13, bold=True, color="FFFFFF")
+        resumen_cell.fill = PatternFill(start_color=self.COLOR_HEADER, end_color=self.COLOR_HEADER, fill_type="solid")
+        resumen_cell.alignment = Alignment(horizontal='center', vertical='center')
+        resumen_cell.border = self._crear_borde()
+        self.ws.row_dimensions[row].height = 28
+        
+        row += 1
+        total_alertas = len(alertas)
+        alertas_criticas = sum(1 for a in alertas if a.get('tipo_color') == 'rojo')
+        alertas_vencimiento = sum(1 for a in alertas if a.get('tipo_color') in ['naranja', 'negro'])
+        alertas_advertencia = sum(1 for a in alertas if a.get('tipo_color') in ['amarillo', 'amarilla'])
+        alertas_pendientes = sum(1 for a in alertas if a.get('estado') == 'pendiente')
+        alertas_resueltas = sum(1 for a in alertas if a.get('estado') == 'resuelto')
+        
+        estadisticas = [
+            ('🚨 Total de alertas', total_alertas, None),
+            ('🔴 Alertas críticas', alertas_criticas, "DC2626" if alertas_criticas > 0 else None),
+            ('📅 Alertas de vencimiento', alertas_vencimiento, "EA580C" if alertas_vencimiento > 0 else None),
+            ('⚠️ Advertencias', alertas_advertencia, "F59E0B" if alertas_advertencia > 0 else None),
+            ('⏳ Pendientes', alertas_pendientes, "F59E0B" if alertas_pendientes > 0 else None),
+            ('✅ Resueltas', alertas_resueltas, "10B981" if alertas_resueltas > 0 else None),
+        ]
+        
+        for stat_label, stat_value, color_valor in estadisticas:
+            cell_label = self.ws.cell(row=row, column=1)
+            cell_label.value = stat_label
+            cell_label.font = Font(name='Calibri', size=11, bold=True, color="1F2937")
+            cell_label.fill = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+            cell_label.border = self._crear_borde(style='thin')
+            cell_label.alignment = Alignment(horizontal='left', vertical='center')
+            
+            cell_value = self.ws.cell(row=row, column=2)
+            cell_value.value = stat_value
+            cell_value.font = Font(name='Calibri', size=11, bold=True, color=color_valor if color_valor else "1F2937")
+            cell_value.fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            cell_value.alignment = Alignment(horizontal='center', vertical='center')
+            cell_value.border = self._crear_borde(style='thin')
+            self.ws.row_dimensions[row].height = 22
+            row += 1
+        
+        # Ajustar anchos
+        self.ws.column_dimensions['A'].width = 8   # ID
+        self.ws.column_dimensions['B'].width = 40  # Título
+        self.ws.column_dimensions['C'].width = 50  # Descripción
+        self.ws.column_dimensions['D'].width = 25  # Producto
+        self.ws.column_dimensions['E'].width = 20  # Usuario
+        self.ws.column_dimensions['F'].width = 15  # Tipo
+        self.ws.column_dimensions['G'].width = 12  # Estado
+        self.ws.column_dimensions['H'].width = 18  # Fecha
+        
+        self._agregar_pie_pagina()
+        
+        # Guardar en memoria
+        output = BytesIO()
+        self.wb.save(output)
+        output.seek(0)
+        return output

@@ -389,9 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Modal simple para seleccionar qué exportar
       const opciones = [
         { text: '📊 Inventario (Excel)', action: async () => await exportarArchivo('/api/inventario/exportar-excel', 'Inventario') },
-        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') },
-        { text: '🚨 Alertas Críticas (Excel)', action: async () => await exportarArchivo('/api/alertas/exportar-excel', 'Alertas_Criticas') },
-          { text: '📝 Logs de Auditoría (CSV)', action: async () => await exportarArchivo('/api/auditoria/export', 'Logs_Auditoria') }
+        { text: '💰 Ventas (Excel)', action: async () => await exportarArchivo('/api/ventas/exportar-excel', 'Ventas') }
       ];
       
       const modal = document.createElement('div');
