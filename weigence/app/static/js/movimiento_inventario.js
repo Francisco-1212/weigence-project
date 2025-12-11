@@ -188,7 +188,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                   : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
                   : "text-blue-600 dark:text-blue-500"
                 }">
-                  ${m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
+                  ${
+                    m.tipo_evento === "Añadir" ? "+" 
+                    : m.tipo_evento === "Retirar" ? "-" 
+                    : m.tipo_evento === "gris" && m.cantidad < 0 ? "-"
+                    : m.tipo_evento === "gris" && m.cantidad > 0 ? "+"
+                    : ""
+                  }${(m.peso_total || 0).toFixed(2)}kg
                 </p>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   ${m.cantidad} unid × ${(m.peso_por_unidad || 0).toFixed(2)}kg
@@ -257,7 +263,13 @@ document.addEventListener("DOMContentLoaded", async () => {
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
               : "text-blue-600 dark:text-blue-500"
             }">
-              ${m.tipo_evento === "Añadir" ? "+" : m.tipo_evento === "Retirar" ? "-" : ""}${(m.peso_total || 0).toFixed(2)}kg
+              ${
+                m.tipo_evento === "Añadir" ? "+" 
+                : m.tipo_evento === "Retirar" ? "-" 
+                : m.tipo_evento === "gris" && m.cantidad < 0 ? "-"
+                : m.tipo_evento === "gris" && m.cantidad > 0 ? "+"
+                : ""
+              }${(m.peso_total || 0).toFixed(2)}kg
             </p>
             <p class="text-[10px] text-neutral-500 dark:text-neutral-400">
               ${(m.timestamp || "").split(" ")[1]?.slice(0,5) || ""}

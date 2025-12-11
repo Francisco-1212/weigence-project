@@ -1244,7 +1244,11 @@ const WeigenceMonitor = {
       if (currentIds === newIds) return; // No hay cambios
       
       cont.innerHTML = "";
-      cont.classList.remove("opacity-0"); // Mostrar contenedor
+
+      if (data.length === 0) {
+        cont.innerHTML = '<p class="text-sm text-neutral-600 dark:text-neutral-400">No hay alertas en este momento.</p>';
+        return;
+      }
 
       data.slice(0, 3).forEach(a => {
         const color =

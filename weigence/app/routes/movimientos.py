@@ -247,12 +247,17 @@ def lecturas_peso_recientes():
                 print(f"🔄 [RETRY] Intento {intento + 1}/{max_intentos} tras {retraso}s...")
                 time.sleep(retraso)
             
-            # Obtener lecturas del estante
-            response = supabase.table("lecturas_peso").select("*").eq("id_estante", id_estante).execute()
+            # Obtener lecturas recientes del estante (últimos 30 segundos)
+            from datetime import datetime, timedelta
+            tiempo_limite = (datetime.now() - timedelta(seconds=30)).isoformat()
             
-            # Ordenar por id_lectura descendente en Python
+            response = supabase.table("lecturas_peso").select("*").eq(
+                "id_estante", id_estante
+            ).gte("timestamp", tiempo_limite).execute()
+            
+            # Ordenar por timestamp descendente en Python
             if response.data:
-                response.data.sort(key=lambda x: x.get('id_lectura', 0), reverse=True)
+                response.data.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
                 response.data = response.data[:10]  # Solo las últimas 10
             
             # Éxito - retornar inmediatamente

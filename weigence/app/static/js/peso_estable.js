@@ -42,23 +42,32 @@ class DetectorPesoSimple {
       const lectura = resultado.data[0]; // La más reciente
       const idLectura = lectura.id_lectura;
       const diferencia = parseFloat(lectura.diferencia_anterior) || 0;
+      const timestampLectura = new Date(lectura.timestamp);
+      const ahora = new Date();
+      const edadSegundos = (ahora - timestampLectura) / 1000;
 
-      // 2. Si ya procesamos esta lectura, skip
+      // 2. Si la lectura es muy antigua (>30 seg), skip
+      if (edadSegundos > 30) {
+        console.log(`⏱️ [Verificar] Lectura ${idLectura} muy antigua (${edadSegundos.toFixed(1)}s), omitiendo`);
+        return;
+      }
+
+      // 3. Si ya procesamos esta lectura, skip
       if (this.lecturasYaProcesadas.has(idLectura)) {
         return;
       }
 
-      // 3. Verificar si supera el umbral (positivo o negativo)
+      // 4. Verificar si supera el umbral (positivo o negativo)
       if (Math.abs(diferencia) < this.UMBRAL) {
         return; // Cambio muy pequeño
       }
 
-      console.log(`🔔 [Detección] Estante ${idEstante}: ${diferencia > 0 ? 'ADICIÓN' : 'RETIRO'} de ${Math.abs(diferencia).toFixed(1)}g`);
+      console.log(`🔔 [Detección] Estante ${idEstante}: ${diferencia > 0 ? 'ADICIÓN' : 'RETIRO'} de ${Math.abs(diferencia).toFixed(1)}g (Lectura: ${edadSegundos.toFixed(1)}s)`);
 
-      // 4. Marcar como procesada
+      // 5. Marcar como procesada
       this.lecturasYaProcesadas.add(idLectura);
 
-      // 5. Registrar movimiento gris
+      // 6. Registrar el movimiento gris
       await this.registrarMovimientoGris(idEstante, lectura);
 
     } catch (error) {
@@ -78,7 +87,7 @@ class DetectorPesoSimple {
       // rut_usuario se toma automáticamente de la sesión en el backend
       cantidad: diferencia > 0 ? 1 : -1,
       tipo_evento: 'gris',
-      peso_total: pesoActual / 1000, // kg
+      peso_total: Math.abs(diferencia) / 1000, // kg - El cambio de peso, no el peso total del estante
       peso_por_unidad: Math.abs(diferencia) / 1000, // kg
       observacion: `${tipoCambio}: ${Math.abs(diferencia).toFixed(0)}g`
     };
