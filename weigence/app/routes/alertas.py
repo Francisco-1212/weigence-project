@@ -35,6 +35,7 @@ def exportar_alertas_csv():
         download_name=f'alertas-{stamp}.csv'
     )
 from datetime import datetime, timedelta
+import time
 
 from flask import flash, jsonify, redirect, render_template, request, session, url_for
 
@@ -350,7 +351,6 @@ def generar_alertas_peso_estantes():
         nuevas = []
         
         # Obtener alertas existentes de estantes con reintentos y manejo de errores
-        import time
         MAX_RETRIES = 3
         for intento in range(MAX_RETRIES):
             try:
@@ -373,8 +373,20 @@ def generar_alertas_peso_estantes():
                 titulo_lower = a["titulo"].lower()
                 alertas_estantes_activas[titulo_lower] = a["id"]
         
-        # Obtener todos los estantes con peso_actual y peso_objetivo
-        estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
+        # Obtener todos los estantes con peso_actual y peso_objetivo - CON REINTENTOS
+        for intento in range(MAX_RETRIES):
+            try:
+                estantes = supabase.table("estantes").select("id_estante, nombre, peso_actual, peso_objetivo").execute().data or []
+                break
+            except Exception as e:
+                print(f"[ERROR] Fallo al consultar estantes en Supabase (intento {intento+1}/{MAX_RETRIES}): {e}")
+                if intento < MAX_RETRIES - 1:
+                    time.sleep(2)
+                else:
+                    import traceback
+                    traceback.print_exc()
+                    print("[ERROR] No se pudieron obtener estantes después de varios intentos")
+                    return False
         
         for estante in estantes:
             id_estante = estante.get("id_estante")
@@ -427,10 +439,17 @@ def generar_alertas_peso_estantes():
             else:
                 # Si el peso está dentro del rango aceptable, resolver alertas activas
                 if titulo_lower in alertas_estantes_activas:
-                    supabase.table("alertas").update({
-                        "estado": "resuelto",
-                        "fecha_modificacion": datetime.now().isoformat()
-                    }).eq("id", alertas_estantes_activas[titulo_lower]).execute()
+                    for intento in range(MAX_RETRIES):
+                        try:
+                            supabase.table("alertas").update({
+                                "estado": "resuelto",
+                                "fecha_modificacion": datetime.now().isoformat()
+                            }).eq("id", alertas_estantes_activas[titulo_lower]).execute()
+                            break
+                        except Exception as e:
+                            print(f"[ERROR] Fallo al actualizar alerta (intento {intento+1}/{MAX_RETRIES}): {e}")
+                            if intento < MAX_RETRIES - 1:
+                                time.sleep(1)
         
         # Insertar nuevas alertas con protección adicional contra duplicados
         if nuevas:
@@ -443,7 +462,15 @@ def generar_alertas_peso_estantes():
                     
                     # Buscar alertas pendientes con el mismo título y estante creadas recientemente (últimos 30 segundos)
                     hace_30_seg = (datetime.now() - timedelta(seconds=30)).isoformat()
-                    duplicadas = supabase.table("alertas").select("id").eq("titulo", titulo).eq("id_estante", id_estante).eq("estado", "pendiente").gte("fecha_creacion", hace_30_seg).execute().data or []
+                    duplicadas = []
+                    for intento in range(MAX_RETRIES):
+                        try:
+                            duplicadas = supabase.table("alertas").select("id").eq("titulo", titulo).eq("id_estante", id_estante).eq("estado", "pendiente").gte("fecha_creacion", hace_30_seg).execute().data or []
+                            break
+                        except Exception as e:
+                            print(f"[ERROR] Fallo al verificar duplicados (intento {intento+1}/{MAX_RETRIES}): {e}")
+                            if intento < MAX_RETRIES - 1:
+                                time.sleep(1)
                     
                     if not duplicadas:
                         alertas_a_insertar.append(alerta)
@@ -451,8 +478,15 @@ def generar_alertas_peso_estantes():
                         print(f"⚠️ Alerta duplicada detectada y omitida: {titulo}")
                 
                 if alertas_a_insertar:
-                    resultado = supabase.table("alertas").insert(alertas_a_insertar).execute()
-                    print(f"✅ Insertadas {len(alertas_a_insertar)} alertas de peso de estantes")
+                    for intento in range(MAX_RETRIES):
+                        try:
+                            resultado = supabase.table("alertas").insert(alertas_a_insertar).execute()
+                            print(f"✅ Insertadas {len(alertas_a_insertar)} alertas de peso de estantes")
+                            break
+                        except Exception as e:
+                            print(f"[ERROR] Fallo al insertar alertas (intento {intento+1}/{MAX_RETRIES}): {e}")
+                            if intento < MAX_RETRIES - 1:
+                                time.sleep(2)
             except Exception as e:
                 import traceback
                 traceback.print_exc()

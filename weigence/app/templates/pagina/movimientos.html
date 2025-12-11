@@ -5,6 +5,18 @@
 {% block sidebar %}{% include "componentes/sidebar.html" %}{% endblock %}
 
 {% block contenido %}
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  .animate-spin-slow {
+    animation: spin 2.2s linear infinite;
+  }
+</style>
 <div class="w-full flex flex-col px-4 sm:px-6 lg:px-8 pt-4 pb-6 font-display">
 
   <!-- Encabezado -->

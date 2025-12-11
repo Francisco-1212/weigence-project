@@ -219,20 +219,36 @@ def crear_nueva_venta():
             }
             detalles_venta.append(detalle)
             
-            # Movimiento de inventario (Retiro) - incluir peso
-            peso_total = cantidad * peso_kg  # Peso total en kg
-            movimiento = {
-                "tipo_evento": "Retirar",
-                "idproducto": idproducto,
-                "id_estante": id_estante,
-                "cantidad": cantidad,
-                "peso_por_unidad": peso_kg,  # Peso por unidad en kg
-                "peso_total": peso_total,     # Peso total en kg
-                "rut_usuario": rut_usuario,
-                "timestamp": datetime.now().isoformat(),
-                "observacion": f"Venta #{id_venta} - Retiro automático por venta"
-            }
-            movimientos_inventario.append(movimiento)
+
+            # Intentar emparejar con retiro ya registrado (asíncrono)
+            from datetime import timedelta
+            now = datetime.now()
+            ventana_ini = (now - timedelta(minutes=5)).isoformat()
+            ventana_fin = (now + timedelta(minutes=5)).isoformat()
+            # Buscar retiro pendiente (no validado por venta) en la ventana
+            retiro_match = supabase.table("movimientos_inventario").select("id_movimiento, cantidad, peso_total, timestamp, es_venta_validada").eq("idproducto", idproducto).eq("tipo_evento", "Retirar").eq("es_venta_validada", False).gte("timestamp", ventana_ini).lte("timestamp", ventana_fin).execute().data
+            if retiro_match:
+                # Emparejar: actualizar retiro como validado
+                for retiro in retiro_match:
+                    supabase.table("movimientos_inventario").update({
+                        "es_venta_validada": True,
+                        "motivo_sospecha": None,
+                        "observacion": f"Emparejado con venta #{id_venta}"
+                    }).eq("id_movimiento", retiro["id_movimiento"]).execute()
+            else:
+                # No hay retiro, registrar venta pendiente
+                movimiento = {
+                    "tipo_evento": "VentaPendiente",
+                    "idproducto": idproducto,
+                    "id_estante": id_estante,
+                    "cantidad": cantidad,
+                    "peso_por_unidad": peso_kg,
+                    "peso_total": cantidad * peso_kg,
+                    "rut_usuario": rut_usuario,
+                    "timestamp": now.isoformat(),
+                    "observacion": f"Venta #{id_venta} pendiente de retiro"
+                }
+                movimientos_inventario.append(movimiento)
             
             # Actualizar stock del producto
             nuevo_stock = stock_actual - cantidad

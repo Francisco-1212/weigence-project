@@ -56,11 +56,8 @@ def inventario():
         session['last_page'] = 'inventario'
     try:
         # === 1. Cargar productos y categorías ===
-        # Intentar filtrar por activo=True, si no existe la columna, cargar todos
-        try:
-            productos = supabase.table("productos").select("*").eq("activo", True).execute().data or []
-        except:
-            productos = supabase.table("productos").select("*").execute().data or []
+        # Cargar todos los productos sin filtrar por estado activo
+        productos = supabase.table("productos").select("*").execute().data or []
 
         estantes_catalogo = obtener_catalogo_estantes()
         categorias_map = construir_mapa_categorias(productos)

@@ -217,12 +217,19 @@ class SnapshotBuilder:
             movement_window_hours=movement_window,
         )
 
+        print(f"[DEBUG BUILD] Enriqueciendo ventas...")
         self._enriquecer_ventas(snapshot, ventas)
+        print(f"[DEBUG BUILD] Enriqueciendo pesajes...")
         self._enriquecer_pesajes(snapshot, pesajes)
+        print(f"[DEBUG BUILD] Enriqueciendo alertas...")
         self._enriquecer_alertas(snapshot, alertas)
+        print(f"[DEBUG BUILD] Enriqueciendo movimientos...")
         self._enriquecer_movimientos(snapshot, movimientos)
+        print(f"[DEBUG BUILD] Enriqueciendo métricas adicionales...")
         self._enriquecer_metricas_adicionales(snapshot, ventas, pesajes, alertas, movimientos, detalles)
+        print(f"[DEBUG BUILD] Infiriendo patrones...")
         self._inferir_patrones(snapshot, detalles)
+        print(f"[DEBUG BUILD] ✅ Snapshot completado")
 
         return snapshot
     
@@ -236,15 +243,25 @@ class SnapshotBuilder:
         detalles: List[Dict[str, object]]
     ) -> None:
         """Calcula métricas adicionales para mensajes accionables del header."""
-        # Total de productos únicos
-        productos_unicos = set()
-        for pesaje in pesajes:
-            if pesaje.get('idproducto'):
-                productos_unicos.add(pesaje.get('idproducto'))
-        for detalle in detalles:
-            if detalle.get('idproducto'):
-                productos_unicos.add(detalle.get('idproducto'))
-        snapshot.total_productos = len(productos_unicos) if productos_unicos else 0
+        print(f"[DEBUG] 🚀 _enriquecer_metricas_adicionales EJECUTÁNDOSE...")
+        
+        # Total de productos únicos - consultar directamente la tabla productos
+        try:
+            from api.conexion_supabase import supabase
+            productos_response = supabase.table('productos').select('idproducto', count='exact').execute()
+            snapshot.total_productos = productos_response.count if productos_response.count else 0
+            print(f"[DEBUG] 📊 Total productos en BD: {snapshot.total_productos}")
+        except Exception as e:
+            print(f"[DEBUG] ⚠️ Error contando productos: {e}")
+            # Fallback al método anterior
+            productos_unicos = set()
+            for pesaje in pesajes:
+                if pesaje.get('idproducto'):
+                    productos_unicos.add(pesaje.get('idproducto'))
+            for detalle in detalles:
+                if detalle.get('idproducto'):
+                    productos_unicos.add(detalle.get('idproducto'))
+            snapshot.total_productos = len(productos_unicos) if productos_unicos else 0
         
         # Productos sin stock (peso = 0 o stock = 0)
         productos_sin_stock = sum(
@@ -284,39 +301,72 @@ class SnapshotBuilder:
         except Exception:
             snapshot.estantes_sobrecargados = 0
         
-        # Contar productos no encontrados y calcular tiempo desde último movimiento
-        print(f"[DEBUG] 🔍 Iniciando cálculo de productos no encontrados y tiempo último movimiento...")
+        # Contar productos no encontrados - Método más eficiente
+        print(f"[DEBUG] 🔍 Iniciando cálculo de productos no encontrados...")
         try:
             from api.conexion_supabase import supabase
-            # Obtener todos los movimientos recientes para analizar
-            mov_response = supabase.table('movimientos_inventario') \
-                .select('id_movimiento, idproducto, tipo_evento, timestamp, productos(nombre)') \
+            
+            # Estrategia 1: Obtener todos los movimientos con todos los campos relevantes
+            todos_movimientos = supabase.table('movimientos_inventario') \
+                .select('*') \
+                .execute().data or []
+            
+            print(f"[DEBUG] 📦 Total movimientos en BD: {len(todos_movimientos)}")
+            
+            # Obtener IDs únicos de productos mencionados en movimientos (excluir None)
+            ids_productos_en_movimientos = {m['idproducto'] for m in todos_movimientos if m.get('idproducto')}
+            print(f"[DEBUG] 📊 IDs únicos en movimientos: {len(ids_productos_en_movimientos)}")
+            
+            # Obtener IDs de productos que SÍ existen en la tabla productos
+            productos_existentes = supabase.table('productos').select('idproducto').execute().data or []
+            ids_productos_existentes = {p['idproducto'] for p in productos_existentes}
+            print(f"[DEBUG] 📊 Productos en BD: {len(ids_productos_existentes)}")
+            
+            # Encontrar IDs de productos que NO existen
+            ids_faltantes = ids_productos_en_movimientos - ids_productos_existentes
+            
+            if ids_faltantes:
+                print(f"[DEBUG] ⚠️ Productos faltantes: {list(ids_faltantes)}")
+                
+                # Contar movimientos con idproducto faltante o nombre 'Producto no encontrado'
+                movimientos_problemáticos = 0
+                for m in todos_movimientos:
+                    id_faltante = m.get('idproducto') in ids_faltantes
+                    nombre_no_encontrado = False
+                    # Si el movimiento tiene el campo 'producto', revisa el nombre
+                    if 'producto' in m:
+                        nombre_no_encontrado = m.get('producto') == 'Producto no encontrado'
+                    movimientos_problemáticos += int(id_faltante or nombre_no_encontrado)
+
+                print(f"[DEBUG] ⚠️ Total movimientos con productos no encontrados: {movimientos_problemáticos}")
+                snapshot.productos_no_encontrados_movimientos = movimientos_problemáticos
+            else:
+                print(f"[DEBUG] ✅ Todos los productos referenciados existen en la BD")
+                snapshot.productos_no_encontrados_movimientos = 0
+            
+            # Calcular tiempo desde el último movimiento (consulta separada)
+            ultimo_mov = supabase.table('movimientos_inventario') \
+                .select('timestamp') \
                 .order('timestamp', desc=True) \
-                .limit(100) \
+                .limit(1) \
                 .execute()
             
-            print(f"[DEBUG] 📦 Movimientos obtenidos: {len(mov_response.data) if mov_response.data else 0}")
-            
-            if mov_response.data:
-                # Contar movimientos donde el producto no existe (JOIN falla)
-                productos_no_encontrados = 0
-                for mov in mov_response.data:
-                    if mov.get('productos') is None:
-                        productos_no_encontrados += 1
-                        print(f"[DEBUG] Producto no encontrado - ID mov: {mov.get('id_movimiento')}, idproducto: {mov.get('idproducto')}, tipo_evento: {mov.get('tipo_evento')}")
-                
-                snapshot.productos_no_encontrados_movimientos = productos_no_encontrados
-                print(f"[DEBUG] ✅ Total productos no encontrados: {productos_no_encontrados}")
-                
-                # Calcular tiempo desde el último movimiento
-                ultimo_movimiento = mov_response.data[0]  # Ya está ordenado desc
-                timestamp_str = ultimo_movimiento.get('timestamp')
+            if ultimo_mov.data and len(ultimo_mov.data) > 0:
+                timestamp_str = ultimo_mov.data[0].get('timestamp')
                 if timestamp_str:
                     try:
                         from datetime import timezone
-                        # Parsear el timestamp de Supabase
-                        timestamp_dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                        # Usar UTC para ambos
+                        # Parsear el timestamp de Supabase asegurando que tenga timezone
+                        if timestamp_str.endswith('Z'):
+                            timestamp_str = timestamp_str.replace('Z', '+00:00')
+                        
+                        timestamp_dt = datetime.fromisoformat(timestamp_str)
+                        
+                        # Si el timestamp no tiene timezone, asignar UTC
+                        if timestamp_dt.tzinfo is None:
+                            timestamp_dt = timestamp_dt.replace(tzinfo=timezone.utc)
+                        
+                        # Usar UTC para el tiempo actual
                         ahora_utc = datetime.now(timezone.utc)
                         tiempo_transcurrido = (ahora_utc - timestamp_dt).total_seconds() / 3600.0
                         snapshot.tiempo_ultimo_movimiento = tiempo_transcurrido
@@ -325,17 +375,14 @@ class SnapshotBuilder:
                         print(f"[DEBUG] ⏱️ Diferencia: {tiempo_transcurrido:.2f} horas ({tiempo_transcurrido * 60:.1f} minutos)")
                     except Exception as e:
                         print(f"[ERROR] Error al parsear timestamp: {e}")
-                        import traceback
-                        traceback.print_exc()
                         snapshot.tiempo_ultimo_movimiento = 0.0
                 else:
                     snapshot.tiempo_ultimo_movimiento = 0.0
             else:
-                snapshot.productos_no_encontrados_movimientos = 0
-                snapshot.tiempo_ultimo_movimiento = 999.0  # Sin movimientos
-                print(f"[DEBUG] ⚠️ No hay datos de movimientos")
+                snapshot.tiempo_ultimo_movimiento = 0.0
+                
         except Exception as e:
-            print(f"[ERROR] ❌ Al contar productos no encontrados: {e}")
+            print(f"[ERROR] Error al calcular productos no encontrados: {e}")
             import traceback
             traceback.print_exc()
             snapshot.productos_no_encontrados_movimientos = 0

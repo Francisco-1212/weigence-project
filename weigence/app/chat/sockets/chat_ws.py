@@ -1,9 +1,11 @@
 from flask import session
 from flask_socketio import SocketIO, emit, join_room
+import logging
 
 from app.chat import chat_service as svc
 
 socketio = None
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -23,7 +25,11 @@ def init_socketio(app):
         ping_interval=25,
         max_http_buffer_size=1000000,
         allow_upgrades=True,
-        transports=['websocket', 'polling']
+        transports=['websocket', 'polling'],
+        # Configuraciones adicionales para manejar sesiones inválidas
+        always_connect=False,  # No auto-conectar sesiones inválidas
+        manage_session=True,  # Flask-SocketIO maneja sesiones Flask
+        cookie=None  # Usar cookies de Flask por defecto
     )
     registrar_eventos()
     return socketio
@@ -38,18 +44,27 @@ def _get_user():
 
 
 def on_connect():
-    user = _get_user()
-    if not user:
-        print("[WS] conexion denegada (sin sesion)")
-        return False
+    """Maneja la conexión WebSocket con validación de sesión."""
+    try:
+        user = _get_user()
+        if not user:
+            print("[WS] conexion denegada (sin sesion)")
+            return False
 
-    print(f"[WS] usuario conectado: {user}")
-    emit("ws_connected", {"usuario_id": user})
+        print(f"[WS] usuario conectado: {user}")
+        emit("ws_connected", {"usuario_id": user})
+    except Exception as e:
+        print(f"[WS ERROR] Error en on_connect: {e}")
+        return False
 
 
 def on_disconnect():
-    user = _get_user()
-    print(f"[WS] usuario desconectado: {user}")
+    """Maneja la desconexión WebSocket de forma segura."""
+    try:
+        user = _get_user()
+        print(f"[WS] usuario desconectado: {user}")
+    except Exception as e:
+        print(f"[WS ERROR] Error en on_disconnect: {e}")
 
 
 # ============================================================
@@ -183,14 +198,33 @@ def _emit_error(msg):
 
 
 # ============================================================
+# 6. MANEJADOR GLOBAL DE ERRORES
+# ============================================================
+
+def on_error_default(e):
+    """Maneja errores globales de SocketIO de forma silenciosa."""
+    # Suprimir errores de sesiones inválidas (muy comunes cuando usuarios refrescan)
+    error_msg = str(e).lower()
+    if "invalid session" in error_msg or "session not found" in error_msg:
+        logger.debug(f"[WS] Sesión inválida detectada (ignorada): {e}")
+    else:
+        logger.error(f"[WS ERROR] Error SocketIO: {e}")
+
+
+# ============================================================
 # REGISTRO CENTRAL
 # ============================================================
 
 def registrar_eventos():
     if socketio is None:
         raise RuntimeError("SocketIO no inicializado. Llama primero a init_socketio(app).")
+    
+    # Registrar eventos principales
     socketio.on_event("connect", on_connect)
     socketio.on_event("disconnect", on_disconnect)
     socketio.on_event("join", on_join)
     socketio.on_event("send", on_send)
     socketio.on_event("seen", on_seen)
+    
+    # Registrar manejador global de errores
+    socketio.on_error_default(on_error_default)

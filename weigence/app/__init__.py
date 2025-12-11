@@ -66,6 +66,7 @@ def create_app(config_name=None):
             "/api/validate-reset-token", 
             "/api/reset-password",
             "/api/lecturas_peso_recientes",  # Sistema automático de detección de peso
+            "/api/lecturas_peso_pendientes",  # Recuperación de movimientos perdidos
             "/api/movimientos/gris"  # Movimientos grises automáticos
         ]
         
@@ -224,6 +225,15 @@ def create_app(config_name=None):
 
         socketio_instance = init_socketio(app)
         logger.info("WebSocket (SocketIO) configurado para chat")
+        
+        # Configurar logging de engineio/socketio para ser menos verboso
+        import logging
+        
+        # Suprimir logs de sesiones inválidas (nivel ERROR)
+        logging.getLogger('socketio').setLevel(logging.CRITICAL)
+        logging.getLogger('engineio').setLevel(logging.CRITICAL)
+        logging.getLogger('engineio.server').setLevel(logging.CRITICAL)
+        
     except ImportError as e:
         logger.warning(f"SocketIO no disponible: {e}")
         logger.warning("Chat funcionara sin tiempo real (solo polling)")
@@ -233,22 +243,64 @@ def create_app(config_name=None):
     @app.errorhandler(404)
     def handle_404(e):
         """Log para 404 mostrando la URL solicitada solo para rutas no comunes"""
-        # Ignorar 404s comunes de archivos estáticos o favicon
-        ignore_paths = ['/favicon.ico', '/robots.txt', '/sitemap.xml', '.map']
-        if not any(path in request.path for path in ignore_paths):
-            logger.debug(f"404 Not Found: {request.method} {request.path}")
+        # Ignorar 404s comunes de archivos estáticos, favicon y SocketIO polling
+        ignore_paths = [
+            '/favicon.ico', 
+            '/robots.txt', 
+            '/sitemap.xml', 
+            '.map',
+            '/socket.io/',  # Rutas de SocketIO (polling fallback)
+            '/static/uploads/profile_pictures/',  # Fotos de perfil faltantes (común)
+        ]
         
-        if request.path.startswith("/api/"):
+        # Loguear con más detalle para diagnosticar problemas
+        should_log = not any(path in request.path for path in ignore_paths)
+        
+        if should_log:
+            # Capturar información adicional para diagnóstico
+            headers_info = f"Referer: {request.referrer}" if request.referrer else "Sin referer"
+            logger.warning(f"⚠️ 404: {request.method} {request.path} | {headers_info} | Query: {dict(request.args)}")
+        
+        # Manejar imágenes de perfil faltantes - redirigir a generador de avatar
+        if '/static/uploads/profile_pictures/' in request.path:
+            # Extraer el RUT del nombre del archivo si es posible
+            import re
+            rut_match = re.search(r'/(\d+-\d+)_', request.path)
+            if rut_match:
+                rut = rut_match.group(1)
+                # Usar UI Avatars con el RUT como inicial
+                initials = rut[:2].upper()
+                avatar_url = f"https://ui-avatars.com/api/?name={initials}&background=4F46E5&color=fff&size=200&bold=true"
+                return redirect(avatar_url)
+            # Si no hay RUT, usar avatar genérico
+            return redirect("https://ui-avatars.com/api/?name=U&background=4F46E5&color=fff&size=200&bold=true")
+        
+        # Siempre devolver una respuesta limpia sin stack trace
+        if request.path.startswith("/api/") or request.is_json or request.accept_mimetypes.best == 'application/json':
             return jsonify({"success": False, "error": "Endpoint no encontrado"}), 404
-        raise
+        
+        # Para navegación normal, redirigir a página de error o home
+        from flask import render_template
+        try:
+            return render_template('errors/404.html'), 404
+        except:
+            # Si no hay template de error, redirigir al dashboard
+            return redirect(url_for('main.dashboard'))
 
     @app.errorhandler(Exception)
     def handle_error(e):
         """Maneja todos los errores y devuelve JSON para peticiones AJAX."""
         # No loguear errores 404 como excepciones críticas
-        from werkzeug.exceptions import NotFound
+        from werkzeug.exceptions import NotFound, HTTPException
+        
         if isinstance(e, NotFound):
             return handle_404(e)
+        
+        # Suprimir logs de otros errores HTTP esperados (400, 403, etc.)
+        if isinstance(e, HTTPException):
+            if request.path.startswith("/api/"):
+                return jsonify({"success": False, "error": e.description}), e.code
+            raise
         
         # Solo loguear excepciones reales, no errores HTTP esperados
         logger.error(f"Excepcion no capturada: {str(e)}", exc_info=False)

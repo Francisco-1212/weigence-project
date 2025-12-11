@@ -227,8 +227,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     html += lista.map((m, i) => {
   const indexReal = inicio + i; // Índice real en el array completo
-  const color = m.tipo_evento === "Añadir" ? "green"
-              : m.tipo_evento === "Retirar" ? "red" : "blue";
+  let color = m.tipo_evento === "Añadir" ? "green"
+              : m.tipo_evento === "Retirar" ? "red"
+              : m.tipo_evento === "VentaPendiente" ? "yellow"
+              : "blue";
 
   return `
     <div class="timeline-item relative mb-3 cursor-pointer group"
@@ -246,13 +248,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="ml-4 p-2.5 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-[var(--card-bg-light)] dark:bg-[var(--card-bg-dark)] shadow-sm hover:shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-200">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 flex-1 min-w-0">
-            <span class="material-symbols-outlined text-base flex-shrink-0 ${
-              m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
-              : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
-              : "text-blue-600 dark:text-blue-500"
-            }">
-              ${m.tipo_evento === "Añadir" ? "arrow_upward" : m.tipo_evento === "Retirar" ? "arrow_downward" : "sync_alt"}
-            </span>
+            ${m.tipo_evento === "VentaPendiente" ? `<span class="material-symbols-outlined animate-spin text-yellow-500 text-base flex-shrink-0">autorenew</span>` :
+              m.tipo_evento === "Añadir" ? `<span class="material-symbols-outlined text-green-600 dark:text-green-500 text-base flex-shrink-0">arrow_upward</span>` :
+              m.tipo_evento === "Retirar" ? `<span class="material-symbols-outlined text-red-600 dark:text-red-500 text-base flex-shrink-0">arrow_downward</span>` :
+              `<span class="material-symbols-outlined text-blue-600 dark:text-blue-500 text-base flex-shrink-0">sync_alt</span>`}
             <p class="text-xs font-semibold text-[var(--text-light)] dark:text-[var(--text-dark)] truncate">
               ${m.producto}
             </p>
@@ -261,6 +260,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p class="text-sm font-bold ${
               m.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-500"
               : m.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-500"
+              : m.tipo_evento === "VentaPendiente" ? "text-yellow-500"
               : "text-blue-600 dark:text-blue-500"
             }">
               ${
@@ -410,6 +410,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const tipo = {
       "Añadir": { icon: "south", color: "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/40" },
       "Retirar": { icon: "north", color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40" },
+      "VentaPendiente": { icon: "autorenew", color: "text-yellow-500 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/40 animate-spin-slow" },
       "Mover": { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" },
     }[m.tipo_evento] || { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" };
 

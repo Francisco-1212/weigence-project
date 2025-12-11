@@ -76,12 +76,12 @@ def _get_positive_messages(page: str, context: Dict[str, Any] = None) -> List[Di
     
     messages_by_page = {
         "dashboard": [
-            {"mensaje": f"📊 Stock estable: {total_productos} productos en inventario{f', {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ''}", "severidad": "info" if productos_sin_stock == 0 else "warning"},
-            {"mensaje": f"🔔 {alertas_pendientes} alertas {'pendientes' if alertas_pendientes > 0 else 'resueltas'} ({alertas_criticas} críticas, {alertas_warning} advertencias)", "severidad": "warning" if alertas_pendientes > 0 else "success"},
+            {"mensaje": f" Stock estable: {total_productos} productos en inventario{f', {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ''}", "severidad": "info" if productos_sin_stock == 0 else "warning"},
+            {"mensaje": f" {alertas_pendientes} alertas {'pendientes' if alertas_pendientes > 0 else 'resueltas'} ({alertas_criticas} críticas, {alertas_warning} advertencias)", "severidad": "warning" if alertas_pendientes > 0 else "success"},
         ],
         "inventario": [
-            {"mensaje": f"📦 {total_productos} productos en inventario{f' - {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ' - Stock completo'}", "severidad": "warning" if productos_sin_stock > 0 else "success"},
-            {"mensaje": f"⚖️ {estantes_sobrecargados} estantes sobrecargados{' - Redistribuir carga' if estantes_sobrecargados > 0 else ' - Capacidad normal'}", "severidad": "warning" if estantes_sobrecargados > 0 else "info"},
+            {"mensaje": f" {total_productos} productos en inventario{f' - {productos_sin_stock} sin stock' if productos_sin_stock > 0 else ' - Stock completo'}", "severidad": "warning" if productos_sin_stock > 0 else "success"},
+            {"mensaje": f" {estantes_sobrecargados} estantes sobrecargados{' - Redistribuir carga' if estantes_sobrecargados > 0 else ' - Capacidad normal'}", "severidad": "warning" if estantes_sobrecargados > 0 else "info"},
         ],
         "ventas": [
             {"mensaje": f"💰 Ventas {'estables' if ventas_24h >= 30 else 'bajas'}: {ventas_24h} ventas en las últimas 24h", "severidad": "info" if ventas_24h >= 30 else "warning"},
@@ -99,9 +99,14 @@ def _get_positive_messages(page: str, context: Dict[str, Any] = None) -> List[Di
         ],
     }
     
-    return messages_by_page.get(page, [
-        {"mensaje": f"📊 Sistema operativo - {total_productos} productos monitoreados", "severidad": "info"}
-    ])
+    # Si la página no está en el diccionario, imprimir advertencia y usar dashboard como fallback
+    if page not in messages_by_page:
+        print(f"[DEBUG MESSAGES] ⚠️ Página '{page}' no tiene mensajes definidos, usando dashboard como fallback")
+        return messages_by_page.get("dashboard", [
+            {"mensaje": f"📊 Sistema operativo - {total_productos} productos monitoreados", "severidad": "info"}
+        ])
+    
+    return messages_by_page[page]
 
 # --- Mensajes largos (AUDITORÍA u otros bloques extensos) ---
 def get_detailed_message(page: str, context: Dict[str, Any] | None = None) -> Dict[str, str]:

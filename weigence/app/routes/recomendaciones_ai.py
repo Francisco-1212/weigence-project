@@ -19,11 +19,48 @@ def _parse_payload(source: Dict[str, Any] | None) -> Dict[str, Any]:
     return {k: v for k, v in source.items() if v is not None}
 
 
+def _convert_to_json_serializable(obj):
+    """Convierte tipos no serializables (numpy, pandas) a tipos nativos de Python."""
+    # Importar solo si están disponibles
+    try:
+        import numpy as np
+        has_numpy = True
+    except ImportError:
+        has_numpy = False
+    
+    try:
+        import pandas as pd
+        has_pandas = True
+    except ImportError:
+        has_pandas = False
+    
+    if isinstance(obj, dict):
+        return {k: _convert_to_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_to_json_serializable(item) for item in obj]
+    elif has_numpy:
+        if isinstance(obj, (np.integer, np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float64, np.float32)):
+            return float(obj)
+        elif isinstance(obj, (np.bool_, np.bool)):
+            return bool(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+    
+    if has_pandas and pd.isna(obj):
+        return None
+    
+    return obj
+
+
 def _success_response(recomendacion: Dict[str, Any]) -> tuple:
+    # Convertir valores no serializables antes de jsonify
+    recomendacion_limpia = _convert_to_json_serializable(recomendacion)
     payload = {
         "ok": True,
-        "mensaje": recomendacion.get("mensaje", "Recomendación generada."),
-        "data": recomendacion,
+        "mensaje": recomendacion_limpia.get("mensaje", "Recomendación generada."),
+        "data": recomendacion_limpia,
     }
     return jsonify(payload), 200
 
@@ -83,14 +120,26 @@ def api_recomendacion_header():
         
         # Si es un array (nuevo formato), devolverlo directamente
         if isinstance(recomendaciones, list):
+            recomendaciones_limpias = _convert_to_json_serializable(recomendaciones)
             return jsonify({
                 "ok": True,
-                "data": recomendaciones,
-                "mensaje": f"{len(recomendaciones)} mensajes disponibles"
+                "data": {"mensajes": recomendaciones_limpias},
+                "mensaje": f"{len(recomendaciones_limpias)} mensajes disponibles"
             })
         
-        # Si es un objeto (compatibilidad con formato antiguo), envolverlo en array
-        return _success_response(recomendaciones)
+        # Si es un objeto (compatibilidad con formato antiguo), convertir a array
+        recomendacion_limpia = _convert_to_json_serializable(recomendaciones)
+        # Convertir objeto a formato de mensajes
+        mensaje_obj = {
+            "mensaje": recomendacion_limpia.get("mensaje", "Sin recomendaciones"),
+            "severidad": recomendacion_limpia.get("severidad", "info"),
+            "detalle": recomendacion_limpia.get("detalle", "")
+        }
+        return jsonify({
+            "ok": True,
+            "data": {"mensajes": [mensaje_obj]},
+            "mensaje": "1 mensaje disponible"
+        })
 
     except Exception as exc:
         print("[DEBUG] Error en api_recomendacion_header:", exc)

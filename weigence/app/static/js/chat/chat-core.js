@@ -67,6 +67,13 @@ const ChatCore = (() => {
                 transports: ["polling"],
                 upgrade: false,
                 reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 5,
+                timeout: 10000,
+                // Evitar auto-conectar si la sesión no es válida
+                autoConnect: true,
+                forceNew: false
             });
 
             // Base events
@@ -80,9 +87,28 @@ const ChatCore = (() => {
                 }
             });
 
-            socket.on("disconnect", () => {
+            socket.on("disconnect", (reason) => {
                 conectado = false;
-                console.log("[WS] desconectado");
+                console.log("[WS] desconectado:", reason);
+                
+                // Si la desconexión fue por error de transporte o sesión inválida, no intentar reconectar automáticamente
+                if (reason === 'io server disconnect' || reason === 'transport close') {
+                    console.warn("[WS] Desconexión por servidor, esperando reconexión manual");
+                }
+            });
+            
+            socket.on("connect_error", (error) => {
+                console.warn("[WS] Error de conexión:", error.message);
+                // No hacer nada especial, socket.io manejará los reintentos automáticamente
+            });
+            
+            socket.on("reconnect_attempt", (attempt) => {
+                console.log(`[WS] Intento de reconexión ${attempt}/5`);
+            });
+            
+            socket.on("reconnect_failed", () => {
+                console.error("[WS] Reconexión fallida después de varios intentos");
+                conectado = false;
             });
 
             // Backend handshake
@@ -146,16 +172,17 @@ const ChatCore = (() => {
             // Errors
             socket.on("error", (err) => {
                 console.warn("[WS] error", err);
-                // Si la sesion es invalida, reiniciamos el socket completo
-                if (err && String(err.message || err).toLowerCase().includes("invalid session")) {
-                    try {
-                        socket.disconnect();
-                    } catch (_) {}
-                    socket = null;
+                
+                // No reiniciar el socket por errores de sesión inválida
+                // El servidor ya rechazó la conexión, simplemente loguear
+                const errorMsg = String(err.message || err).toLowerCase();
+                if (errorMsg.includes("invalid session") || errorMsg.includes("session not found")) {
+                    console.warn("[WS] Sesión inválida detectada - El servidor rechazó la conexión");
                     conectado = false;
-                    init();
+                    // No llamar a init() aquí, dejar que el usuario refresque la página
                     return;
                 }
+                
                 if (onErrorCallback) onErrorCallback(err);
             });
 
