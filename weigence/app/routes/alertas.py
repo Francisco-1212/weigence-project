@@ -18,7 +18,7 @@ def exportar_alertas_csv():
             alerta.get("id"),
             alerta.get("titulo"),
             alerta.get("descripcion"),
-            alerta.get("estado"),
+        
             alerta.get("idproducto"),
             alerta.get("idusuario"),
             alerta.get("id_estante"),
@@ -349,8 +349,21 @@ def generar_alertas_peso_estantes():
         ejecucion_id = random.randint(1000, 9999)
         nuevas = []
         
-        # Obtener alertas existentes de estantes
-        existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
+        # Obtener alertas existentes de estantes con reintentos y manejo de errores
+        import time
+        MAX_RETRIES = 3
+        for intento in range(MAX_RETRIES):
+            try:
+                existentes = supabase.table("alertas").select("id, titulo, estado, id_estante").execute().data or []
+                break
+            except Exception as e:
+                print(f"[ERROR] Fallo al consultar alertas en Supabase (intento {intento+1}/{MAX_RETRIES}): {e}")
+                if intento < MAX_RETRIES - 1:
+                    time.sleep(2)
+                else:
+                    import traceback
+                    traceback.print_exc()
+                    return False
         
         # Filtrar alertas de estantes ACTIVAS solamente
         alertas_estantes_activas = {}

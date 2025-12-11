@@ -394,49 +394,146 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Función auxiliar para renderizar detalles de movimiento pinned
   function renderDetalleDirecto(m) {
+    // Usar el mismo formato que renderDetalle
     const tipo = {
       "Añadir": { icon: "south", color: "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/40" },
       "Retirar": { icon: "north", color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40" },
       "Mover": { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" },
     }[m.tipo_evento] || { icon: "sync_alt", color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40" };
 
-    detalle.className = "min-h-[46vh] flex flex-col bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg p-5 space-y-5 overflow-auto";
+    const relacionados = window.MOVIMIENTOS ? window.MOVIMIENTOS.filter(x => x.producto === m.producto).slice(0, 5) : [];
+
+    detalle.className = "min-h-[46vh] flex flex-col bg-[var(--card-bg-light)] dark:bg-[var(--card-sub-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg overflow-hidden transition-all duration-300";
 
     detalle.innerHTML = `
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 flex items-center justify-center rounded-md ${tipo.color}">
-            <span class="material-symbols-outlined text-[20px]">${tipo.icon}</span>
+      <!-- Header compacto -->
+      <div class="relative ${tipo.color} border-b border-neutral-300 dark:border-[var(--border-dark)] p-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
+            <div class="w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-900 shadow-sm flex-shrink-0">
+              <span class="material-symbols-outlined text-xl ${tipo.color.split(' ')[0]}">${tipo.icon}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <h2 class="text-sm font-bold text-[var(--text-light)] dark:text-white truncate">${m.producto}</h2>
+            </div>
           </div>
-          <div>
-            <h2 class="text-[15px] font-semibold text-[var(--text-light)] dark:text-white leading-tight">${m.producto}</h2>
-            <p class="text-[11px] text-neutral-600 dark:text-[var(--text-muted-dark)]">${m.timestamp}</p>
+          <div class="text-right flex-shrink-0">
+            <p class="text-[10px] text-neutral-600 dark:text-neutral-400 flex items-center justify-end gap-1">
+              <span class="material-symbols-outlined text-xs">schedule</span>
+              ${new Date(m.timestamp).toLocaleString("es-ES", {dateStyle: 'short', timeStyle: 'short'})}
+            </p>
           </div>
         </div>
-        <span class="px-2 py-[2px] text-[11px] font-medium rounded border border-neutral-300 dark:border-[var(--border-dark)] text-primary-600 dark:text-primary-400 bg-neutral-100 dark:bg-[var(--card-bg-dark)]">
-          ${m.tipo_evento}
-        </span>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
-        ${info("Peso Total", `${(m.peso_total || 0).toFixed(2)} kg`)}
-        ${info("Cantidad", `${m.cantidad} unidades`)}
-        ${info("Peso/Unidad", `${(m.peso_por_unidad || 0).toFixed(2)} kg`)}
-        ${info("Ubicación", m.ubicacion)}
-        ${info("Usuario", m.usuario_nombre)}
-        ${info("RUT", m.rut_usuario || "—")}
-      </div>${info("Usuario", m.usuario_nombre)}
-            ${info("RUT", m.rut_usuario || "—")}
-          </div>      <div class="bg-neutral-100 dark:bg-[var(--card-bg-dark)] border border-neutral-300 dark:border-[var(--border-dark)] rounded-lg p-4">
-        <p class="text-[11px] text-neutral-600 dark:text-[var(--text-muted-dark)] uppercase tracking-wide mb-1">Observación</p>
-        <p class="text-[13px] text-neutral-800 dark:text-neutral-200 leading-snug">${m.observacion || "Sin observaciones."}</p>
+      <!-- Contenido compacto en grid 2 columnas -->
+      <div class="p-3 overflow-auto">
+        <!-- Resumen de peso compacto (ancho completo) -->
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="p-2 rounded-lg border-2 ${tipo.color.includes('green') ? 'border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20' : tipo.color.includes('red') ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'} text-center">
+            <span class="material-symbols-outlined ${tipo.color.split(' ')[0]} text-lg">scale</span>
+            <p class="text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase mt-1">Peso Total</p>
+            <p class="text-xl font-bold ${tipo.color.split(' ')[0]}">${(m.peso_total || 0).toFixed(2)}</p>
+            <p class="text-[10px] text-neutral-500">kg</p>
+          </div>
+          <div class="p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)] text-center">
+            <span class="material-symbols-outlined text-primary-500 text-lg">inventory_2</span>
+            <p class="text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase mt-1">Cantidad</p>
+            <p class="text-xl font-bold text-[var(--text-light)] dark:text-white">${m.cantidad}</p>
+            <p class="text-[10px] text-neutral-500">unid.</p>
+          </div>
+          <div class="p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)] text-center">
+            <span class="material-symbols-outlined text-primary-500 text-lg">balance</span>
+            <p class="text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase mt-1">Peso/Unid.</p>
+            <p class="text-xl font-bold text-[var(--text-light)] dark:text-white">${(m.peso_por_unidad || 0).toFixed(2)}</p>
+            <p class="text-[10px] text-neutral-500">kg/u</p>
+          </div>
+        </div>
+
+        <!-- Grid 2 columnas: Info + Historial -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Columna izquierda: Información + Observación -->
+          <div class="space-y-1.5">
+            <h3 class="text-xs font-bold text-[var(--text-light)] dark:text-white flex items-center gap-1.5 mb-0.5">
+              <span class="material-symbols-outlined text-base">info</span>
+              Información
+            </h3>
+            <div class="flex items-center gap-2 p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)]">
+              <span class="material-symbols-outlined text-primary-500 text-lg">location_on</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Ubicación</p>
+                <p class="text-xs font-semibold text-[var(--text-light)] dark:text-white truncate">${m.ubicacion}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)]">
+              <span class="material-symbols-outlined text-primary-500 text-lg">person</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Usuario</p>
+                <p class="text-xs font-semibold text-[var(--text-light)] dark:text-white truncate">${m.usuario_nombre}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)]">
+              <span class="material-symbols-outlined text-primary-500 text-lg">badge</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">RUT</p>
+                <p class="text-xs font-semibold text-[var(--text-light)] dark:text-white truncate">${m.rut_usuario || "—"}</p>
+              </div>
+            </div>
+            ${m.observacion ? `
+              <div class="p-2 rounded-lg border border-neutral-300 dark:border-[var(--border-dark)] bg-neutral-50 dark:bg-[var(--card-bg-dark)]">
+                <div class="flex items-start gap-2">
+                  <span class="material-symbols-outlined text-warning-500 text-lg flex-shrink-0">notes</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase mb-1">Observación</p>
+                    <p class="text-xs text-neutral-800 dark:text-neutral-200 break-words">${m.observacion}</p>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Columna derecha: Historial del producto -->
+          <div class="space-y-1.5">
+            <h3 class="text-xs font-bold text-[var(--text-light)] dark:text-white flex items-center gap-1.5 mb-0.5">
+              <span class="material-symbols-outlined text-base">history</span>
+              Historial de ${m.producto}
+            </h3>
+            ${relacionados.slice(0, 4).map(r => {
+              const rColor = r.tipo_evento === "Añadir" ? "text-green-600 dark:text-green-400" :
+                             r.tipo_evento === "Retirar" ? "text-red-600 dark:text-red-400" :
+                             "text-blue-600 dark:text-blue-400";
+              return `
+                <div class="p-2 rounded-lg border border-neutral-200 dark:border-[var(--border-dark)] bg-white dark:bg-[var(--card-bg-dark)] hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-200">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-sm ${rColor}">${
+                        r.tipo_evento === "Añadir" ? "south" :
+                        r.tipo_evento === "Retirar" ? "north" : "sync_alt"
+                      }</span>
+                      <span class="text-xs text-neutral-700 dark:text-neutral-300">
+                        <span class="font-semibold">${r.tipo_evento}</span>
+                      </span>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-xs font-semibold ${rColor}">${(r.peso_total || 0).toFixed(2)}kg</p>
+                      <p class="text-[10px] text-neutral-500">${String(r.timestamp).split(" ")[1]?.slice(0,5) || ""}</p>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
       </div>
     `;
     
-    // Mostrar estadísticas si hay idproducto
+    // Mostrar sección de estadísticas
     const statsSection = document.getElementById('stats-producto');
-    if (statsSection && m.idproducto) {
+    if (statsSection) {
       statsSection.classList.remove('hidden');
+    }
+    // Cargar estadísticas del producto
+    if (m.idproducto) {
       cargarEstadisticas(m.idproducto);
     }
   }

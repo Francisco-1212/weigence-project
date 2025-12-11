@@ -1,3 +1,108 @@
+/* Sombra hover profesional IA para el panel Pro */
+.ia-recommendation-pro {
+  transition: box-shadow 0.3s cubic-bezier(.4,0,.2,1);
+}
+.ia-recommendation-pro:hover {
+  box-shadow: 0 4px 16px 0 rgba(59,130,246,0.06), 0 1px 4px 0 rgba(0,0,0,0.03);
+}
+.dark .ia-recommendation-pro:hover {
+  box-shadow: 0 4px 16px 0 rgba(96,165,250,0.09), 0 1px 4px 0 rgba(255,255,255,0.03);
+}
+
+/* === Estilos movidos desde auditoria.html === */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 12px rgba(34, 197, 94, 0.8); }
+}
+
+.user-highlight {
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.13) 0%, rgba(147, 51, 234, 0.13) 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  color: #1e293b;
+  box-shadow: 0 1px 6px 0 rgba(59,130,246,0.07);
+}
+
+.dark .user-highlight {
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #eaeaea;
+}
+
+/* Scrollbar personalizado para dashboard y detalle IA (modo claro y oscuro) */
+#ia-dashboard-view::-webkit-scrollbar,
+#ia-detail-view .flex-1::-webkit-scrollbar {
+  width: 8px;
+}
+
+#ia-dashboard-view::-webkit-scrollbar-track,
+#ia-detail-view .flex-1::-webkit-scrollbar-track {
+  background: #f3f4f6; /* gray-100 para modo claro */
+}
+
+#ia-dashboard-view::-webkit-scrollbar-thumb,
+#ia-detail-view .flex-1::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.7); /* gray-400 más visible en claro */
+  border-radius: 4px;
+  border: 2px solid #f3f4f6;
+}
+
+.dark #ia-dashboard-view::-webkit-scrollbar-track,
+.dark #ia-detail-view .flex-1::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark #ia-dashboard-view::-webkit-scrollbar-thumb,
+.dark #ia-detail-view .flex-1::-webkit-scrollbar-thumb {
+  background-color: rgba(82, 82, 91, 0.8); /* neutral-700 oscuro */
+  border: 2px solid #18181b;
+}
+
+#ia-dashboard-view::-webkit-scrollbar-thumb:hover,
+#ia-detail-view .flex-1::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.9);
+}
+
+.dark #ia-dashboard-view::-webkit-scrollbar-thumb:hover,
+.dark #ia-detail-view .flex-1::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(82, 82, 91, 1);
+}
+
+/* Toast notification styles (mejor contraste en claro) */
+.ia-toast-notification {
+  animation: slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 4.7s;
+  background: linear-gradient(90deg, #f0fdfa 60%, #e0e7ff 100%);
+  color: #0f172a;
+  border: 1px solid #bae6fd;
+  box-shadow: 0 2px 12px 0 rgba(59,130,246,0.08);
+}
+.dark .ia-toast-notification {
+  background: linear-gradient(90deg, #1e293b 60%, #312e81 100%);
+  color: #eaeaea;
+  border: 1px solid #6366f1;
+  box-shadow: 0 2px 12px 0 rgba(59,130,246,0.18);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
 /* ============================================================
    IA RECOMMENDATION - DISEÑO LIMPIO
    

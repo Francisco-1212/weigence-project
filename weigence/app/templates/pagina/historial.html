@@ -40,7 +40,7 @@
     <!-- Contenido con scroll -->
     <div class="flex-1 overflow-y-auto p-6">
       
-      <!-- Panel Movimientos -->
+      <!-- Panel Movimientos: solo tabla, sin panel de detalle propio -->
       <div id="panel-mov" class="tab-content">
         {% if movimientos %}
         <div class="overflow-hidden rounded-lg border border-neutral-300 dark:border-[var(--border-dark)]">
@@ -102,7 +102,6 @@
             </tbody>
           </table>
         </div>
-
         <!-- Botón ir a movimientos -->
         <div class="flex justify-center mt-6">
           <a href="{{ url_for('main.movimientos') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md">
@@ -110,7 +109,6 @@
             Ver pantalla completa de movimientos
           </a>
         </div>
-
         {% else %}
         <div class="text-center py-12">
           <span class="material-symbols-outlined text-6xl text-neutral-300 dark:text-neutral-600">inbox</span>

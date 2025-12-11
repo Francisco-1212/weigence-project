@@ -40,6 +40,13 @@
         abierto = false;
     };
 
+    // Animación "viva" al hacer click (rebote extra)
+    bindOnce(btn, "mousedown", "bounce", () => {
+        btn.classList.remove("chat-float-btn-pressed");
+        void btn.offsetWidth; // force reflow
+        btn.classList.add("chat-float-btn-pressed");
+        setTimeout(() => btn.classList.remove("chat-float-btn-pressed"), 350);
+    });
     bindOnce(btn, "click", "open", open);
     bindOnce(closeBtn, "click", "close", close);
     bindOnce(document, "click", "outside", (e) => {

@@ -1,3 +1,12 @@
+/* Fondo forzado para el panel Pro en modo claro */
+
+.ia-recommendation-pro {
+  background: linear-gradient(135deg, #e0f2fe 0%, #60a5fa 100%) !important;
+}
+
+.dark .ia-recommendation-pro {
+  background: linear-gradient(135deg, #1a1b23 0%, #0f1014 100%) !important;
+}
 /* ============================================================
    AUDITORÍA INTELIGENTE - REFACTORIZADO Y LIMPIO
    
@@ -233,6 +242,133 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* === NUEVO: Tarjetas de severidad únicas para modo claro === */
+:root {
+  --crit-bg: linear-gradient(90deg, #fff0f3 0%, #ffe5e9 100%);
+  --crit-border: #f43f5e;
+  --crit-shadow: 0 2px 16px 0 rgba(244,63,94,0.08);
+  --warn-bg: linear-gradient(90deg, #fffbe6 0%, #fff3cd 100%);
+  --warn-border: #f59e0b;
+  --warn-shadow: 0 2px 16px 0 rgba(245,158,11,0.08);
+  --op-bg: linear-gradient(90deg, #e6f0ff 0%, #e6f7ff 100%);
+  --op-border: #2563eb;
+  --op-shadow: 0 2px 16px 0 rgba(37,99,235,0.08);
+  --info-bg: linear-gradient(90deg, #e6fff7 0%, #e6fff9 100%);
+  --info-border: #10b981;
+  --info-shadow: 0 2px 16px 0 rgba(16,185,129,0.08);
+}
+
+/* Tarjeta severidad modo claro */
+.severity-card {
+  background: var(--info-bg);
+  border: 1.5px solid var(--info-border);
+  box-shadow: var(--info-shadow);
+  transition: box-shadow 0.2s, border 0.2s, background 0.2s;
+}
+.severity-card[data-severity-filter="critical"] {
+  background: var(--crit-bg);
+  border-color: var(--crit-border);
+  box-shadow: var(--crit-shadow);
+}
+.severity-card[data-severity-filter="high"] {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  box-shadow: var(--warn-shadow);
+}
+.severity-card[data-severity-filter="medium"] {
+  background: var(--op-bg);
+  border-color: var(--op-border);
+  box-shadow: var(--op-shadow);
+}
+.severity-card[data-severity-filter="low"] {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  box-shadow: var(--info-shadow);
+}
+
+.severity-card:hover {
+  box-shadow: 0 6px 32px 0 rgba(60,72,100,0.10), 0 2px 8px 0 rgba(60,72,100,0.08);
+  transform: translateY(-2px) scale(1.01);
+  border-width: 2px;
+  filter: brightness(1.03);
+}
+
+/* Micro-interacción: animación de barra lateral */
+.severity-card .w-1_5 {
+  transition: height 0.25s cubic-bezier(.4,0,.2,1), background 0.2s;
+}
+.severity-card:hover .w-1_5 {
+  height: 2.8rem !important;
+  background: linear-gradient(180deg, #fff, var(--crit-border), #fff 80%);
+}
+.severity-card[data-severity-filter="critical"]:hover .w-1_5 {
+  background: linear-gradient(180deg, #fff, var(--crit-border), #fff 80%);
+}
+.severity-card[data-severity-filter="high"]:hover .w-1_5 {
+  background: linear-gradient(180deg, #fff, var(--warn-border), #fff 80%);
+}
+.severity-card[data-severity-filter="medium"]:hover .w-1_5 {
+  background: linear-gradient(180deg, #fff, var(--op-border), #fff 80%);
+}
+.severity-card[data-severity-filter="low"]:hover .w-1_5 {
+  background: linear-gradient(180deg, #fff, var(--info-border), #fff 80%);
+}
+
+/* Contador grande y badge */
+.severity-card .text-3xl {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.severity-card .trend-value {
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Badge Pro */
+.ml-badge {
+  background: linear-gradient(90deg, #7c3aed 0%, #2563eb 100%);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.10);
+  border: none;
+  font-size: 0.85em;
+  padding: 0.2em 0.8em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+/* Mensaje contextual minimalista */
+#dashboard-context-message {
+  color: #2563eb;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+/* Sombra y fondo para el header del panel IA */
+#ai-recomendacion-auditoria > .flex-shrink-0 {
+  background: linear-gradient(90deg, #f0f4ff 0%, #f7faff 100%);
+  box-shadow: 0 2px 12px 0 rgba(60,72,100,0.06);
+  border-bottom: 1.5px solid #e0e7ff;
+}
+
+/* Responsive: solo para modo claro */
+@media (max-width: 640px) {
+  .severity-card .text-3xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Oscurecer solo en dark, no sobrescribir modo claro */
+.dark .severity-card {
+  background: unset !important;
+  border-color: unset !important;
+  box-shadow: unset !important;
+  filter: unset !important;
 }
 
 /* Botones de navegación profesionales */

@@ -1,3 +1,28 @@
+/* Animación de "vida" para el botón flotante del chat */
+@keyframes chat-float-bounce {
+  0% { transform: scale(1) rotate(0deg); box-shadow: 0 2px 8px rgba(99,102,241,0.15); }
+  20% { transform: scale(1.08) rotate(-6deg); box-shadow: 0 6px 18px rgba(99,102,241,0.18); }
+  40% { transform: scale(0.97) rotate(4deg); box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
+  60% { transform: scale(1.04) rotate(-2deg); box-shadow: 0 8px 24px rgba(99,102,241,0.22); }
+  80% { transform: scale(0.98) rotate(2deg); box-shadow: 0 2px 8px rgba(99,102,241,0.10); }
+  100% { transform: scale(1) rotate(0deg); box-shadow: 0 2px 8px rgba(99,102,241,0.15); }
+}
+
+#chat-float-btn {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+#chat-float-btn:hover {
+  animation: chat-float-bounce 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+  box-shadow: 0 8px 32px rgba(99,102,241,0.25), 0 1.5px 8px rgba(0,0,0,0.10);
+  filter: brightness(1.08) saturate(1.15);
+}
+
+#chat-float-btn:active {
+  transform: scale(0.93) rotate(-2deg);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.18);
+  filter: brightness(0.98) saturate(0.95);
+}
 /* ============================================================
    CHAT FLOTANTE - WEIGENCE
    ============================================================ */

@@ -1999,9 +1999,16 @@ video {
 }
 
 .filtro-fecha-btn.filtro-activo {
-  background: #262626;
-  color: #fff;
+  background: #e0edff;
+  color: #2563eb;
   font-weight: bold;
+  box-shadow: 0 1px 4px 0 rgba(37,99,235,0.07);
+  border-radius: 0.7em;
+}
+
+.dark .filtro-fecha-btn.filtro-activo {
+  background: #1e293b;
+  color: #60a5fa;
 }
 
 /* ===== RESET Y ESTILOS BASE ===== */
