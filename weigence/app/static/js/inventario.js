@@ -1126,9 +1126,9 @@ const WeigenceMonitor = {
       // Mostrar indicador de carga
       contenedor.innerHTML = '<div class="col-span-full text-center py-4 text-neutral-500"><span class="material-symbols-outlined animate-spin">refresh</span> Cargando estantes...</div>';
       
-      // Agregar timeout de 5 segundos
+      // Agregar timeout de 15 segundos
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const res = await fetch("/api/estantes_estado", { signal: controller.signal });
       clearTimeout(timeoutId);
