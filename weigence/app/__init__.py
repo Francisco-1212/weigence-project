@@ -59,6 +59,8 @@ def create_app(config_name=None):
         """Verifica si es una ruta API que debe estar exenta de CSRF"""
         path = request.path
         exempt_prefixes = [
+            "/",  # Login - exento de CSRF
+            "/login",  # Login alternativo
             "/api/chat/", 
             "/api/usuarios", 
             "/api/auditoria", 
@@ -292,9 +294,23 @@ def create_app(config_name=None):
         """Maneja todos los errores y devuelve JSON para peticiones AJAX."""
         # No loguear errores 404 como excepciones críticas
         from werkzeug.exceptions import NotFound, HTTPException
+        from flask_wtf.csrf import CSRFError
         
         if isinstance(e, NotFound):
             return handle_404(e)
+        
+        # Manejar errores CSRF de forma especial
+        if isinstance(e, CSRFError):
+            logger.warning(f"[CSRF] Error de validación CSRF en {request.path}: {str(e)}")
+            # Si es el login, redirigir para refrescar el token
+            if request.path == "/" or request.path == "/login":
+                flash("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.", "warning")
+                return redirect(url_for('main.login'))
+            # Para otras rutas, si es API devolver JSON, si no mostrar error
+            if request.path.startswith("/api/") or request.is_json:
+                return jsonify({"success": False, "error": "Token de seguridad inválido. Recarga la página."}), 400
+            flash("Token de seguridad inválido. Por favor, recarga la página.", "error")
+            return redirect(url_for('main.dashboard'))
         
         # Suprimir logs de otros errores HTTP esperados (400, 403, etc.)
         if isinstance(e, HTTPException):
