@@ -1226,6 +1226,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       datos.peso_por_unidad = parseFloat(formData.get("peso_por_unidad"));
       datos.peso_total = datos.cantidad * datos.peso_por_unidad;
       datos.observacion = formData.get("observacion") || "";
+      datos.timestamp = new Date().toISOString(); // Agregar timestamp actual
       // Obtener el id_estante del campo oculto
       const idEstanteHidden = formData.get("id_estante_hidden");
       datos.id_estante = parseInt(idEstanteHidden || formData.get("id_estante"));

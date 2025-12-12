@@ -750,7 +750,7 @@ def nuevo_movimiento():
         datos_req = request.json
         print("Datos recibidos:", datos_req)
 
-        # Obtener datos requeridos del sensor
+        # Obtener datos requeridos
         id_estante = datos_req.get('id_estante')
         peso_total = datos_req.get('peso_total')
         tipo_evento = datos_req.get('tipo_evento')
@@ -774,8 +774,31 @@ def nuevo_movimiento():
         else:
             timestamp_dt = timestamp
 
-        # Llamar a la lógica central
-        datos = procesar_movimiento(id_estante, peso_total, tipo_evento, timestamp_dt, rut_usuario)
+        # Detectar si es movimiento MANUAL (viene con idproducto, cantidad, peso_por_unidad)
+        idproducto_manual = datos_req.get('idproducto')
+        cantidad_manual = datos_req.get('cantidad')
+        peso_por_unidad_manual = datos_req.get('peso_por_unidad')
+        observacion_manual = datos_req.get('observacion', '')
+
+        # Si es movimiento manual, usar datos directos sin procesar
+        if idproducto_manual and cantidad_manual and peso_por_unidad_manual:
+            print(f"📝 Movimiento MANUAL detectado - usando datos del formulario")
+            datos = {
+                "idproducto": idproducto_manual,
+                "cantidad": cantidad_manual,
+                "peso_por_unidad": peso_por_unidad_manual,
+                "match_por_peso": False,
+                "es_venta_validada": (tipo_evento == "Retirar"),  # Si es Retirar manual, marcarlo como venta validada
+                "es_agregacion_validada": (tipo_evento == "Añadir"),  # Si es Añadir manual, marcarlo como agregación validada
+                "es_retiro_sospechoso": False,
+                "motivo_sospecha": None,
+                "observacion": observacion_manual or "Movimiento registrado manualmente",
+                "idproducto_detectado": None
+            }
+        else:
+            # Si NO es manual, procesar como movimiento del sensor
+            print(f"🤖 Movimiento AUTOMÁTICO detectado - procesando con lógica de sensor")
+            datos = procesar_movimiento(id_estante, peso_total, tipo_evento, timestamp_dt, rut_usuario)
 
         # Preparar datos para inserción
         movimiento_db = {
@@ -790,6 +813,7 @@ def nuevo_movimiento():
             "rut_usuario": rut_usuario,
             "match_por_peso": datos.get("match_por_peso"),
             "es_venta_validada": datos.get("es_venta_validada"),
+            "es_agregacion_validada": datos.get("es_agregacion_validada"),
             "es_retiro_sospechoso": datos.get("es_retiro_sospechoso"),
             "motivo_sospecha": datos.get("motivo_sospecha"),
             "observacion": datos.get("observacion")

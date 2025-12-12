@@ -317,6 +317,10 @@ class SnapshotBuilder:
             ids_productos_en_movimientos = {m['idproducto'] for m in todos_movimientos if m.get('idproducto')}
             print(f"[DEBUG] 📊 IDs únicos en movimientos: {len(ids_productos_en_movimientos)}")
             
+            # Contar movimientos con idproducto NULL
+            movimientos_sin_producto = sum(1 for m in todos_movimientos if not m.get('idproducto'))
+            print(f"[DEBUG] ⚠️ Movimientos con idproducto NULL: {movimientos_sin_producto}")
+            
             # Obtener IDs de productos que SÍ existen en la tabla productos
             productos_existentes = supabase.table('productos').select('idproducto').execute().data or []
             ids_productos_existentes = {p['idproducto'] for p in productos_existentes}
@@ -325,24 +329,19 @@ class SnapshotBuilder:
             # Encontrar IDs de productos que NO existen
             ids_faltantes = ids_productos_en_movimientos - ids_productos_existentes
             
+            # Contar movimientos problemáticos
+            movimientos_problemáticos = movimientos_sin_producto  # Empezar con los NULL
+            
             if ids_faltantes:
                 print(f"[DEBUG] ⚠️ Productos faltantes: {list(ids_faltantes)}")
                 
-                # Contar movimientos con idproducto faltante o nombre 'Producto no encontrado'
-                movimientos_problemáticos = 0
+                # Sumar movimientos con idproducto faltante
                 for m in todos_movimientos:
-                    id_faltante = m.get('idproducto') in ids_faltantes
-                    nombre_no_encontrado = False
-                    # Si el movimiento tiene el campo 'producto', revisa el nombre
-                    if 'producto' in m:
-                        nombre_no_encontrado = m.get('producto') == 'Producto no encontrado'
-                    movimientos_problemáticos += int(id_faltante or nombre_no_encontrado)
+                    if m.get('idproducto') in ids_faltantes:
+                        movimientos_problemáticos += 1
 
-                print(f"[DEBUG] ⚠️ Total movimientos con productos no encontrados: {movimientos_problemáticos}")
-                snapshot.productos_no_encontrados_movimientos = movimientos_problemáticos
-            else:
-                print(f"[DEBUG] ✅ Todos los productos referenciados existen en la BD")
-                snapshot.productos_no_encontrados_movimientos = 0
+            print(f"[DEBUG] ⚠️ Total movimientos con productos no encontrados: {movimientos_problemáticos}")
+            snapshot.productos_no_encontrados_movimientos = movimientos_problemáticos
             
             # Calcular tiempo desde el último movimiento (consulta separada)
             ultimo_mov = supabase.table('movimientos_inventario') \
