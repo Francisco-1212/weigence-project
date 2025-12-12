@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from api.conexion_supabase import supabase
 
 # Tolerancia estándar para el match de peso (en kg)
-TOLERANCIA_PESO = 0.004  # 3 gramos
+TOLERANCIA_PESO = 0.005  # 5 gramos - más estricto para evitar falsos positivos
 
 def procesar_movimiento(
 	id_estante: int,
@@ -63,22 +63,20 @@ def procesar_movimiento(
 		if mejor_match is not None and min_diff <= TOLERANCIA_PESO:
 			logging.info(f"[MATCH] Producto detectado: {mejor_match.get('descripcion','')} | id: {idproducto_detectado} | peso_ref: {peso_ref_elegido} | diff: {min_diff}")
 		else:
-			# Si no hay match exacto, pero hay producto más cercano, lo marcamos como sospechoso pero lo devolvemos
-			if mejor_match is not None and min_diff <= (TOLERANCIA_PESO * 5):
-				logging.warning(f"[MATCH RELAJADO] Producto detectado con tolerancia extendida: {mejor_match.get('descripcion','')} | id: {idproducto_detectado} | peso_ref: {peso_ref_elegido} | diff: {min_diff}")
-				# Se marca como match por peso False pero se asocia el producto
-				return {
-					"idproducto": idproducto_detectado,
-					"idproducto_detectado": idproducto_detectado,
-					"cantidad": None,
-					"peso_por_unidad": peso_ref_elegido,
-					"match_por_peso": False,
-					"es_venta_validada": False,
-					"es_retiro_sospechoso": True,
-					"motivo_sospecha": "Match por peso fuera de tolerancia estándar",
-					"observacion": "Producto detectado con tolerancia extendida"
-				}
-			# No hay match por peso
+			# Si la diferencia es mayor a la tolerancia, registramos como movimiento no identificado
+			if mejor_match is not None:
+				logging.warning(f"[NO MATCH] Peso detectado ({peso_retirado} kg) no coincide con ningún producto. Producto más cercano: {mejor_match.get('descripcion','')} | peso_ref: {peso_ref_elegido} | diff: {min_diff} kg (tolerancia: {TOLERANCIA_PESO} kg)")
+			else:
+				logging.warning(f"[NO MATCH] No hay productos en el estante para comparar")
+			
+			# No hay match por peso - devolver sin producto asociado
+			# Crear motivo conciso con información del producto más cercano
+			if mejor_match:
+				nombre_prod = mejor_match.get('nombre') or mejor_match.get('descripcion', 'N/A')
+				motivo = f"Peso detectado ({peso_retirado:.3f} kg) no coincide con ningún producto registrado. Producto más cercano: {nombre_prod} ({peso_ref_elegido:.3f} kg, diff: {min_diff:.3f} kg)"
+			else:
+				motivo = "No se encontró producto con peso coincidente"
+			
 			return {
 				"idproducto": None,
 				"idproducto_detectado": None,
@@ -87,8 +85,8 @@ def procesar_movimiento(
 				"match_por_peso": False,
 				"es_venta_validada": False,
 				"es_retiro_sospechoso": False,
-				"motivo_sospecha": "No se encontró producto con peso coincidente",
-				"observacion": "No se detectó producto por peso"
+				"motivo_sospecha": motivo,
+				"observacion": "Producto no identificado - peso fuera de tolerancia"
 			}
 		# 5. Calcular cantidad con redondeo hacia abajo
 		cantidad_abs = floor(peso_retirado / peso_ref_elegido) if peso_ref_elegido else 1

@@ -110,9 +110,17 @@ def movimientos():
                     usuario_nombre = usuarios_data.get("nombre", "Usuario no registrado")
                     rut_display = rut_usuario or "No registrado"
                 
+                # Determinar el nombre del producto
+                idproducto = m.get("idproducto")
+                if idproducto is None:
+                    # Producto no identificado - título corto
+                    producto_nombre = "Producto no identificado"
+                else:
+                    producto_nombre = productos_data.get("nombre", "Producto no encontrado")
+                
                 mov = {
                     "id_movimiento": m.get("id_movimiento"),
-                    "producto": productos_data.get("nombre", "Producto no encontrado"),
+                    "producto": producto_nombre,
                     "tipo_evento": m.get("tipo_evento"),
                     "cantidad": m.get("cantidad", 0),
                     "peso_por_unidad": m.get("peso_por_unidad", 0),
@@ -122,8 +130,10 @@ def movimientos():
                     "rut_usuario": rut_display,
                     "observacion": m.get("observacion", ""),
                     "timestamp": m.get("timestamp", "").replace("T", " "),
-                    "idproducto": m.get("idproducto"),
-                    "id_estante": m.get("id_estante")
+                    "idproducto": idproducto,
+                    "id_estante": m.get("id_estante"),
+                    "match_por_peso": m.get("match_por_peso", False),
+                    "motivo_sospecha": m.get("motivo_sospecha")
                 }
                 movimientos.append(mov)
                 #print("Movimiento procesado:", mov)
@@ -625,7 +635,7 @@ def actualizar_movimiento_pendiente_o_gris(id_estante, peso_total, timestamp_ret
         print(f"📋 [Actualizar] Encontrados {len(movimientos_encontrados.data)} movimientos {tipo_busqueda}")
         
         # Buscar el que mejor coincida con el peso y producto
-        TOLERANCIA_PESO = 0.01  # 10 gramos de tolerancia
+        TOLERANCIA_PESO = 0.005  # 5 gramos de tolerancia - más estricto para evitar falsos positivos
         mejor_coincidencia = None
         min_diferencia = float('inf')
         
