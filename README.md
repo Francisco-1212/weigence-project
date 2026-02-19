@@ -28,7 +28,7 @@ El proyecto implementa una arquitectura basada en el patrón **MVC (Modelo-Vista
 1. Clonar el repositorio:
    `git clone https://github.com/Francisco-1212/weigence-project.git`
 2. Instalar dependencias:
-   `pip install -r requirements.txt`
+   `pip install -r weigence/app/requirements.txt`
 3. Configurar variables de entorno (.env) para la conexión a la base de datos.
 4. Ejecutar la aplicación:
    `python app.py`
