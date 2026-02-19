@@ -33,5 +33,3 @@ El proyecto implementa una arquitectura basada en el patrón **MVC (Modelo-Vista
 4. Ejecutar la aplicación:
    `python app.py`
 
----
-Desarrollado por Francisco Carrasco - Ingeniero en Informática (Egresado INACAP)
